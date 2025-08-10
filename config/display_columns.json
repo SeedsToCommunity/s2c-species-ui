@@ -1,14 +1,14 @@
 {
   "main_page_columns": [
     {
-      "field": "botanical_name",
-      "display_name": "Botanical Name",
+      "field": "common_name",
+      "display_name": "Common Name",
       "type": "title",
       "show_as_badge": false
     },
     {
-      "field": "common_name",
-      "display_name": "Common Name",
+      "field": "botanical_name",
+      "display_name": "Botanical Name",
       "type": "subtitle",
       "show_as_badge": false
     },
