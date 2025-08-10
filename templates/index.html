@@ -10,42 +10,42 @@
     <style>
         /* Mobile-friendly touch targets for species links */
         .species-link {
+            display: inline-block !important;
             min-height: 44px; /* iOS recommended touch target size */
-            min-width: 44px;
-            display: inline-flex !important;
-            align-items: center;
-            padding: 8px 4px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
+            line-height: 1.4;
+            padding: 8px 12px !important;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            text-decoration: none !important;
+            position: relative;
         }
         
-        .species-link:hover,
-        .species-link:focus {
-            background-color: rgba(var(--bs-info-rgb), 0.1);
-            transform: translateX(2px);
+        .species-link:hover {
+            background-color: rgba(var(--bs-info-rgb), 0.15) !important;
+            color: var(--bs-info) !important;
         }
         
-        /* Improve mobile touch responsiveness */
+        .species-link:active {
+            background-color: rgba(var(--bs-info-rgb), 0.25) !important;
+        }
+        
+        /* Mobile-specific improvements */
         @media (max-width: 768px) {
             .species-link {
-                font-size: 1.1rem;
-                padding: 12px 8px;
-                margin: -4px 0;
-            }
-            
-            .card-body {
-                padding: 1.25rem;
+                font-size: 1.1rem !important;
+                padding: 12px 16px !important;
+                margin: 4px 0 !important;
+                min-height: 48px; /* Larger touch target for mobile */
+                display: block !important;
+                width: 100%;
+                text-align: left;
             }
         }
         
-        /* Ensure proper touch interaction on iOS */
+        /* Ensure links are always clickable */
         .species-link {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            pointer-events: auto !important;
+            -webkit-tap-highlight-color: rgba(var(--bs-info-rgb), 0.3);
         }
         
         .form-floating > label {
@@ -199,9 +199,7 @@
                                                         <h6 class="card-subtitle mb-3 text-muted fst-italic">
                                                             {% if column.field == 'botanical_name' %}
                                                                 <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **current_filters) }}" 
-                                                                   class="text-decoration-none text-info species-link d-inline-block"
-                                                                   onclick="return true;"
-                                                                   style="cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
+                                                                   class="species-link text-info">
                                                                     {{ field_value }}
                                                                     <i data-feather="arrow-right" class="ms-1 small"></i>
                                                                 </a>
@@ -248,9 +246,7 @@
                                             </h5>
                                             <h6 class="card-subtitle mb-3 text-muted fst-italic">
                                                 <a href="{{ url_for('species_detail', botanical_name=plant.botanical_name|urlencode, **current_filters) }}" 
-                                                   class="text-decoration-none text-info species-link d-inline-block"
-                                                   onclick="return true;"
-                                                   style="cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
+                                                   class="species-link text-info">
                                                     {{ plant.botanical_name }}
                                                     <i data-feather="arrow-right" class="ms-1 small"></i>
                                                 </a>
@@ -304,34 +300,39 @@
         // Initialize Feather icons
         feather.replace();
         
-        // Fix for mobile touch issues with links
+        // Mobile touch fix for species links
         document.addEventListener('DOMContentLoaded', function() {
-            // Add touch event listeners for better mobile support
             const speciesLinks = document.querySelectorAll('.species-link');
-            speciesLinks.forEach(function(link) {
-                link.addEventListener('touchstart', function(e) {
-                    // Add visual feedback for touch
-                    this.style.opacity = '0.7';
-                }, { passive: true });
+            console.log('Found species links:', speciesLinks.length);
+            
+            speciesLinks.forEach(function(link, index) {
+                console.log('Processing link', index, ':', link.href);
                 
-                link.addEventListener('touchend', function(e) {
-                    // Restore opacity and trigger navigation
-                    this.style.opacity = '1';
-                    
-                    // Prevent default behavior and manually trigger navigation
-                    e.preventDefault();
-                    
-                    // Small delay to ensure the touch is registered
-                    setTimeout(() => {
-                        if (this.href) {
-                            window.location.href = this.href;
-                        }
-                    }, 150);
+                // Add click handler for all devices
+                link.addEventListener('click', function(e) {
+                    console.log('Click detected on link:', this.href);
+                    // Let normal link behavior proceed
+                    return true;
                 }, { passive: false });
                 
-                link.addEventListener('touchcancel', function(e) {
-                    // Restore opacity if touch is cancelled
-                    this.style.opacity = '1';
+                // Add touchstart for visual feedback
+                link.addEventListener('touchstart', function(e) {
+                    console.log('Touch started on link:', this.href);
+                    this.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.2)';
+                }, { passive: true });
+                
+                // Add touchend to ensure navigation
+                link.addEventListener('touchend', function(e) {
+                    console.log('Touch ended on link:', this.href);
+                    this.style.backgroundColor = '';
+                    
+                    // For mobile devices, ensure navigation happens
+                    setTimeout(() => {
+                        if (this.href && !e.defaultPrevented) {
+                            console.log('Manually navigating to:', this.href);
+                            window.location.href = this.href;
+                        }
+                    }, 100);
                 }, { passive: true });
             });
         });
