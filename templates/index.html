@@ -337,9 +337,9 @@
             });
         });
         
-        // Auto-submit form with debouncing
+        // Auto-submit form with longer debouncing for better user experience
         let filterTimeout;
-        const DEBOUNCE_DELAY = 500; // 500ms delay
+        const DEBOUNCE_DELAY = 1500; // Increased to 1.5 seconds to reduce interruptions
         
         function debounceFilter() {
             clearTimeout(filterTimeout);
@@ -350,10 +350,26 @@
         
         // Add event listeners to all filter inputs
         document.addEventListener('DOMContentLoaded', function() {
-            // Text input (name search) - debounce on keyup
+            // Text input (name search) - debounce with longer delay to avoid interrupting typing
             const nameInput = document.getElementById('name');
             if (nameInput) {
-                nameInput.addEventListener('input', debounceFilter);
+                // Only trigger debounce after user stops typing for a while
+                nameInput.addEventListener('input', function(e) {
+                    // Don't submit if the input is very short (likely still typing)
+                    if (this.value.length > 0 && this.value.length < 3) {
+                        clearTimeout(filterTimeout);
+                        return;
+                    }
+                    debounceFilter();
+                });
+                
+                // Also allow manual submission with Enter key
+                nameInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        clearTimeout(filterTimeout);
+                        document.getElementById('filterForm').submit();
+                    }
+                });
             }
             
             // Dropdown selects - immediate submit on change
