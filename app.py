@@ -17,6 +17,9 @@ def index():
         # Read the CSV file using pandas
         df = pd.read_csv('plants.csv')
         
+        # Clean up the data - fill NaN values with empty strings
+        df = df.fillna('')
+        
         # Convert to list of dictionaries for easier template rendering
         plants = df.to_dict('records')
         

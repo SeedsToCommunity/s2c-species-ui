@@ -1,16 +1,5 @@
-scientific_name,common_name,family,habitat,native_region,growth_form,bloom_season
-Quercus alba,White Oak,Fagaceae,Forest,Eastern North America,Tree,Spring
-Acer rubrum,Red Maple,Sapindaceae,Wetland,Eastern North America,Tree,Early Spring
-Rudbeckia hirta,Black-eyed Susan,Asteraceae,Prairie,North America,Perennial,Summer
-Echinacea purpurea,Purple Coneflower,Asteraceae,Prairie,Eastern North America,Perennial,Summer
-Vaccinium corymbosum,Highbush Blueberry,Ericaceae,Woodland,Eastern North America,Shrub,Spring
-Asclepias speciosa,Showy Milkweed,Apocynaceae,Prairie,Western North America,Perennial,Summer
-Pinus strobus,Eastern White Pine,Pinaceae,Forest,Eastern North America,Tree,Spring
-Solidago canadensis,Canada Goldenrod,Asteraceae,Field,North America,Perennial,Late Summer
-Sambucus canadensis,American Elderberry,Adoxaceae,Wetland,North America,Shrub,Early Summer
-Viburnum trilobum,American Cranberrybush,Adoxaceae,Woodland Edge,North America,Shrub,Spring
-Monarda fistulosa,Wild Bergamot,Lamiaceae,Prairie,North America,Perennial,Summer
-Aquilegia canadensis,Wild Columbine,Ranunculaceae,Rocky Woodland,Eastern North America,Perennial,Spring
-Helianthus maximiliani,Maximilian Sunflower,Asteraceae,Prairie,Central North America,Perennial,Late Summer
-Baptisia australis,Blue Wild Indigo,Fabaceae,Open Woodland,Eastern North America,Perennial,Spring
-Coreopsis lanceolata,Lanceleaf Coreopsis,Asteraceae,Prairie,Eastern North America,Perennial,Summer
+botanical_name,common_name,collected,ran_out,special_collect,s2c_lists,start_seed_watch,growth_habit,link_to_pictures,germination_code,strat_notes,planting_notes,process_notes,apr,may,jun,jul,aug,sep,oct,bloom_color,height,stature,compact_bloom_range,bloom_months,plant_spacing,resist_deer,light,moisture,spread,soil,species_comments,wash_s2_barn,wash_s2_out,wash_s3_barn,wash_s3_quantity
+Actaea pachypoda,White Baneberry / Dolls Eyes,FALSE,FALSE,TRUE,Neat & Tidy,07=Jul,,https://www.missouriplants.com/Actaea_pachypoda_page.html,F,Cold Moist -> Warm Moist -> Cold Moist,Complex,,,,,,,,,White,1'-3',Waist,MAY - JUN,"MAY, JUN",,,"P, Sh",M,,,FALSE,FALSE,FALSE,
+Actaea rubra,Red Baneberry,,TRUE,Neat & Tidy,07=Jul,,F,Cold Moist -> Warm Moist -> Cold Moist,Complex,,,,,,,,,White,1'-3',Waist,MAY,MAY,12",Y,Sh,"M, Ms",,good for woodland setting not especially showy best massed for a nice texture poisonous,FALSE,FALSE,FALSE,
+Aquilegia canadensis,Eastern Red Columbine,,TRUE,"Neat & Tidy, Sweet & Simple",06=Jun,,https://www.missouriplants.com/Aquilegia_canadensis_page.html,"C(60), M",,,,,,,,,,Red-Yellow,1'-3',Waist,MAY,MAY,12",Y,"P, Sh","D, M, Ms",,delicate texture great for woodland setting. Source says full sun to part shade.,TRUE,FALSE,TRUE,C-HUNS
+Aralia racemosa,Spikenard,,TRUE,Neat & Tidy,08=Aug,,https://www.missouriplants.com/Aralia_racemosa_page.html,"C(60), M",,,,White,White,White,,,White,2'-5',Chest,JUN - AUG,"JUN, JUL, AUG",5',?,"P, Sh","M, Ms, W",,Almost shrub-like in its size and shape. Beautiful graceful limbs. Has purple clusters of berries in the late summer.,TRUE,FALSE,TRUE,B-TENS

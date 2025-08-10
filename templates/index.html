@@ -114,33 +114,52 @@
                                             {{ plant.common_name }}
                                         </h5>
                                         <h6 class="card-subtitle mb-3 text-muted fst-italic">
-                                            {{ plant.scientific_name }}
+                                            {{ plant.botanical_name }}
                                         </h6>
                                         
+                                        {% if plant.bloom_color %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Family:</small>
-                                            <span class="badge bg-info ms-1">{{ plant.family }}</span>
+                                            <small class="text-muted">Bloom Color:</small>
+                                            <span class="badge bg-info ms-1">{{ plant.bloom_color }}</span>
                                         </div>
+                                        {% endif %}
                                         
+                                        {% if plant.height %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Habitat:</small>
-                                            <span class="badge bg-success ms-1">{{ plant.habitat }}</span>
+                                            <small class="text-muted">Height:</small>
+                                            <span class="badge bg-success ms-1">{{ plant.height }}</span>
                                         </div>
+                                        {% endif %}
                                         
+                                        {% if plant.bloom_months %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Growth Form:</small>
-                                            <span class="badge bg-warning ms-1">{{ plant.growth_form }}</span>
+                                            <small class="text-muted">Bloom Time:</small>
+                                            <span class="badge bg-warning ms-1">{{ plant.bloom_months }}</span>
                                         </div>
+                                        {% endif %}
                                         
+                                        {% if plant.light %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Native Region:</small>
-                                            <span class="text-body-secondary">{{ plant.native_region }}</span>
+                                            <small class="text-muted">Light:</small>
+                                            <span class="text-body-secondary">{{ plant.light }}</span>
                                         </div>
+                                        {% endif %}
                                         
+                                        {% if plant.moisture %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Bloom Season:</small>
-                                            <span class="text-body-secondary">{{ plant.bloom_season }}</span>
+                                            <small class="text-muted">Moisture:</small>
+                                            <span class="text-body-secondary">{{ plant.moisture }}</span>
                                         </div>
+                                        {% endif %}
+                                        
+                                        {% if plant.link_to_pictures %}
+                                        <div class="mt-3">
+                                            <a href="{{ plant.link_to_pictures }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i data-feather="external-link" class="me-1"></i>
+                                                View Pictures
+                                            </a>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
