@@ -3,34 +3,19 @@
   "description": "Requirements and methods for storing processed seeds",
   "columns": [
     {
-      "field": "botanical_name",
-      "label": "Botanical Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "common_name",
-      "label": "Common Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
       "field": "germination_code",
       "label": "Germination Code",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "strat_notes",
       "label": "Strat Notes",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "process_notes",
       "label": "Process Notes",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     }
   ]
 }

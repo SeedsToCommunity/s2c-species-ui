@@ -3,28 +3,14 @@
   "description": "Stratification requirements and procedures",
   "columns": [
     {
-      "field": "botanical_name",
-      "label": "Botanical Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "common_name",
-      "label": "Common Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
       "field": "germination_code",
       "label": "Germination Code",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "strat_notes",
       "label": "Strat Notes",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     }
   ]
 }

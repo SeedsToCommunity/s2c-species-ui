@@ -3,58 +3,39 @@
   "description": "Information needed to identify the plant in the field",
   "columns": [
     {
-      "field": "botanical_name",
-      "label": "Botanical Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "common_name",
-      "label": "Common Name", 
-      "type": "text",
-      "priority": "high"
-    },
-    {
       "field": "height",
       "label": "Height",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "stature",
       "label": "Stature",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "bloom_color",
       "label": "Bloom Color",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "compact_bloom_range",
       "label": "Bloom Range",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "light",
       "label": "Light Requirements",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "moisture",
       "label": "Moisture Requirements",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     },
     {
       "field": "link_to_pictures",
       "label": "Pictures",
-      "type": "link",
-      "priority": "high"
+      "type": "link"
     }
   ]
 }

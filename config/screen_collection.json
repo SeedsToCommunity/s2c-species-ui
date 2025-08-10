@@ -3,22 +3,9 @@
   "description": "Data relevant to collecting seeds from the plant",
   "columns": [
     {
-      "field": "botanical_name",
-      "label": "Botanical Name",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "common_name",
-      "label": "Common Name",
-      "type": "text", 
-      "priority": "high"
-    },
-    {
       "field": "start_seed_watch",
       "label": "Start Seed Watch",
-      "type": "text",
-      "priority": "high"
+      "type": "text"
     }
   ]
 }
