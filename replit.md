@@ -8,6 +8,29 @@ This is a Flask-based web application that displays a directory of plant species
 
 Preferred communication style: Simple, everyday language.
 
+## New Feature Requirements (Single Species Workflow)
+
+### Multi-Screen Species Detail System
+When a user selects a species from the main list, they should enter a dedicated workflow with 5 specialized screens:
+
+1. **Species Identification** - Information needed to identify the plant in the field
+2. **Seed Collection** - Data relevant to collecting seeds from the plant
+3. **Seed Processing** - Instructions and data for processing collected seeds
+4. **Seed Storage** - Requirements and methods for storing processed seeds
+5. **Stratification** - Stratification requirements and procedures
+
+### Technical Requirements
+- Each screen needs its own configuration file defining which columns to display
+- Users can navigate between all 5 screens while staying on the same species
+- "Back to Filter" button that preserves previous filter state
+- URL routing to support direct links to specific species/screens
+- Responsive navigation between workflow steps
+
+### Configuration Structure
+- Separate JSON config files for each screen type
+- Each config specifies which data columns are relevant for that workflow step
+- Maintains current filter state when returning to main list
+
 ## System Architecture
 
 ### Frontend Architecture
