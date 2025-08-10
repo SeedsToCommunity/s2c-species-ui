@@ -10,15 +10,48 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
+def load_plant_data():
+    """Load and process plant data from the tab-separated file"""
+    try:
+        # Read the tab-separated file
+        df = pd.read_csv('origdata.tabsv', sep='\t')
+        
+        # Clean up column names - replace spaces with underscores and make lowercase
+        df.columns = df.columns.str.replace(' ', '_').str.lower()
+        
+        # Clean up the data - fill NaN values with empty strings
+        df = df.fillna('')
+        
+        # Save as CSV for future reference
+        df.to_csv('plants.csv', index=False)
+        
+        return df
+        
+    except FileNotFoundError:
+        app.logger.error("origdata.tabsv file not found, trying plants.csv")
+        # Fallback to existing CSV if tab file doesn't exist
+        try:
+            df = pd.read_csv('plants.csv')
+            df = df.fillna('')
+            return df
+        except FileNotFoundError:
+            app.logger.error("No data files found")
+            return pd.DataFrame()
+            
+    except Exception as e:
+        app.logger.error(f"Error reading plant data: {str(e)}")
+        return pd.DataFrame()
+
 @app.route('/')
 def index():
     """Main route to display plant species list"""
     try:
-        # Read the CSV file using pandas
-        df = pd.read_csv('plants.csv')
+        # Load plant data from tab-separated file
+        df = load_plant_data()
         
-        # Clean up the data - fill NaN values with empty strings
-        df = df.fillna('')
+        if df.empty:
+            flash('Error: No plant data could be loaded. Please check data files.', 'error')
+            return render_template('index.html', plants=[])
         
         # Convert to list of dictionaries for easier template rendering
         plants = df.to_dict('records')
@@ -26,18 +59,8 @@ def index():
         app.logger.info(f"Successfully loaded {len(plants)} plant species")
         return render_template('index.html', plants=plants)
         
-    except FileNotFoundError:
-        app.logger.error("plants.csv file not found")
-        flash('Error: Plant data file not found. Please ensure plants.csv exists.', 'error')
-        return render_template('index.html', plants=[])
-        
-    except pd.errors.EmptyDataError:
-        app.logger.error("plants.csv file is empty")
-        flash('Error: Plant data file is empty.', 'error')
-        return render_template('index.html', plants=[])
-        
     except Exception as e:
-        app.logger.error(f"Error reading plant data: {str(e)}")
+        app.logger.error(f"Error processing plant data: {str(e)}")
         flash(f'Error loading plant data: {str(e)}', 'error')
         return render_template('index.html', plants=[])
 
