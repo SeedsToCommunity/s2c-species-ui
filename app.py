@@ -175,7 +175,7 @@ def index():
         }
         
         # Convert to list of dictionaries for easier template rendering
-        plants = filtered_df.reset_index(drop=True).to_dict('records')
+        plants = filtered_df.to_dict('records')
         
         app.logger.info(f"Successfully loaded {len(plants)} plant species (filtered from {len(df)} total)")
         return render_template('index.html', plants=plants, config=config, 
