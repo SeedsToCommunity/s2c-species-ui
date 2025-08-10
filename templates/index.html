@@ -89,14 +89,14 @@
                                 </div>
                             </div>
                             <div class="mt-3">
-                                <button type="submit" class="btn btn-primary">
-                                    <i data-feather="search" class="me-1"></i>
-                                    Apply Filters
-                                </button>
-                                <a href="/" class="btn btn-outline-secondary ms-2">
+                                <a href="/" class="btn btn-outline-secondary">
                                     <i data-feather="x-circle" class="me-1"></i>
-                                    Clear All
+                                    Clear All Filters
                                 </a>
+                                <span class="text-muted ms-3 small">
+                                    <i data-feather="zap" class="me-1"></i>
+                                    Filters update automatically
+                                </span>
                             </div>
                         </form>
                     </div>
@@ -241,6 +241,44 @@
     <script>
         // Initialize Feather icons
         feather.replace();
+        
+        // Auto-submit form with debouncing
+        let filterTimeout;
+        const DEBOUNCE_DELAY = 500; // 500ms delay
+        
+        function debounceFilter() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                document.getElementById('filterForm').submit();
+            }, DEBOUNCE_DELAY);
+        }
+        
+        // Add event listeners to all filter inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            // Text input (name search) - debounce on keyup
+            const nameInput = document.getElementById('name');
+            if (nameInput) {
+                nameInput.addEventListener('input', debounceFilter);
+            }
+            
+            // Dropdown selects - immediate submit on change
+            const selectInputs = [
+                'start_seed_watch',
+                'germination_code', 
+                'light',
+                'moisture'
+            ];
+            
+            selectInputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', () => {
+                        clearTimeout(filterTimeout);
+                        document.getElementById('filterForm').submit();
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>
