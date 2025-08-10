@@ -6,6 +6,52 @@
     <title>Plant Species Directory</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    
+    <style>
+        /* Mobile-friendly touch targets for species links */
+        .species-link {
+            min-height: 44px; /* iOS recommended touch target size */
+            min-width: 44px;
+            display: inline-flex !important;
+            align-items: center;
+            padding: 8px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .species-link:hover,
+        .species-link:focus {
+            background-color: rgba(var(--bs-info-rgb), 0.1);
+            transform: translateX(2px);
+        }
+        
+        /* Improve mobile touch responsiveness */
+        @media (max-width: 768px) {
+            .species-link {
+                font-size: 1.1rem;
+                padding: 12px 8px;
+                margin: -4px 0;
+            }
+            
+            .card-body {
+                padding: 1.25rem;
+            }
+        }
+        
+        /* Ensure proper touch interaction on iOS */
+        .species-link {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        .form-floating > label {
+            color: var(--bs-secondary);
+        }
+    </style>
 </head>
 <body>
     <div class="container py-4">
@@ -153,7 +199,9 @@
                                                         <h6 class="card-subtitle mb-3 text-muted fst-italic">
                                                             {% if column.field == 'botanical_name' %}
                                                                 <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **current_filters) }}" 
-                                                                   class="text-decoration-none text-info">
+                                                                   class="text-decoration-none text-info species-link d-inline-block"
+                                                                   onclick="return true;"
+                                                                   style="cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
                                                                     {{ field_value }}
                                                                     <i data-feather="arrow-right" class="ms-1 small"></i>
                                                                 </a>
@@ -200,7 +248,9 @@
                                             </h5>
                                             <h6 class="card-subtitle mb-3 text-muted fst-italic">
                                                 <a href="{{ url_for('species_detail', botanical_name=plant.botanical_name|urlencode, **current_filters) }}" 
-                                                   class="text-decoration-none text-info">
+                                                   class="text-decoration-none text-info species-link d-inline-block"
+                                                   onclick="return true;"
+                                                   style="cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
                                                     {{ plant.botanical_name }}
                                                     <i data-feather="arrow-right" class="ms-1 small"></i>
                                                 </a>
@@ -253,6 +303,38 @@
     <script>
         // Initialize Feather icons
         feather.replace();
+        
+        // Fix for mobile touch issues with links
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add touch event listeners for better mobile support
+            const speciesLinks = document.querySelectorAll('.species-link');
+            speciesLinks.forEach(function(link) {
+                link.addEventListener('touchstart', function(e) {
+                    // Add visual feedback for touch
+                    this.style.opacity = '0.7';
+                }, { passive: true });
+                
+                link.addEventListener('touchend', function(e) {
+                    // Restore opacity and trigger navigation
+                    this.style.opacity = '1';
+                    
+                    // Prevent default behavior and manually trigger navigation
+                    e.preventDefault();
+                    
+                    // Small delay to ensure the touch is registered
+                    setTimeout(() => {
+                        if (this.href) {
+                            window.location.href = this.href;
+                        }
+                    }, 150);
+                }, { passive: false });
+                
+                link.addEventListener('touchcancel', function(e) {
+                    // Restore opacity if touch is cancelled
+                    this.style.opacity = '1';
+                }, { passive: true });
+            });
+        });
         
         // Auto-submit form with debouncing
         let filterTimeout;
