@@ -22,27 +22,15 @@
     },
     {
       "field": "strat_notes",
-      "label": "Storage/Stratification Notes",
+      "label": "Strat Notes",
       "type": "text",
       "priority": "high"
     },
     {
-      "field": "collected",
-      "label": "Previously Collected",
+      "field": "process_notes",
+      "label": "Process Notes",
       "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "ran_out",
-      "label": "Ran Out",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "species_comments",
-      "label": "Species Comments",
-      "type": "text",
-      "priority": "low"
+      "priority": "high"
     }
   ]
 }

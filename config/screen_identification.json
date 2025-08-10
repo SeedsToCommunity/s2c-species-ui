@@ -15,52 +15,46 @@
       "priority": "high"
     },
     {
-      "field": "link_to_pictures",
-      "label": "Pictures",
-      "type": "link",
+      "field": "height",
+      "label": "Height",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "stature",
+      "label": "Stature",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "bloom_color",
+      "label": "Bloom Color",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "compact_bloom_range",
+      "label": "Bloom Range",
+      "type": "text",
       "priority": "high"
     },
     {
       "field": "light",
       "label": "Light Requirements",
       "type": "text",
-      "priority": "medium"
+      "priority": "high"
     },
     {
       "field": "moisture",
       "label": "Moisture Requirements",
       "type": "text",
-      "priority": "medium"
+      "priority": "high"
     },
     {
-      "field": "compact_bloom_range",
-      "label": "Bloom Range",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "height",
-      "label": "Height",
-      "type": "text",
-      "priority": "low"
-    },
-    {
-      "field": "growth_habit",
-      "label": "Growth Habit",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "bloom_color",
-      "label": "Bloom Color",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "species_comments",
-      "label": "Species Comments",
-      "type": "text",
-      "priority": "low"
+      "field": "link_to_pictures",
+      "label": "Pictures",
+      "type": "link",
+      "priority": "high"
     }
   ]
 }

@@ -21,34 +21,16 @@
       "priority": "high"
     },
     {
-      "field": "process_notes",
-      "label": "Processing Notes",
+      "field": "strat_notes",
+      "label": "Strat Notes",
       "type": "text",
       "priority": "high"
     },
     {
-      "field": "planting_notes",
-      "label": "Planting Notes",
+      "field": "process_notes",
+      "label": "Process Notes",
       "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "collected",
-      "label": "Previously Collected",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "ran_out",
-      "label": "Ran Out",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "species_comments",
-      "label": "Species Comments",
-      "type": "text",
-      "priority": "low"
+      "priority": "high"
     }
   ]
 }

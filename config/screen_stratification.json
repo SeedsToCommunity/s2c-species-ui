@@ -22,27 +22,9 @@
     },
     {
       "field": "strat_notes",
-      "label": "Stratification Notes",
+      "label": "Strat Notes",
       "type": "text",
       "priority": "high"
-    },
-    {
-      "field": "planting_notes",
-      "label": "Planting Notes",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "process_notes",
-      "label": "Process Notes",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "species_comments",
-      "label": "Species Comments",
-      "type": "text",
-      "priority": "low"
     }
   ]
 }

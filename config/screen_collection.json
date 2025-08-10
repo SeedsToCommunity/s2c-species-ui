@@ -19,42 +19,6 @@
       "label": "Start Seed Watch",
       "type": "text",
       "priority": "high"
-    },
-    {
-      "field": "compact_bloom_range",
-      "label": "Bloom Range",
-      "type": "text",
-      "priority": "high"
-    },
-    {
-      "field": "special_collect",
-      "label": "Special Collection Notes",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "growth_habit",
-      "label": "Growth Habit",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "link_to_pictures",
-      "label": "Pictures",
-      "type": "link",
-      "priority": "medium"
-    },
-    {
-      "field": "bloom_months",
-      "label": "Bloom Months",
-      "type": "text",
-      "priority": "medium"
-    },
-    {
-      "field": "species_comments",
-      "label": "Species Comments",
-      "type": "text",
-      "priority": "low"
     }
   ]
 }
