@@ -117,38 +117,73 @@
                                             {{ plant.botanical_name }}
                                         </h6>
                                         
-                                        {% if plant.bloom_color %}
+                                        <!-- Growing Information -->
+                                        <div class="row mb-3">
+                                            {% if plant.bloom_color %}
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Bloom Color:</small><br>
+                                                <span class="badge bg-info">{{ plant.bloom_color }}</span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if plant.height %}
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Height:</small><br>
+                                                <span class="badge bg-success">{{ plant.height }}</span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if plant.bloom_months %}
+                                            <div class="col-12 mb-2">
+                                                <small class="text-muted">Bloom Time:</small><br>
+                                                <span class="badge bg-warning">{{ plant.bloom_months }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Collection & Processing -->
+                                        {% if plant.start_seed_watch %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Bloom Color:</small>
-                                            <span class="badge bg-info ms-1">{{ plant.bloom_color }}</span>
+                                            <small class="text-muted">Collection Time:</small><br>
+                                            <span class="text-body-secondary">{{ plant.start_seed_watch }}</span>
                                         </div>
                                         {% endif %}
                                         
-                                        {% if plant.height %}
+                                        {% if plant.germination_code %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Height:</small>
-                                            <span class="badge bg-success ms-1">{{ plant.height }}</span>
+                                            <small class="text-muted">Germination:</small><br>
+                                            <span class="text-body-secondary">{{ plant.germination_code }}</span>
                                         </div>
                                         {% endif %}
                                         
-                                        {% if plant.bloom_months %}
+                                        {% if plant.strat_notes %}
                                         <div class="mb-2">
-                                            <small class="text-muted">Bloom Time:</small>
-                                            <span class="badge bg-warning ms-1">{{ plant.bloom_months }}</span>
+                                            <small class="text-muted">Stratification:</small><br>
+                                            <span class="text-body-secondary small">{{ plant.strat_notes }}</span>
                                         </div>
                                         {% endif %}
                                         
-                                        {% if plant.light %}
-                                        <div class="mb-2">
-                                            <small class="text-muted">Light:</small>
-                                            <span class="text-body-secondary">{{ plant.light }}</span>
+                                        <!-- Growing Conditions -->
+                                        <div class="row mb-2">
+                                            {% if plant.light %}
+                                            <div class="col-6">
+                                                <small class="text-muted">Light:</small><br>
+                                                <span class="text-body-secondary">{{ plant.light }}</span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if plant.moisture %}
+                                            <div class="col-6">
+                                                <small class="text-muted">Moisture:</small><br>
+                                                <span class="text-body-secondary">{{ plant.moisture }}</span>
+                                            </div>
+                                            {% endif %}
                                         </div>
-                                        {% endif %}
                                         
-                                        {% if plant.moisture %}
-                                        <div class="mb-2">
-                                            <small class="text-muted">Moisture:</small>
-                                            <span class="text-body-secondary">{{ plant.moisture }}</span>
+                                        {% if plant.species_comments %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">Notes:</small><br>
+                                            <span class="text-body-secondary small">{{ plant.species_comments }}</span>
                                         </div>
                                         {% endif %}
                                         
