@@ -2,7 +2,8 @@ import os
 import pandas as pd
 import logging
 import json
-from flask import Flask, render_template, flash, request
+from flask import Flask, render_template, flash, request, url_for, abort
+from urllib.parse import quote, unquote
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.DEBUG)
@@ -77,6 +78,27 @@ def get_unique_values(df, column):
                 values.add(clean_val)
     
     return sorted(list(values))
+
+def load_screen_config(screen_type):
+    """Load screen configuration for species detail view"""
+    try:
+        with open(f'config/screen_{screen_type}.json', 'r') as f:
+            config = json.load(f)
+        return config
+    except FileNotFoundError:
+        app.logger.error(f"Screen configuration file for {screen_type} not found")
+        return {"screen_name": screen_type.title(), "columns": []}
+    except Exception as e:
+        app.logger.error(f"Error loading screen configuration for {screen_type}: {str(e)}")
+        return {"screen_name": screen_type.title(), "columns": []}
+
+def get_species_by_name(df, botanical_name):
+    """Get a single species by botanical name"""
+    decoded_name = unquote(botanical_name)
+    species = df[df['botanical_name'] == decoded_name]
+    if species.empty:
+        return None
+    return species.iloc[0].to_dict()
 
 def filter_plants(df, filters):
     """Apply filters to the plant dataframe"""
@@ -163,6 +185,53 @@ def index():
         app.logger.error(f"Error processing plant data: {str(e)}")
         flash(f'Error loading plant data: {str(e)}', 'error')
         return render_template('index.html', plants=[], config={}, filter_options={})
+
+@app.route('/species/<path:botanical_name>')
+@app.route('/species/<path:botanical_name>/<screen_type>')
+def species_detail(botanical_name, screen_type='identification'):
+    """Species detail view with workflow screens"""
+    try:
+        # Load plant data
+        df = load_plant_data()
+        if df.empty:
+            flash('Error: No plant data could be loaded.', 'error')
+            return abort(404)
+        
+        # Get the specific species
+        species = get_species_by_name(df, botanical_name)
+        if not species:
+            flash(f'Species "{unquote(botanical_name)}" not found.', 'error')
+            return abort(404)
+        
+        # Valid screen types
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        if screen_type not in valid_screens:
+            return abort(404)
+        
+        # Load screen configuration
+        screen_config = load_screen_config(screen_type)
+        
+        # Get filter parameters to preserve state
+        current_filters = {
+            'name': request.args.get('name', ''),
+            'start_seed_watch': request.args.get('start_seed_watch', ''),
+            'germination_code': request.args.get('germination_code', ''),
+            'light': request.args.get('light', ''),
+            'moisture': request.args.get('moisture', '')
+        }
+        
+        return render_template('species_detail.html', 
+                             species=species, 
+                             screen_config=screen_config,
+                             current_screen=screen_type,
+                             valid_screens=valid_screens,
+                             current_filters=current_filters,
+                             botanical_name=unquote(botanical_name))
+        
+    except Exception as e:
+        app.logger.error(f"Error loading species detail: {str(e)}")
+        flash(f'Error loading species data: {str(e)}', 'error')
+        return abort(404)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ species.common_name }} - Plant Species Detail</title>
+    
+    <!-- Bootstrap CSS with Replit Theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <style>
+        .screen-nav .nav-link {
+            border-radius: 0.375rem;
+            margin: 0 0.125rem;
+        }
+        .screen-nav .nav-link.active {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+        .field-value {
+            word-wrap: break-word;
+        }
+        .priority-high {
+            border-left: 4px solid var(--bs-success);
+        }
+        .priority-medium {
+            border-left: 4px solid var(--bs-warning);
+        }
+        .priority-low {
+            border-left: 4px solid var(--bs-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Header with Species Name -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="text-primary mb-2">
+                    <i data-feather="leaf" class="me-2"></i>
+                    {{ species.common_name }}
+                </h1>
+                <h2 class="text-muted fst-italic fs-4">{{ botanical_name }}</h2>
+            </div>
+            <div>
+                {% set filter_params = [] %}
+                {% for key, value in current_filters.items() %}
+                    {% if value %}
+                        {% set _ = filter_params.append(key + '=' + value|urlencode) %}
+                    {% endif %}
+                {% endfor %}
+                {% set query_string = '?' + filter_params|join('&') if filter_params else '' %}
+                
+                <a href="{{ url_for('index') }}{{ query_string }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Filter
+                </a>
+            </div>
+        </div>
+
+        <!-- Screen Navigation -->
+        <div class="card mb-4">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">
+                            <i data-feather="clipboard" class="me-2"></i>
+                            {{ screen_config.screen_name }}
+                        </h5>
+                        <small class="text-muted">{{ screen_config.description }}</small>
+                    </div>
+                    <nav class="screen-nav">
+                        <div class="nav nav-pills">
+                            {% for screen in valid_screens %}
+                                {% set screen_name = screen.replace('_', ' ').title() %}
+                                <a href="{{ url_for('species_detail', botanical_name=botanical_name|urlencode, screen_type=screen, **current_filters) }}" 
+                                   class="nav-link {{ 'active' if screen == current_screen else '' }}">
+                                    {% if screen == 'identification' %}
+                                        <i data-feather="search" class="me-1 small"></i>
+                                    {% elif screen == 'collection' %}
+                                        <i data-feather="package" class="me-1 small"></i>
+                                    {% elif screen == 'processing' %}
+                                        <i data-feather="settings" class="me-1 small"></i>
+                                    {% elif screen == 'storage' %}
+                                        <i data-feather="archive" class="me-1 small"></i>
+                                    {% elif screen == 'stratification' %}
+                                        <i data-feather="layers" class="me-1 small"></i>
+                                    {% endif %}
+                                    {{ screen_name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Species Data Fields -->
+        <div class="row">
+            {% for column in screen_config.columns %}
+                {% set field_value = species.get(column.field, '') %}
+                {% if field_value and field_value != '' %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100 priority-{{ column.priority }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0 text-primary">
+                                        {{ column.label }}
+                                    </h6>
+                                    <span class="badge bg-{{ 'success' if column.priority == 'high' else 'warning' if column.priority == 'medium' else 'secondary' }} small">
+                                        {{ column.priority.title() }}
+                                    </span>
+                                </div>
+                                <div class="field-value">
+                                    {% if column.type == 'link' and field_value %}
+                                        <a href="{{ field_value }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i data-feather="external-link" class="me-1"></i>
+                                            View Pictures
+                                        </a>
+                                    {% else %}
+                                        <p class="card-text mb-0">{{ field_value }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Show message if no data available for this screen -->
+            {% set has_data = false %}
+            {% for column in screen_config.columns %}
+                {% set field_value = species.get(column.field, '') %}
+                {% if field_value and field_value != '' %}
+                    {% set has_data = true %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if not has_data %}
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i data-feather="info" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <h5 class="text-muted">No Data Available</h5>
+                            <p class="text-muted mb-0">
+                                No information is currently available for this species in the {{ screen_config.screen_name.lower() }} workflow.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">
+                        <i data-feather="database" class="me-1"></i>
+                        Plant Species Workflow System
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">
+                        <i data-feather="layers" class="me-1"></i>
+                        {{ current_screen.replace('_', ' ').title() }} Workflow
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "screen_name": "Seed Processing",
+  "description": "Instructions and data for processing collected seeds",
+  "columns": [
+    {
+      "field": "botanical_name",
+      "label": "Botanical Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "common_name",
+      "label": "Common Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "process_notes",
+      "label": "Processing Notes",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "planting_notes",
+      "label": "Planting Notes",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "collected",
+      "label": "Previously Collected",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "ran_out",
+      "label": "Ran Out",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "species_comments",
+      "label": "Species Comments",
+      "type": "text",
+      "priority": "low"
+    }
+  ]
+}

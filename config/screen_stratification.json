@@ -1,0 +1,48 @@
+{
+  "screen_name": "Stratification",
+  "description": "Stratification requirements and procedures",
+  "columns": [
+    {
+      "field": "botanical_name",
+      "label": "Botanical Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "common_name",
+      "label": "Common Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "strat_notes",
+      "label": "Stratification Notes",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "planting_notes",
+      "label": "Planting Notes",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "process_notes",
+      "label": "Process Notes",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "species_comments",
+      "label": "Species Comments",
+      "type": "text",
+      "priority": "low"
+    }
+  ]
+}

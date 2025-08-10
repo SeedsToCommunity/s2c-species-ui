@@ -151,7 +151,15 @@
                                                         </h5>
                                                     {% elif column.type == 'subtitle' %}
                                                         <h6 class="card-subtitle mb-3 text-muted fst-italic">
-                                                            {{ field_value }}
+                                                            {% if column.field == 'botanical_name' %}
+                                                                <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **current_filters) }}" 
+                                                                   class="text-decoration-none text-info">
+                                                                    {{ field_value }}
+                                                                    <i data-feather="arrow-right" class="ms-1 small"></i>
+                                                                </a>
+                                                            {% else %}
+                                                                {{ field_value }}
+                                                            {% endif %}
                                                         </h6>
                                                     {% elif column.type == 'badge' and column.show_as_badge %}
                                                         {% if loop.first or config.main_page_columns[loop.index0-1].type != 'badge' %}
@@ -191,7 +199,11 @@
                                                 {{ plant.common_name }}
                                             </h5>
                                             <h6 class="card-subtitle mb-3 text-muted fst-italic">
-                                                {{ plant.botanical_name }}
+                                                <a href="{{ url_for('species_detail', botanical_name=plant.botanical_name|urlencode, **current_filters) }}" 
+                                                   class="text-decoration-none text-info">
+                                                    {{ plant.botanical_name }}
+                                                    <i data-feather="arrow-right" class="ms-1 small"></i>
+                                                </a>
                                             </h6>
                                         {% endif %}
                                     </div>

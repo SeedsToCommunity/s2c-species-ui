@@ -1,0 +1,48 @@
+{
+  "screen_name": "Seed Storage",
+  "description": "Requirements and methods for storing processed seeds",
+  "columns": [
+    {
+      "field": "botanical_name",
+      "label": "Botanical Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "common_name",
+      "label": "Common Name",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "strat_notes",
+      "label": "Storage/Stratification Notes",
+      "type": "text",
+      "priority": "high"
+    },
+    {
+      "field": "collected",
+      "label": "Previously Collected",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "ran_out",
+      "label": "Ran Out",
+      "type": "text",
+      "priority": "medium"
+    },
+    {
+      "field": "species_comments",
+      "label": "Species Comments",
+      "type": "text",
+      "priority": "low"
+    }
+  ]
+}
