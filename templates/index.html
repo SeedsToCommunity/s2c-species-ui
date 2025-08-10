@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <!-- Filter Controls (Placeholder - Non-functional) -->
+        <!-- Filter Controls -->
         <div class="row mb-4">
             <div class="col">
                 <div class="card">
@@ -31,49 +31,74 @@
                             <i data-feather="filter" class="me-2"></i>
                             Filter Options
                         </h5>
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label for="familyFilter" class="form-label">Plant Family</label>
-                                <select class="form-select" id="familyFilter" disabled>
-                                    <option selected>All Families</option>
-                                    <option>Asteraceae</option>
-                                    <option>Fagaceae</option>
-                                    <option>Sapindaceae</option>
-                                </select>
+                        <form method="GET" action="/" id="filterForm">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="name" class="form-label">Name Search</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           placeholder="Search botanical or common name..." 
+                                           value="{{ current_filters.name if current_filters else '' }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="start_seed_watch" class="form-label">Start Collecting Month</label>
+                                    <select class="form-select" id="start_seed_watch" name="start_seed_watch">
+                                        <option value="">All Months</option>
+                                        {% for option in filter_options.start_seed_watch %}
+                                            <option value="{{ option }}" 
+                                                    {% if current_filters and current_filters.start_seed_watch == option %}selected{% endif %}>
+                                                {{ option }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="germination_code" class="form-label">Germination Code</label>
+                                    <select class="form-select" id="germination_code" name="germination_code">
+                                        <option value="">All Codes</option>
+                                        {% for option in filter_options.germination_code %}
+                                            <option value="{{ option }}" 
+                                                    {% if current_filters and current_filters.germination_code == option %}selected{% endif %}>
+                                                {{ option }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="light" class="form-label">Light</label>
+                                    <select class="form-select" id="light" name="light">
+                                        <option value="">All Light</option>
+                                        {% for option in filter_options.light %}
+                                            <option value="{{ option }}" 
+                                                    {% if current_filters and current_filters.light == option %}selected{% endif %}>
+                                                {{ option }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="moisture" class="form-label">Moisture</label>
+                                    <select class="form-select" id="moisture" name="moisture">
+                                        <option value="">All Moisture</option>
+                                        {% for option in filter_options.moisture %}
+                                            <option value="{{ option }}" 
+                                                    {% if current_filters and current_filters.moisture == option %}selected{% endif %}>
+                                                {{ option }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="habitatFilter" class="form-label">Habitat</label>
-                                <select class="form-select" id="habitatFilter" disabled>
-                                    <option selected>All Habitats</option>
-                                    <option>Forest</option>
-                                    <option>Prairie</option>
-                                    <option>Wetland</option>
-                                </select>
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i data-feather="search" class="me-1"></i>
+                                    Apply Filters
+                                </button>
+                                <a href="/" class="btn btn-outline-secondary ms-2">
+                                    <i data-feather="x-circle" class="me-1"></i>
+                                    Clear All
+                                </a>
                             </div>
-                            <div class="col-md-3">
-                                <label for="growthFilter" class="form-label">Growth Form</label>
-                                <select class="form-select" id="growthFilter" disabled>
-                                    <option selected>All Types</option>
-                                    <option>Tree</option>
-                                    <option>Shrub</option>
-                                    <option>Perennial</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="searchInput" class="form-label">Search</label>
-                                <input type="text" class="form-control" id="searchInput" placeholder="Search plants..." disabled>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-outline-secondary" disabled>
-                                <i data-feather="search" class="me-1"></i>
-                                Apply Filters
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary ms-2" disabled>
-                                <i data-feather="x-circle" class="me-1"></i>
-                                Clear All
-                            </button>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -101,7 +126,13 @@
                             <i data-feather="list" class="me-2"></i>
                             Plant Species
                         </h3>
-                        <span class="badge bg-secondary fs-6">{{ plants|length }} species found</span>
+                        <span class="badge bg-info fs-6">
+                            {% if current_filters and (current_filters.name or current_filters.start_seed_watch or current_filters.germination_code or current_filters.light or current_filters.moisture) %}
+                                {{ plants|length }} of {{ filter_options.total_count }} species found
+                            {% else %}
+                                {{ plants|length }} species
+                            {% endif %}
+                        </span>
                     </div>
 
                     <div class="row">
