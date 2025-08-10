@@ -25,14 +25,19 @@ Preferred communication style: Simple, everyday language.
 - **Configuration**: Environment-based configuration for session secrets
 
 ### Data Storage
-- **Primary Data Source**: CSV file (`plants.csv`) containing plant species information
+- **Primary Data Source**: Tab-separated file (`origdata.tabsv`) containing plant species information
+- **Auto-conversion**: Application automatically converts tab-separated data to CSV format on startup
 - **Data Format**: Structured CSV data converted to Python dictionaries for template rendering
 - **No Database**: Simple file-based approach suitable for static or infrequently updated data
+- **Configuration System**: JSON-based configuration files for customizable display and app settings
 
 ### Application Structure
 - **Entry Points**: Both `app.py` and `main.py` serve as application entry points
 - **Template Organization**: HTML templates stored in standard Flask `templates/` directory
 - **Static Assets**: External CDN resources for Bootstrap and icons to minimize local dependencies
+- **Configuration Files**: JSON-based configuration system in `config/` directory
+  - `display_columns.json`: Controls which plant data fields are displayed and how they're formatted
+  - `app_settings.json`: Application-wide settings for UI, data sources, and display preferences
 
 ## External Dependencies
 

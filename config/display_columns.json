@@ -1,0 +1,102 @@
+{
+  "main_page_columns": [
+    {
+      "field": "common_name",
+      "display_name": "Common Name",
+      "type": "title",
+      "show_as_badge": false
+    },
+    {
+      "field": "botanical_name",
+      "display_name": "Botanical Name",
+      "type": "subtitle",
+      "show_as_badge": false
+    },
+    {
+      "field": "bloom_color",
+      "display_name": "Bloom Color",
+      "type": "badge",
+      "show_as_badge": true,
+      "badge_color": "info"
+    },
+    {
+      "field": "height",
+      "display_name": "Height",
+      "type": "badge",
+      "show_as_badge": true,
+      "badge_color": "success"
+    },
+    {
+      "field": "bloom_months",
+      "display_name": "Bloom Time",
+      "type": "badge",
+      "show_as_badge": true,
+      "badge_color": "warning"
+    },
+    {
+      "field": "start_seed_watch",
+      "display_name": "Collection Time",
+      "type": "text",
+      "show_as_badge": false
+    },
+    {
+      "field": "germination_code",
+      "display_name": "Germination",
+      "type": "text",
+      "show_as_badge": false
+    },
+    {
+      "field": "strat_notes",
+      "display_name": "Stratification",
+      "type": "text_small",
+      "show_as_badge": false
+    },
+    {
+      "field": "light",
+      "display_name": "Light",
+      "type": "text",
+      "show_as_badge": false
+    },
+    {
+      "field": "moisture",
+      "display_name": "Moisture",
+      "type": "text",
+      "show_as_badge": false
+    },
+    {
+      "field": "species_comments",
+      "display_name": "Notes",
+      "type": "text_small",
+      "show_as_badge": false
+    },
+    {
+      "field": "link_to_pictures",
+      "display_name": "Pictures",
+      "type": "link",
+      "show_as_badge": false,
+      "link_text": "View Pictures"
+    }
+  ],
+  "filter_columns": [
+    {
+      "field": "bloom_color",
+      "display_name": "Bloom Color",
+      "type": "select"
+    },
+    {
+      "field": "height",
+      "display_name": "Height",
+      "type": "select"
+    },
+    {
+      "field": "light",
+      "display_name": "Light Requirements",
+      "type": "select"
+    },
+    {
+      "field": "common_name",
+      "display_name": "Search",
+      "type": "search"
+    }
+  ]
+}

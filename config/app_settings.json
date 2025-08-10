@@ -1,0 +1,25 @@
+{
+  "app_info": {
+    "title": "Plant Species Directory",
+    "subtitle": "Browse our collection of native plant species and their characteristics",
+    "organization": "Nonprofit Plant Collection Society"
+  },
+  "data_sources": {
+    "primary_file": "origdata.tabsv",
+    "backup_file": "plants.csv",
+    "auto_convert": true
+  },
+  "display_settings": {
+    "items_per_page": 50,
+    "cards_per_row": 3,
+    "show_item_count": true,
+    "enable_search": false,
+    "enable_filters": false
+  },
+  "ui_settings": {
+    "theme": "dark",
+    "icon_library": "feather",
+    "css_framework": "bootstrap",
+    "show_footer": true
+  }
+}
