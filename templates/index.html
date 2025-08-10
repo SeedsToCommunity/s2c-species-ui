@@ -300,33 +300,83 @@
         // Initialize Feather icons
         feather.replace();
         
-        // Mobile touch fix for species links
-        document.addEventListener('DOMContentLoaded', function() {
+
+        // AJAX filtering to update results without page reload (preserves focus)
+        let filterTimeout;
+        const DEBOUNCE_DELAY = 500;
+        
+        function updateResults() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                const form = document.getElementById('filterForm');
+                const formData = new FormData(form);
+                const params = new URLSearchParams(formData);
+                
+                fetch('?' + params.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse the new HTML
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+                    
+                    // Update the species list
+                    const currentList = document.querySelector('.row.g-4');
+                    const newList = newDoc.querySelector('.row.g-4');
+                    if (currentList && newList) {
+                        currentList.innerHTML = newList.innerHTML;
+                    }
+                    
+                    // Update the species count
+                    const currentFooter = document.querySelector('footer p.text-muted');
+                    const newFooter = newDoc.querySelector('footer p.text-muted');
+                    if (currentFooter && newFooter) {
+                        currentFooter.innerHTML = newFooter.innerHTML;
+                    }
+                    
+                    // Re-initialize feather icons and species links
+                    feather.replace();
+                    initializeSpeciesLinks();
+                })
+                .catch(error => {
+                    console.error('Filter update failed:', error);
+                    // Fallback to form submission if AJAX fails
+                    form.submit();
+                });
+            }, DEBOUNCE_DELAY);
+        }
+        
+        function initializeSpeciesLinks() {
             const speciesLinks = document.querySelectorAll('.species-link');
             console.log('Found species links:', speciesLinks.length);
             
             speciesLinks.forEach(function(link, index) {
                 console.log('Processing link', index, ':', link.href);
                 
+                // Remove existing listeners to avoid duplicates
+                const newLink = link.cloneNode(true);
+                link.parentNode.replaceChild(newLink, link);
+                
                 // Add click handler for all devices
-                link.addEventListener('click', function(e) {
+                newLink.addEventListener('click', function(e) {
                     console.log('Click detected on link:', this.href);
-                    // Let normal link behavior proceed
                     return true;
                 }, { passive: false });
                 
                 // Add touchstart for visual feedback
-                link.addEventListener('touchstart', function(e) {
+                newLink.addEventListener('touchstart', function(e) {
                     console.log('Touch started on link:', this.href);
                     this.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.2)';
                 }, { passive: true });
                 
                 // Add touchend to ensure navigation
-                link.addEventListener('touchend', function(e) {
+                newLink.addEventListener('touchend', function(e) {
                     console.log('Touch ended on link:', this.href);
                     this.style.backgroundColor = '';
                     
-                    // For mobile devices, ensure navigation happens
                     setTimeout(() => {
                         if (this.href && !e.defaultPrevented) {
                             console.log('Manually navigating to:', this.href);
@@ -335,44 +385,20 @@
                     }, 100);
                 }, { passive: true });
             });
-        });
-        
-        // Auto-submit form with longer debouncing for better user experience
-        let filterTimeout;
-        const DEBOUNCE_DELAY = 1500; // Increased to 1.5 seconds to reduce interruptions
-        
-        function debounceFilter() {
-            clearTimeout(filterTimeout);
-            filterTimeout = setTimeout(() => {
-                document.getElementById('filterForm').submit();
-            }, DEBOUNCE_DELAY);
         }
         
         // Add event listeners to all filter inputs
         document.addEventListener('DOMContentLoaded', function() {
-            // Text input (name search) - debounce with longer delay to avoid interrupting typing
+            // Initialize species links on page load
+            initializeSpeciesLinks();
+            
+            // Text input (name search) - AJAX update with debounce
             const nameInput = document.getElementById('name');
             if (nameInput) {
-                // Only trigger debounce after user stops typing for a while
-                nameInput.addEventListener('input', function(e) {
-                    // Don't submit if the input is very short (likely still typing)
-                    if (this.value.length > 0 && this.value.length < 3) {
-                        clearTimeout(filterTimeout);
-                        return;
-                    }
-                    debounceFilter();
-                });
-                
-                // Also allow manual submission with Enter key
-                nameInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        clearTimeout(filterTimeout);
-                        document.getElementById('filterForm').submit();
-                    }
-                });
+                nameInput.addEventListener('input', updateResults);
             }
             
-            // Dropdown selects - immediate submit on change
+            // Dropdown selects - immediate AJAX update
             const selectInputs = [
                 'start_seed_watch',
                 'germination_code', 
@@ -385,7 +411,7 @@
                 if (element) {
                     element.addEventListener('change', () => {
                         clearTimeout(filterTimeout);
-                        document.getElementById('filterForm').submit();
+                        updateResults();
                     });
                 }
             });
