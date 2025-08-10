@@ -1,1 +1,7 @@
 flask
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary
+pandas

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Species Directory</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="display-4 mb-3">
+                    <i data-feather="leaf" class="me-3"></i>
+                    Plant Species Directory
+                </h1>
+                <p class="lead text-muted">
+                    Browse our collection of native plant species and their characteristics
+                </p>
+            </div>
+        </div>
+
+        <!-- Filter Controls (Placeholder - Non-functional) -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i data-feather="filter" class="me-2"></i>
+                            Filter Options
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="familyFilter" class="form-label">Plant Family</label>
+                                <select class="form-select" id="familyFilter" disabled>
+                                    <option selected>All Families</option>
+                                    <option>Asteraceae</option>
+                                    <option>Fagaceae</option>
+                                    <option>Sapindaceae</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="habitatFilter" class="form-label">Habitat</label>
+                                <select class="form-select" id="habitatFilter" disabled>
+                                    <option selected>All Habitats</option>
+                                    <option>Forest</option>
+                                    <option>Prairie</option>
+                                    <option>Wetland</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="growthFilter" class="form-label">Growth Form</label>
+                                <select class="form-select" id="growthFilter" disabled>
+                                    <option selected>All Types</option>
+                                    <option>Tree</option>
+                                    <option>Shrub</option>
+                                    <option>Perennial</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="searchInput" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search plants..." disabled>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-secondary" disabled>
+                                <i data-feather="search" class="me-1"></i>
+                                Apply Filters
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary ms-2" disabled>
+                                <i data-feather="x-circle" class="me-1"></i>
+                                Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+                        <i data-feather="alert-circle" class="me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Plant Species List -->
+        <div class="row">
+            <div class="col">
+                {% if plants %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>
+                            <i data-feather="list" class="me-2"></i>
+                            Plant Species
+                        </h3>
+                        <span class="badge bg-secondary fs-6">{{ plants|length }} species found</span>
+                    </div>
+
+                    <div class="row">
+                        {% for plant in plants %}
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">
+                                            <i data-feather="flower" class="me-2"></i>
+                                            {{ plant.common_name }}
+                                        </h5>
+                                        <h6 class="card-subtitle mb-3 text-muted fst-italic">
+                                            {{ plant.scientific_name }}
+                                        </h6>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">Family:</small>
+                                            <span class="badge bg-info ms-1">{{ plant.family }}</span>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">Habitat:</small>
+                                            <span class="badge bg-success ms-1">{{ plant.habitat }}</span>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">Growth Form:</small>
+                                            <span class="badge bg-warning ms-1">{{ plant.growth_form }}</span>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">Native Region:</small>
+                                            <span class="text-body-secondary">{{ plant.native_region }}</span>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">Bloom Season:</small>
+                                            <span class="text-body-secondary">{{ plant.bloom_season }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i data-feather="search" style="width: 64px; height: 64px;" class="text-muted"></i>
+                        </div>
+                        <h3 class="text-muted">No Plant Species Found</h3>
+                        <p class="text-muted">
+                            There are currently no plant species to display. 
+                            Please check that the plant data file exists and contains valid data.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">
+                        <i data-feather="database" class="me-1"></i>
+                        Plant Species Directory
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">
+                        <i data-feather="info" class="me-1"></i>
+                        Displaying {{ plants|length if plants else 0 }} species
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+    </script>
+</body>
+</html>
