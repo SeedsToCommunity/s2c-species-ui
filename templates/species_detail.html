@@ -115,15 +115,15 @@
             {% endfor %}
             
             <!-- Show message if no data available for this screen -->
-            {% set has_data = false %}
+            {% set data_fields = [] %}
             {% for column in screen_config.columns %}
                 {% set field_value = species.get(column.field, '') %}
                 {% if field_value and field_value != '' %}
-                    {% set has_data = true %}
+                    {% set _ = data_fields.append(1) %}
                 {% endif %}
             {% endfor %}
             
-            {% if not has_data %}
+            {% if data_fields|length == 0 %}
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body text-center py-5">
