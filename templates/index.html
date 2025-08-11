@@ -303,7 +303,7 @@
 
         // AJAX filtering to update results without page reload (preserves focus)
         let filterTimeout;
-        const DEBOUNCE_DELAY = 500;
+        const DEBOUNCE_DELAY = 150;
         
         function updateResults() {
             clearTimeout(filterTimeout);
@@ -311,6 +311,10 @@
                 const form = document.getElementById('filterForm');
                 const formData = new FormData(form);
                 const params = new URLSearchParams(formData);
+                
+                // Store the currently focused element
+                const activeElement = document.activeElement;
+                const activeElementId = activeElement ? activeElement.id : null;
                 
                 fetch('?' + params.toString(), {
                     headers: {
@@ -323,23 +327,38 @@
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
                     
-                    // Update the species list
-                    const currentList = document.querySelector('.row.g-4');
-                    const newList = newDoc.querySelector('.row.g-4');
-                    if (currentList && newList) {
-                        currentList.innerHTML = newList.innerHTML;
+                    // Update the species list container
+                    const currentContainer = document.querySelector('.row .col');
+                    const newContainer = newDoc.querySelector('.row .col');
+                    if (currentContainer && newContainer) {
+                        currentContainer.innerHTML = newContainer.innerHTML;
                     }
                     
-                    // Update the species count
-                    const currentFooter = document.querySelector('footer p.text-muted');
-                    const newFooter = newDoc.querySelector('footer p.text-muted');
-                    if (currentFooter && newFooter) {
-                        currentFooter.innerHTML = newFooter.innerHTML;
+                    // Update the species count badge
+                    const currentBadge = document.querySelector('.badge.bg-info');
+                    const newBadge = newDoc.querySelector('.badge.bg-info');
+                    if (currentBadge && newBadge) {
+                        currentBadge.innerHTML = newBadge.innerHTML;
+                    }
+                    
+                    // Update the footer count
+                    const currentFooterCount = document.querySelector('footer .col-md-6.text-md-end p');
+                    const newFooterCount = newDoc.querySelector('footer .col-md-6.text-md-end p');
+                    if (currentFooterCount && newFooterCount) {
+                        currentFooterCount.innerHTML = newFooterCount.innerHTML;
                     }
                     
                     // Re-initialize feather icons and species links
                     feather.replace();
                     initializeSpeciesLinks();
+                    
+                    // Restore focus to the previously focused element
+                    if (activeElementId) {
+                        const elementToFocus = document.getElementById(activeElementId);
+                        if (elementToFocus) {
+                            elementToFocus.focus();
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('Filter update failed:', error);
@@ -411,7 +430,56 @@
                 if (element) {
                     element.addEventListener('change', () => {
                         clearTimeout(filterTimeout);
-                        updateResults();
+                        // Immediate update for dropdowns
+                        const form = document.getElementById('filterForm');
+                        const formData = new FormData(form);
+                        const params = new URLSearchParams(formData);
+                        
+                        const activeElement = document.activeElement;
+                        const activeElementId = activeElement ? activeElement.id : null;
+                        
+                        fetch('?' + params.toString(), {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.text())
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const newDoc = parser.parseFromString(html, 'text/html');
+                            
+                            const currentContainer = document.querySelector('.row .col');
+                            const newContainer = newDoc.querySelector('.row .col');
+                            if (currentContainer && newContainer) {
+                                currentContainer.innerHTML = newContainer.innerHTML;
+                            }
+                            
+                            const currentBadge = document.querySelector('.badge.bg-info');
+                            const newBadge = newDoc.querySelector('.badge.bg-info');
+                            if (currentBadge && newBadge) {
+                                currentBadge.innerHTML = newBadge.innerHTML;
+                            }
+                            
+                            const currentFooterCount = document.querySelector('footer .col-md-6.text-md-end p');
+                            const newFooterCount = newDoc.querySelector('footer .col-md-6.text-md-end p');
+                            if (currentFooterCount && newFooterCount) {
+                                currentFooterCount.innerHTML = newFooterCount.innerHTML;
+                            }
+                            
+                            feather.replace();
+                            initializeSpeciesLinks();
+                            
+                            if (activeElementId) {
+                                const elementToFocus = document.getElementById(activeElementId);
+                                if (elementToFocus) {
+                                    elementToFocus.focus();
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Filter update failed:', error);
+                            form.submit();
+                        });
                     });
                 }
             });
