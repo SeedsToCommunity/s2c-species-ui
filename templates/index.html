@@ -181,7 +181,7 @@
                         </span>
                     </div>
 
-                    <div class="row">
+                    <div class="row" id="species-cards-container">
                         {% for plant in plants %}
                             <div class="col-lg-6 col-xl-4 mb-4">
                                 <div class="card h-100">
@@ -327,11 +327,11 @@
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
                     
-                    // Update the plant species cards row
-                    const currentCardsRow = document.querySelector('.row .col .row');
-                    const newCardsRow = newDoc.querySelector('.row .col .row');
-                    if (currentCardsRow && newCardsRow) {
-                        currentCardsRow.innerHTML = newCardsRow.innerHTML;
+                    // Update the plant species cards container
+                    const currentCardsContainer = document.getElementById('species-cards-container');
+                    const newCardsContainer = newDoc.getElementById('species-cards-container');
+                    if (currentCardsContainer && newCardsContainer) {
+                        currentCardsContainer.innerHTML = newCardsContainer.innerHTML;
                     }
                     
                     // Update the species count badge
@@ -448,10 +448,10 @@
                             const parser = new DOMParser();
                             const newDoc = parser.parseFromString(html, 'text/html');
                             
-                            const currentCardsRow = document.querySelector('.row .col .row');
-                            const newCardsRow = newDoc.querySelector('.row .col .row');
-                            if (currentCardsRow && newCardsRow) {
-                                currentCardsRow.innerHTML = newCardsRow.innerHTML;
+                            const currentCardsContainer = document.getElementById('species-cards-container');
+                            const newCardsContainer = newDoc.getElementById('species-cards-container');
+                            if (currentCardsContainer && newCardsContainer) {
+                                currentCardsContainer.innerHTML = newCardsContainer.innerHTML;
                             }
                             
                             const currentBadge = document.querySelector('.badge.bg-info');
