@@ -327,11 +327,11 @@
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
                     
-                    // Update the species list container
-                    const currentContainer = document.querySelector('.row .col');
-                    const newContainer = newDoc.querySelector('.row .col');
-                    if (currentContainer && newContainer) {
-                        currentContainer.innerHTML = newContainer.innerHTML;
+                    // Update the plant species cards row
+                    const currentCardsRow = document.querySelector('.row .col .row');
+                    const newCardsRow = newDoc.querySelector('.row .col .row');
+                    if (currentCardsRow && newCardsRow) {
+                        currentCardsRow.innerHTML = newCardsRow.innerHTML;
                     }
                     
                     // Update the species count badge
@@ -448,10 +448,10 @@
                             const parser = new DOMParser();
                             const newDoc = parser.parseFromString(html, 'text/html');
                             
-                            const currentContainer = document.querySelector('.row .col');
-                            const newContainer = newDoc.querySelector('.row .col');
-                            if (currentContainer && newContainer) {
-                                currentContainer.innerHTML = newContainer.innerHTML;
+                            const currentCardsRow = document.querySelector('.row .col .row');
+                            const newCardsRow = newDoc.querySelector('.row .col .row');
+                            if (currentCardsRow && newCardsRow) {
+                                currentCardsRow.innerHTML = newCardsRow.innerHTML;
                             }
                             
                             const currentBadge = document.querySelector('.badge.bg-info');
