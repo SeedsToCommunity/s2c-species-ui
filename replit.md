@@ -35,11 +35,15 @@ When a user selects a species from the main list, they enter a dedicated workflo
 
 ### Branding and Navigation
 - **Update page titles, headers, and footers** - Improve branding and user experience
+- **Rename app for deployment** - Choose more appropriate name for users (current replit.app domain is fine)
 - **Add external links** - Include links to:
   - Facebook page
   - Organization webpage  
   - Shared document space
 - **Add hero image** - Include compelling image at top of main page for visual appeal
+
+### Development and Deployment
+- **Add GitHub connectivity** - Set up version control and backup through GitHub integration
 
 ### User Experience Improvements
 - **Enhanced visual design** - Improve overall aesthetics and usability
