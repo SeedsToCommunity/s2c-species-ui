@@ -76,6 +76,15 @@ def load_plant_data():
             csv_data = StringIO(response.text)
             df = pd.read_csv(csv_data)
             
+            # Check if first row contains the actual headers (Google Sheets issue)
+            if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
+                app.logger.info("Detected header row in data, fixing column names")
+                # Use first row as column names
+                new_columns = df.iloc[0].tolist()
+                df.columns = new_columns
+                # Remove the header row from data
+                df = df.iloc[1:].reset_index(drop=True)
+            
             # Clean up column names - replace spaces with underscores and make lowercase
             df.columns = df.columns.str.replace(' ', '_').str.lower()
             
