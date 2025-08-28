@@ -14,6 +14,10 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
+# Global cache for plant data to avoid reloading on every request
+_cached_plant_data = None
+_data_cache_timestamp = None
+
 def load_display_config():
     """Load display configuration from JSON file"""
     try:
@@ -54,8 +58,13 @@ def load_app_settings():
         app.logger.error(f"Error loading app settings: {str(e)}")
         return {"data_source": {"google_drive_csv_url": "", "fallback_files": ["origdata.tabsv", "plants.csv"]}}
 
-def load_plant_data():
+def load_plant_data(force_reload=False):
     """Load and process plant data from Google Drive CSV or fallback to local files"""
+    global _cached_plant_data, _data_cache_timestamp
+    
+    # Return cached data if available and not forcing reload
+    if not force_reload and _cached_plant_data is not None:
+        return _cached_plant_data
     
     # Load settings and get Google Drive URL
     settings = load_app_settings()
@@ -92,6 +101,10 @@ def load_plant_data():
             df = df.fillna('')
             
             app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive")
+            
+            # Cache the data
+            _cached_plant_data = df
+            _data_cache_timestamp = pd.Timestamp.now()
             return df
             
     except requests.RequestException as e:
@@ -123,6 +136,10 @@ def load_plant_data():
         df = df.fillna('')
         
         app.logger.info(f"Successfully loaded {len(df)} rows from local files")
+        
+        # Cache the data
+        _cached_plant_data = df
+        _data_cache_timestamp = pd.Timestamp.now()
         return df
         
     except Exception as e:
@@ -304,6 +321,20 @@ def species_detail(botanical_name, screen_type='identification'):
         app.logger.error(f"Error loading species detail: {str(e)}")
         flash(f'Error loading species data: {str(e)}', 'error')
         return abort(404)
+
+@app.route('/admin/refresh-data')
+def refresh_data():
+    """Admin route to manually refresh cached data"""
+    global _cached_plant_data
+    try:
+        _cached_plant_data = None  # Clear cache
+        df = load_plant_data(force_reload=True)
+        flash(f'Data refreshed successfully! Loaded {len(df)} plant species.', 'success')
+        return redirect(url_for('index'))
+    except Exception as e:
+        app.logger.error(f"Error refreshing data: {str(e)}")
+        flash(f'Error refreshing data: {str(e)}', 'error')
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
