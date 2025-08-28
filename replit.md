@@ -27,6 +27,15 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - Responsive navigation between workflow steps
 - Fixed "No Data Available" bug that was incorrectly showing when data was present
 
+## Completed Features (Data Management)
+
+### Google Drive CSV Integration ✅
+- **Dynamic data loading** - App can fetch plant data directly from Google Drive CSV files
+- **No-deployment updates** - Update plant data in Google Drive without redeploying the app
+- **Fallback system** - Gracefully falls back to local files if Google Drive is unavailable
+- **Automatic URL conversion** - Handles both Google Drive share URLs and direct download URLs
+- **Environment configuration** - Uses `GOOGLE_DRIVE_CSV_URL` environment variable for setup
+
 ## New Feature Requirements (Enhancement Phase)
 
 ### Data Enhancement
@@ -67,10 +76,12 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Configuration**: Environment-based configuration for session secrets
 
 ### Data Storage
-- **Primary Data Source**: Tab-separated file (`origdata.tabsv`) containing plant species information
-- **Auto-conversion**: Application automatically converts tab-separated data to CSV format on startup
-- **Data Format**: Structured CSV data converted to Python dictionaries for template rendering
-- **No Database**: Simple file-based approach suitable for static or infrequently updated data
+- **Primary Data Source**: Google Drive CSV file (configurable via `GOOGLE_DRIVE_CSV_URL` environment variable)
+- **Fallback Sources**: Local tab-separated file (`origdata.tabsv`) or CSV file (`plants.csv`)
+- **Dynamic Loading**: Application fetches fresh data from Google Drive on each startup
+- **Auto-conversion**: Handles both Google Drive share URLs and direct download URLs
+- **Data Format**: CSV data automatically cleaned and converted to Python dictionaries for template rendering
+- **No Database**: Cloud-based file approach with local fallback for reliability
 - **Configuration System**: JSON-based configuration files for customizable display and app settings
 
 ### Application Structure

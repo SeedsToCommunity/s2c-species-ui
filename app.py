@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import logging
 import json
+import requests
+from io import StringIO
 from flask import Flask, render_template, flash, request, url_for, abort
 from urllib.parse import quote, unquote
 
@@ -25,11 +27,62 @@ def load_display_config():
         app.logger.error(f"Error loading display configuration: {str(e)}")
         return {"main_page_columns": [], "filter_columns": []}
 
+def convert_google_drive_url(share_url):
+    """Convert Google Drive share URL to direct CSV download URL"""
+    if 'drive.google.com' in share_url and 'file/d/' in share_url:
+        # Extract the file ID from the share URL
+        file_id = share_url.split('file/d/')[1].split('/')[0]
+        # Return the direct download URL
+        return f"https://drive.google.com/uc?id={file_id}&export=download"
+    return share_url
+
 def load_plant_data():
-    """Load and process plant data from the tab-separated file"""
+    """Load and process plant data from Google Drive CSV or fallback to local files"""
+    
+    # Google Drive URL (will be configurable)
+    google_drive_url = os.environ.get('GOOGLE_DRIVE_CSV_URL', '')
+    
     try:
-        # Read the tab-separated file
-        df = pd.read_csv('origdata.tabsv', sep='\t')
+        if google_drive_url:
+            app.logger.info(f"Loading data from Google Drive: {google_drive_url}")
+            
+            # Convert share URL to direct download URL if needed
+            download_url = convert_google_drive_url(google_drive_url)
+            
+            # Download the CSV data
+            response = requests.get(download_url, timeout=30)
+            response.raise_for_status()
+            
+            # Read CSV from the response text
+            csv_data = StringIO(response.text)
+            df = pd.read_csv(csv_data)
+            
+            # Clean up column names - replace spaces with underscores and make lowercase
+            df.columns = df.columns.str.replace(' ', '_').str.lower()
+            
+            # Clean up the data - fill NaN values with empty strings
+            df = df.fillna('')
+            
+            app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive")
+            return df
+            
+    except requests.RequestException as e:
+        app.logger.error(f"Error downloading from Google Drive: {str(e)}")
+    except Exception as e:
+        app.logger.error(f"Error processing Google Drive data: {str(e)}")
+    
+    # Fallback to local files
+    try:
+        app.logger.info("Falling back to local data files")
+        
+        # Try tab-separated file first
+        if os.path.exists('origdata.tabsv'):
+            df = pd.read_csv('origdata.tabsv', sep='\t')
+        elif os.path.exists('plants.csv'):
+            df = pd.read_csv('plants.csv')
+        else:
+            app.logger.error("No data files found (local or Google Drive)")
+            return pd.DataFrame()
         
         # Clean up column names - replace spaces with underscores and make lowercase
         df.columns = df.columns.str.replace(' ', '_').str.lower()
@@ -37,24 +90,11 @@ def load_plant_data():
         # Clean up the data - fill NaN values with empty strings
         df = df.fillna('')
         
-        # Save as CSV for future reference
-        df.to_csv('plants.csv', index=False)
-        
+        app.logger.info(f"Successfully loaded {len(df)} rows from local files")
         return df
         
-    except FileNotFoundError:
-        app.logger.error("origdata.tabsv file not found, trying plants.csv")
-        # Fallback to existing CSV if tab file doesn't exist
-        try:
-            df = pd.read_csv('plants.csv')
-            df = df.fillna('')
-            return df
-        except FileNotFoundError:
-            app.logger.error("No data files found")
-            return pd.DataFrame()
-            
     except Exception as e:
-        app.logger.error(f"Error reading plant data: {str(e)}")
+        app.logger.error(f"Error reading local plant data: {str(e)}")
         return pd.DataFrame()
 
 def get_unique_values(df, column):
