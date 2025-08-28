@@ -369,5 +369,123 @@ def refresh_data():
         flash(f'Error refreshing data: {str(e)}', 'error')
         return redirect(url_for('index'))
 
+@app.route('/admin/data-columns')
+def admin_data_columns():
+    """Admin page to view all available columns and their current assignments"""
+    try:
+        # Load plant data to get all available columns
+        df = load_plant_data()
+        if df.empty:
+            flash('No plant data available to analyze columns', 'error')
+            return render_template('admin_columns.html', columns_info={})
+        
+        # Get all column names from the data
+        all_columns = list(df.columns)
+        
+        # Load current display configuration
+        display_config = load_display_config()
+        
+        # Load all screen configurations
+        screen_configs = {}
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        for screen in valid_screens:
+            screen_configs[screen] = load_screen_config(screen)
+        
+        # Analyze column usage
+        columns_info = {}
+        for col in all_columns:
+            # Get sample data for this column
+            non_empty_values = df[col].dropna()
+            sample_values = non_empty_values.head(3).tolist() if len(non_empty_values) > 0 else []
+            
+            # Check where this column is used
+            used_in = {
+                'main_page': any(c.get('field') == col for c in display_config.get('main_page_columns', [])),
+                'screens': []
+            }
+            
+            for screen_name, config in screen_configs.items():
+                if any(c.get('field') == col for c in config.get('columns', [])):
+                    used_in['screens'].append(screen_name)
+            
+            # Determine data type and length
+            data_type = 'text'
+            max_length = 0
+            if len(non_empty_values) > 0:
+                max_length = max(len(str(val)) for val in non_empty_values)
+                if max_length > 100:
+                    data_type = 'paragraph'
+                elif any(str(val).startswith('http') for val in non_empty_values[:10]):
+                    data_type = 'link'
+            
+            columns_info[col] = {
+                'total_records': len(df),
+                'non_empty_count': len(non_empty_values),
+                'sample_values': sample_values,
+                'max_length': max_length,
+                'data_type': data_type,
+                'used_in': used_in,
+                'is_unused': not used_in['main_page'] and not used_in['screens']
+            }
+        
+        return render_template('admin_columns.html', 
+                             columns_info=columns_info,
+                             display_config=display_config,
+                             screen_configs=screen_configs,
+                             total_species=len(df))
+        
+    except Exception as e:
+        app.logger.error(f"Error analyzing columns: {str(e)}")
+        flash(f'Error analyzing data columns: {str(e)}', 'error')
+        return render_template('admin_columns.html', columns_info={})
+
+@app.route('/api/data-columns')
+def api_data_columns():
+    """API endpoint to get column information as JSON"""
+    try:
+        # Load plant data
+        df = load_plant_data()
+        if df.empty:
+            return {"error": "No plant data available"}, 500
+        
+        # Get all column names and sample data
+        columns_data = {}
+        for col in df.columns:
+            non_empty_values = df[col].dropna()
+            sample_values = non_empty_values.head(5).tolist() if len(non_empty_values) > 0 else []
+            
+            # Determine data characteristics
+            max_length = max(len(str(val)) for val in non_empty_values) if len(non_empty_values) > 0 else 0
+            data_type = 'text'
+            if max_length > 100:
+                data_type = 'paragraph'
+            elif any(str(val).startswith('http') for val in non_empty_values[:10]):
+                data_type = 'link'
+            
+            columns_data[col] = {
+                "column_name": col,
+                "total_records": len(df),
+                "non_empty_count": len(non_empty_values),
+                "fill_percentage": round((len(non_empty_values) / len(df) * 100), 1) if len(df) > 0 else 0,
+                "max_length": max_length,
+                "suggested_type": data_type,
+                "sample_values": sample_values
+            }
+        
+        return {
+            "total_columns": len(columns_data),
+            "total_species": len(df),
+            "columns": columns_data,
+            "csv_guidelines": {
+                "paragraph_text": "Wrap long text in double quotes, use line breaks within quotes",
+                "special_characters": "Escape internal quotes by doubling them (\"\")",
+                "google_sheets": "Google Sheets handles CSV formatting automatically"
+            }
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error in API column data: {str(e)}")
+        return {"error": str(e)}, 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

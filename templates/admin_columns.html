@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Column Management - Plant Species Directory</title>
+    <link href="https://repls.us/cdn/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .column-card {
+            transition: all 0.2s ease;
+        }
+        .column-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .data-type-badge {
+            font-size: 0.75rem;
+        }
+        .sample-value {
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 2px;
+            display: inline-block;
+        }
+        .usage-indicator {
+            font-size: 0.75rem;
+        }
+        .unused-column {
+            border-left: 4px solid #dc3545;
+        }
+        .used-column {
+            border-left: 4px solid #198754;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .filter-tabs .nav-link {
+            border-radius: 20px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="text-dark mb-2">
+                            <i data-feather="database" class="me-2"></i>
+                            Data Column Management
+                        </h1>
+                        <p class="text-muted mb-0">View all available columns and their current assignments</p>
+                    </div>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to App
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if columns_info %}
+        <!-- Statistics Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="grid" style="width: 32px; height: 32px;" class="mb-2"></i>
+                        <h3 class="mb-1">{{ columns_info|length }}</h3>
+                        <small>Total Columns</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="check-circle" style="width: 32px; height: 32px;" class="mb-2"></i>
+                        <h3 class="mb-1">{{ columns_info.values()|selectattr('is_unused', 'equalto', false)|list|length }}</h3>
+                        <small>Columns in Use</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="alert-circle" style="width: 32px; height: 32px;" class="mb-2"></i>
+                        <h3 class="mb-1">{{ columns_info.values()|selectattr('is_unused', 'equalto', true)|list|length }}</h3>
+                        <small>Unused Columns</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="file-text" style="width: 32px; height: 32px;" class="mb-2"></i>
+                        <h3 class="mb-1">{{ total_species }}</h3>
+                        <small>Plant Species</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-pills filter-tabs" id="filterTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-filter="all">All Columns</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-filter="used">Used Columns</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-filter="unused">Unused Columns</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-filter="paragraph">Paragraph Text</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-filter="link">Links</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Columns Grid -->
+        <div class="row" id="columnsGrid">
+            {% for column_name, info in columns_info.items() %}
+            <div class="col-lg-6 col-xl-4 mb-4 column-item" 
+                 data-used="{{ 'true' if not info.is_unused else 'false' }}"
+                 data-type="{{ info.data_type }}">
+                <div class="card column-card h-100 {{ 'unused-column' if info.is_unused else 'used-column' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="card-title mb-0 text-primary">{{ column_name }}</h6>
+                            <span class="badge bg-{{ 'secondary' if info.data_type == 'text' else ('info' if info.data_type == 'link' else 'warning') }} data-type-badge">
+                                {{ info.data_type }}
+                            </span>
+                        </div>
+
+                        <!-- Data Statistics -->
+                        <div class="mb-3">
+                            <small class="text-muted d-block">
+                                <i data-feather="bar-chart" class="me-1" style="width: 14px; height: 14px;"></i>
+                                {{ info.non_empty_count }} of {{ info.total_records }} records
+                                ({{ "%.1f"|format((info.non_empty_count / info.total_records * 100) if info.total_records > 0 else 0) }}%)
+                            </small>
+                            {% if info.max_length > 0 %}
+                            <small class="text-muted d-block">
+                                <i data-feather="type" class="me-1" style="width: 14px; height: 14px;"></i>
+                                Max length: {{ info.max_length }} characters
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Sample Values -->
+                        {% if info.sample_values %}
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Sample values:</small>
+                            {% for value in info.sample_values %}
+                            <span class="sample-value">
+                                {% if value|string|length > 50 %}
+                                    {{ value|string|truncate(47) }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Usage Information -->
+                        <div class="usage-info">
+                            {% if info.is_unused %}
+                            <span class="badge bg-danger usage-indicator">
+                                <i data-feather="x" style="width: 12px; height: 12px;" class="me-1"></i>
+                                Not Used
+                            </span>
+                            {% else %}
+                            {% if info.used_in.main_page %}
+                            <span class="badge bg-primary usage-indicator me-1">
+                                <i data-feather="home" style="width: 12px; height: 12px;" class="me-1"></i>
+                                Main Page
+                            </span>
+                            {% endif %}
+                            {% for screen in info.used_in.screens %}
+                            <span class="badge bg-success usage-indicator me-1 mb-1">
+                                <i data-feather="layers" style="width: 12px; height: 12px;" class="me-1"></i>
+                                {{ screen.title() }}
+                            </span>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- CSV Handling Information -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="info" class="me-2"></i>
+                            CSV Format Guidelines for Paragraph Text
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-success">✅ CSV Best Practices</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Wrap paragraph text in double quotes</li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Use line breaks within quoted cells for readability</li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Escape internal quotes by doubling them ("")</li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Google Sheets handles this automatically</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-info">📋 Column Assignment</h6>
+                                <p class="text-muted mb-2">To use columns in your app:</p>
+                                <ol class="text-muted">
+                                    <li>Edit <code>config/display_columns.json</code> for main page</li>
+                                    <li>Edit screen config files in <code>config/</code> for workflow tabs</li>
+                                    <li>Use exact column names shown above</li>
+                                    <li>Set type to "paragraph" for long text content</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data Available -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="database" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                        <h5 class="text-muted">No Data Available</h5>
+                        <p class="text-muted">Unable to load plant data for column analysis.</p>
+                        <a href="{{ url_for('admin_refresh_data') }}" class="btn btn-primary">
+                            <i data-feather="refresh-cw" class="me-1"></i>
+                            Refresh Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Filter functionality
+        document.querySelectorAll('[data-filter]').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Update active tab
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                const items = document.querySelectorAll('.column-item');
+                
+                items.forEach(item => {
+                    let show = true;
+                    
+                    switch(filter) {
+                        case 'used':
+                            show = item.dataset.used === 'true';
+                            break;
+                        case 'unused':
+                            show = item.dataset.used === 'false';
+                            break;
+                        case 'paragraph':
+                            show = item.dataset.type === 'paragraph';
+                            break;
+                        case 'link':
+                            show = item.dataset.type === 'link';
+                            break;
+                        case 'all':
+                        default:
+                            show = true;
+                            break;
+                    }
+                    
+                    if (show) {
+                        item.style.display = '';
+                        item.style.animation = 'fadeIn 0.3s ease';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
