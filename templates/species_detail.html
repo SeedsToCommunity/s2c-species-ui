@@ -29,7 +29,7 @@
         <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
                 <h1 class="text-primary mb-2">
-                    <i data-feather="flower" class="me-2"></i>
+                    <i data-feather="home" class="me-2"></i>
                     {{ species.common_name }}
                 </h1>
                 <h2 class="text-muted fst-italic fs-4">{{ botanical_name }}</h2>
@@ -54,19 +54,21 @@
         <div class="card mb-4">
             <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
+                    <div class="screen-header">
                         <h5 class="mb-0">
                             <i data-feather="clipboard" class="me-2"></i>
-                            {{ screen_config.screen_name }}
+                            <span id="screen-title">{{ screen_config.screen_name }}</span>
                         </h5>
-                        <small class="text-muted">{{ screen_config.description }}</small>
+                        <small class="text-muted" id="screen-description">{{ screen_config.description }}</small>
                     </div>
                     <nav class="screen-nav">
                         <div class="nav nav-pills">
                             {% for screen in valid_screens %}
                                 {% set screen_name = screen.replace('_', ' ').title() %}
-                                <a href="{{ url_for('species_detail', botanical_name=botanical_name|urlencode, screen_type=screen, **current_filters) }}" 
-                                   class="nav-link {{ 'active' if screen == current_screen else '' }}">
+                                <a href="javascript:void(0)" 
+                                   data-screen="{{ screen }}"
+                                   class="nav-link screen-tab {{ 'active' if screen == current_screen else '' }}"
+                                   onclick="switchScreen('{{ screen }}')">
                                     {% if screen == 'identification' %}
                                         <i data-feather="search" class="me-1 small"></i>
                                     {% elif screen == 'collection' %}
@@ -88,7 +90,7 @@
         </div>
 
         <!-- Species Data Fields -->
-        <div class="row">
+        <div class="row" id="species-content">
             {% for column in screen_config.columns %}
                 {% set field_value = species.get(column.field, '') %}
                 {% if field_value and field_value != '' %}
@@ -165,6 +167,115 @@
     <script>
         // Initialize Feather icons
         feather.replace();
+        
+        // Current botanical name for API calls
+        const botanicalName = '{{ botanical_name }}';
+        
+        // Function to switch screens without page reload
+        async function switchScreen(screenType) {
+            try {
+                // Update active tab
+                document.querySelectorAll('.screen-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-screen="${screenType}"]`).classList.add('active');
+                
+                // Show loading state
+                document.getElementById('species-content').innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Fetch new screen data
+                const response = await fetch(`/api/species/${encodeURIComponent(botanicalName)}/${screenType}`);
+                if (!response.ok) throw new Error('Failed to load screen data');
+                
+                const data = await response.json();
+                
+                // Update screen title and description
+                document.getElementById('screen-title').textContent = data.screen_config.screen_name;
+                document.getElementById('screen-description').textContent = data.screen_config.description || '';
+                
+                // Update content
+                updateScreenContent(data.species, data.screen_config);
+                
+                // Re-initialize Feather icons for new content
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Error switching screen:', error);
+                document.getElementById('species-content').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-circle" class="me-2"></i>
+                            Error loading screen data. Please try again.
+                        </div>
+                    </div>
+                `;
+                feather.replace();
+            }
+        }
+        
+        // Function to update screen content
+        function updateScreenContent(species, screenConfig) {
+            let content = '';
+            let hasData = false;
+            
+            screenConfig.columns.forEach(column => {
+                const fieldValue = species[column.field];
+                if (fieldValue && fieldValue !== '') {
+                    hasData = true;
+                    content += `
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3 text-primary">
+                                        ${column.label}
+                                    </h6>
+                                    <div class="field-value">
+                    `;
+                    
+                    if (column.type === 'link' && fieldValue) {
+                        content += `
+                            <a href="${fieldValue}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i data-feather="external-link" class="me-1"></i>
+                                View Pictures
+                            </a>
+                        `;
+                    } else {
+                        content += `<p class="card-text mb-0">${fieldValue}</p>`;
+                    }
+                    
+                    content += `
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (!hasData) {
+                content = `
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <i data-feather="info" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                <h5 class="text-muted">No Data Available</h5>
+                                <p class="text-muted mb-0">
+                                    No information is currently available for this species in the ${screenConfig.screen_name.toLowerCase()} workflow.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('species-content').innerHTML = content;
+        }
     </script>
 </body>
 </html>

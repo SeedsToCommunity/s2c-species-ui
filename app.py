@@ -322,6 +322,39 @@ def species_detail(botanical_name, screen_type='identification'):
         flash(f'Error loading species data: {str(e)}', 'error')
         return abort(404)
 
+@app.route('/api/species/<path:botanical_name>/<screen_type>')
+def api_species_screen(botanical_name, screen_type):
+    """API endpoint for loading species screen data without page reload"""
+    try:
+        # Load plant data
+        df = load_plant_data()
+        if df.empty:
+            return {"error": "No plant data available"}, 500
+        
+        # Get the specific species
+        species = get_species_by_name(df, botanical_name)
+        if not species:
+            return {"error": "Species not found"}, 404
+        
+        # Valid screen types
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        if screen_type not in valid_screens:
+            return {"error": "Invalid screen type"}, 404
+        
+        # Load screen configuration
+        screen_config = load_screen_config(screen_type)
+        
+        # Return JSON data
+        return {
+            "species": species,
+            "screen_config": screen_config,
+            "current_screen": screen_type
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error in API endpoint: {str(e)}")
+        return {"error": str(e)}, 500
+
 @app.route('/admin/refresh-data')
 def refresh_data():
     """Admin route to manually refresh cached data"""
