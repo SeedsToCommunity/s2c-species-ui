@@ -36,11 +36,30 @@ def convert_google_drive_url(share_url):
         return f"https://drive.google.com/uc?id={file_id}&export=download"
     return share_url
 
+def load_app_settings():
+    """Load application settings from JSON configuration file"""
+    try:
+        with open('config/app_settings.json', 'r') as f:
+            settings = json.load(f)
+        return settings
+    except FileNotFoundError:
+        app.logger.warning("App settings file not found, using defaults")
+        return {
+            "data_source": {
+                "google_drive_csv_url": "",
+                "fallback_files": ["origdata.tabsv", "plants.csv"]
+            }
+        }
+    except Exception as e:
+        app.logger.error(f"Error loading app settings: {str(e)}")
+        return {"data_source": {"google_drive_csv_url": "", "fallback_files": ["origdata.tabsv", "plants.csv"]}}
+
 def load_plant_data():
     """Load and process plant data from Google Drive CSV or fallback to local files"""
     
-    # Google Drive URL (will be configurable)
-    google_drive_url = os.environ.get('GOOGLE_DRIVE_CSV_URL', '')
+    # Load settings and get Google Drive URL
+    settings = load_app_settings()
+    google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
     
     try:
         if google_drive_url:
@@ -74,12 +93,16 @@ def load_plant_data():
     # Fallback to local files
     try:
         app.logger.info("Falling back to local data files")
+        fallback_files = settings.get('data_source', {}).get('fallback_files', ['origdata.tabsv', 'plants.csv'])
         
-        # Try tab-separated file first
-        if os.path.exists('origdata.tabsv'):
-            df = pd.read_csv('origdata.tabsv', sep='\t')
-        elif os.path.exists('plants.csv'):
-            df = pd.read_csv('plants.csv')
+        # Try each fallback file in order
+        for filename in fallback_files:
+            if os.path.exists(filename):
+                if filename.endswith('.tabsv'):
+                    df = pd.read_csv(filename, sep='\t')
+                else:
+                    df = pd.read_csv(filename)
+                break
         else:
             app.logger.error("No data files found (local or Google Drive)")
             return pd.DataFrame()
