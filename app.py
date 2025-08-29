@@ -396,6 +396,38 @@ def api_species_screen(botanical_name, screen_type):
         app.logger.error(f"Error in API endpoint: {str(e)}")
         return {"error": str(e)}, 500
 
+@app.route('/admin')
+def admin_dashboard():
+    """Admin dashboard listing all admin pages"""
+    admin_pages = [
+        {
+            'title': 'Issue Reports',
+            'url': '/admin/issues',
+            'description': 'View and manage all reported issues from community members',
+            'icon': 'alert-triangle'
+        },
+        {
+            'title': 'Data Columns',
+            'url': '/admin/columns', 
+            'description': 'Analyze data columns, usage patterns, and field assignments',
+            'icon': 'columns'
+        },
+        {
+            'title': 'Refresh Data',
+            'url': '/admin/refresh',
+            'description': 'Manually refresh cached plant data from Google Drive',
+            'icon': 'refresh-cw'
+        },
+        {
+            'title': 'API Columns',
+            'url': '/api/columns',
+            'description': 'JSON API endpoint for programmatic access to column data',
+            'icon': 'code'
+        }
+    ]
+    
+    return render_template('admin_dashboard.html', admin_pages=admin_pages)
+
 @app.route('/admin/refresh')
 def refresh_data():
     """Admin route to manually refresh cached data"""
