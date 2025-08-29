@@ -9,7 +9,7 @@
     },
     {
       "field": "moisture",
-      "label": "Moisture Requirements", 
+      "label": "Moisture Requirements",
       "type": "text"
     },
     {
