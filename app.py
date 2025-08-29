@@ -682,11 +682,11 @@ def admin_column_usage():
             
             column_usage[col] = usage
         
-        # Sort columns by usage (most used first, then alphabetically)
-        sorted_columns = sorted(column_usage.items(), key=lambda x: (-x[1]['total_uses'], x[0]))
+        # Keep original column order from CSV file (preserves data structure)
+        ordered_columns = [(col, column_usage[col]) for col in all_columns]
         
         return render_template('admin_column_usage.html', 
-                             column_usage=dict(sorted_columns),
+                             column_usage=dict(ordered_columns),
                              total_columns=len(all_columns),
                              total_species=len(df))
         
