@@ -198,33 +198,33 @@ def filter_plants(df, filters):
     if filters.get('name'):
         name_query = filters['name'].lower()
         mask = (
-            filtered_df['botanical_name'].str.lower().str.contains(name_query, na=False) |
-            filtered_df['common_name'].str.lower().str.contains(name_query, na=False)
+            filtered_df['botanical_name'].str.lower().str.contains(name_query, na=False, regex=False) |
+            filtered_df['common_name'].str.lower().str.contains(name_query, na=False, regex=False)
         )
         filtered_df = filtered_df[mask]
     
     # Start collecting month filter
     if filters.get('start_seed_watch'):
         month_filter = filters['start_seed_watch']
-        mask = filtered_df['start_seed_watch'].str.contains(month_filter, na=False)
+        mask = filtered_df['start_seed_watch'].str.contains(month_filter, na=False, regex=False)
         filtered_df = filtered_df[mask]
     
     # Germination code filter
     if filters.get('germination_code'):
         germ_filter = filters['germination_code']
-        mask = filtered_df['germination_code'].str.contains(germ_filter, na=False)
+        mask = filtered_df['germination_code'].str.contains(germ_filter, na=False, regex=False)
         filtered_df = filtered_df[mask]
     
     # Light filter
     if filters.get('light'):
         light_filter = filters['light']
-        mask = filtered_df['light'].str.contains(light_filter, na=False)
+        mask = filtered_df['light'].str.contains(light_filter, na=False, regex=False)
         filtered_df = filtered_df[mask]
     
     # Moisture filter
     if filters.get('moisture'):
         moisture_filter = filters['moisture']
-        mask = filtered_df['moisture'].str.contains(moisture_filter, na=False)
+        mask = filtered_df['moisture'].str.contains(moisture_filter, na=False, regex=False)
         filtered_df = filtered_df[mask]
     
     return filtered_df
