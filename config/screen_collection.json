@@ -1,6 +1,7 @@
 {
   "screen_name": "Seed Collection",
   "description": "Data relevant to collecting seeds from the plant",
+  "announcement": "⚠️ Do not collect for the series unless you are certain of both genus and species. Good intentions are not enough. General identification is not close enough. Only collect if you are confident it is the straight native species. No cultivars, hybrids, non-natives, or invasive plants.",
   "columns": [
     {
       "field": "start_seed_watch",

@@ -105,6 +105,23 @@
             </div>
         </div>
 
+        <!-- Announcement (if present) -->
+        {% if screen_config.announcement %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning border-warning">
+                    <div class="d-flex align-items-start">
+                        <i data-feather="alert-triangle" class="me-2 mt-1 flex-shrink-0" style="color: #856404;"></i>
+                        <div>
+                            <strong>Important Notice:</strong><br>
+                            {{ screen_config.announcement }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Species Data Fields -->
         <div class="row" id="species-content">
             {% for column in screen_config.columns %}

@@ -42,12 +42,6 @@
       "type": "link",
       "show_as_badge": false,
       "link_text": "View Pictures"
-    },
-    {
-      "field": "germination_code",
-      "display_name": "Germination Code",
-      "type": "text",
-      "show_as_badge": false
     }
   ],
   "filter_columns": [
