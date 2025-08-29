@@ -255,6 +255,11 @@ def index():
         # Apply filters
         filtered_df = filter_plants(df, filters)
         
+        # Ensure filtered_df is a DataFrame
+        if not hasattr(filtered_df, 'to_dict'):
+            app.logger.error(f"Filter function returned invalid type: {type(filtered_df)}")
+            filtered_df = df.iloc[0:0]  # Empty DataFrame with same structure
+        
         # Get unique values for filter dropdowns
         filter_options = {
             'start_seed_watch': get_unique_values(df, 'start_seed_watch'),
