@@ -20,6 +20,16 @@
         .field-value {
             word-wrap: break-word;
         }
+        /* Reduce Bootstrap row gutters for tighter layout */
+        #species-content {
+            --bs-gutter-x: 0.5rem;
+            --bs-gutter-y: 0.25rem;
+        }
+        /* Make cards even more compact */
+        #species-content .card {
+            border-width: 1px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        }
 
     </style>
 </head>
@@ -129,9 +139,9 @@
             {% for column in screen_config.columns %}
                 {% set field_value = species.get(column.field, '') %}
                 {% if field_value and field_value != '' %}
-                    <div class="col-lg-6 mb-2">
+                    <div class="col-lg-6 mb-1">
                         <div class="card h-100">
-                            <div class="card-body py-2 px-3">
+                            <div class="card-body py-1 px-2">
                                 {% if column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="text-muted me-2">{{ column.label }}:</small>
@@ -296,9 +306,9 @@
                     hasData = true;
                     if (column.type === 'link' && fieldValue) {
                         content += `
-                            <div class="col-lg-6 mb-2">
+                            <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
-                                    <div class="card-body py-2 px-3">
+                                    <div class="card-body py-1 px-2">
                                         <div class="d-flex align-items-center">
                                             <small class="text-muted me-2">${column.label}:</small>
                                             <a href="${fieldValue}" target="_blank" class="btn btn-outline-primary btn-sm">
@@ -320,9 +330,9 @@
                         }
                         
                         content += `
-                            <div class="col-lg-6 mb-2">
+                            <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
-                                    <div class="card-body py-2 px-3">
+                                    <div class="card-body py-1 px-2">
                                         <div>
                                             <small class="text-muted">${column.label}:</small>
                                             ${displayValue}
