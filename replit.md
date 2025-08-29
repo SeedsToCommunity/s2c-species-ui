@@ -37,6 +37,7 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Consistent filtering behavior** - Both text and dropdown filters use unified AJAX update logic
 - **Special character support** - Fixed regex filtering issues by using exact text matching
 - **Filter preservation** - Maintains filter state during navigation and species detail workflows
+- **Robust form state management** - Handles complex filter combinations and state transitions properly
 
 ## Completed Features (Data Management)
 

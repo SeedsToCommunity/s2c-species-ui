@@ -378,9 +378,6 @@
                 const activeElement = document.activeElement;
                 const activeElementId = activeElement ? activeElement.id : null;
                 
-                // Debug: Log the current filter parameters for text input
-                console.log('Text filter parameters:', params.toString());
-                
                 fetch('?' + params.toString(), {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
@@ -492,9 +489,6 @@
                         const form = document.getElementById('filterForm');
                         const formData = new FormData(form);
                         const params = new URLSearchParams(formData);
-                        
-                        // Debug: Log the current filter parameters
-                        console.log('Filter parameters:', params.toString());
                         
                         const activeElement = document.activeElement;
                         const activeElementId = activeElement ? activeElement.id : null;
