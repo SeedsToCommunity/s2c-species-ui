@@ -258,7 +258,7 @@
                         // Handle special formatting for specific field types
                         let displayValue = fieldValue;
                         if (column.field === 'special_collect' && (fieldValue === 'TRUE' || fieldValue === true)) {
-                            displayValue = '<span class="badge bg-warning text-dark">Special Collection Required</span>';
+                            displayValue = '<span class="badge bg-success">Requested Species</span>';
                         }
                         content += `<p class="card-text mb-0">${displayValue}</p>`;
                     }
