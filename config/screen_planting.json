@@ -3,18 +3,8 @@
   "description": "Information about planting and growing the species",
   "columns": [
     {
-      "field": "light",
-      "label": "Light Requirements",
-      "type": "text"
-    },
-    {
-      "field": "moisture",
-      "label": "Moisture Requirements",
-      "type": "text"
-    },
-    {
-      "field": "common_name",
-      "label": "Common Name",
+      "field": "planting_notes",
+      "label": "Planting Notes",
       "width": "auto"
     }
   ]

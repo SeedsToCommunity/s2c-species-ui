@@ -350,13 +350,17 @@ def species_detail(botanical_name, screen_type='identification'):
             'moisture': request.args.get('moisture', '')
         }
         
+        # Check if running in development (Replit environment)
+        is_development = os.environ.get('REPL_ID') is not None
+        
         return render_template('species_detail.html', 
                              species=species, 
                              screen_config=screen_config,
                              current_screen=screen_type,
                              valid_screens=valid_screens,
                              current_filters=current_filters,
-                             botanical_name=unquote(botanical_name))
+                             botanical_name=unquote(botanical_name),
+                             is_development=is_development)
         
     except Exception as e:
         app.logger.error(f"Error loading species detail: {str(e)}")

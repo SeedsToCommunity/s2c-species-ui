@@ -67,32 +67,40 @@
                         </h5>
                         <small class="text-muted" id="screen-description">{{ screen_config.description }}</small>
                     </div>
-                    <nav class="screen-nav">
-                        <div class="nav nav-pills">
-                            {% for screen in valid_screens %}
-                                {% set screen_name = screen.replace('_', ' ').title() %}
-                                <a href="javascript:void(0)" 
-                                   data-screen="{{ screen }}"
-                                   class="nav-link screen-tab {{ 'active' if screen == current_screen else '' }}"
-                                   onclick="switchScreen('{{ screen }}')">
-                                    {% if screen == 'identification' %}
-                                        <i data-feather="search" class="me-1 small"></i>
-                                    {% elif screen == 'collection' %}
-                                        <i data-feather="package" class="me-1 small"></i>
-                                    {% elif screen == 'processing' %}
-                                        <i data-feather="settings" class="me-1 small"></i>
-                                    {% elif screen == 'storage' %}
-                                        <i data-feather="archive" class="me-1 small"></i>
-                                    {% elif screen == 'stratification' %}
-                                        <i data-feather="layers" class="me-1 small"></i>
-                                    {% elif screen == 'planting' %}
-                                        <i data-feather="sun" class="me-1 small"></i>
-                                    {% endif %}
-                                    {{ screen_name }}
-                                </a>
-                            {% endfor %}
-                        </div>
-                    </nav>
+                    <div class="d-flex align-items-center gap-3">
+                        <nav class="screen-nav">
+                            <div class="nav nav-pills">
+                                {% for screen in valid_screens %}
+                                    {% set screen_name = screen.replace('_', ' ').title() %}
+                                    <a href="javascript:void(0)" 
+                                       data-screen="{{ screen }}"
+                                       class="nav-link screen-tab {{ 'active' if screen == current_screen else '' }}"
+                                       onclick="switchScreen('{{ screen }}')">
+                                        {% if screen == 'identification' %}
+                                            <i data-feather="search" class="me-1 small"></i>
+                                        {% elif screen == 'collection' %}
+                                            <i data-feather="package" class="me-1 small"></i>
+                                        {% elif screen == 'processing' %}
+                                            <i data-feather="settings" class="me-1 small"></i>
+                                        {% elif screen == 'storage' %}
+                                            <i data-feather="archive" class="me-1 small"></i>
+                                        {% elif screen == 'stratification' %}
+                                            <i data-feather="layers" class="me-1 small"></i>
+                                        {% elif screen == 'planting' %}
+                                            <i data-feather="sun" class="me-1 small"></i>
+                                        {% endif %}
+                                        {{ screen_name }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </nav>
+                        {% if is_development %}
+                            <a href="/admin/column-usage" class="btn btn-outline-info btn-sm">
+                                <i data-feather="grid" class="me-1"></i>
+                                Edit Columns
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
