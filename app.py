@@ -351,8 +351,7 @@ def species_detail(botanical_name, screen_type='identification'):
         }
         
         # Check if running in development (only show in actual development workspace, not deployed)
-        is_development = (os.environ.get('REPL_ID') is not None and 
-                         os.environ.get('REPL_DEPLOYMENT_URL') is None)
+        is_development = (os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production')
         
         return render_template('species_detail.html', 
                              species=species, 
@@ -692,8 +691,7 @@ def admin_column_usage():
         ordered_columns = [(col, column_usage[col]) for col in all_columns]
         
         # Check if running in development (only show in actual development workspace, not deployed)
-        is_development = (os.environ.get('REPL_ID') is not None and 
-                         os.environ.get('REPL_DEPLOYMENT_URL') is None)
+        is_development = (os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production')
         
         return render_template('admin_column_usage.html', 
                              column_usage=dict(ordered_columns),
@@ -706,14 +704,13 @@ def admin_column_usage():
         flash(f'Error analyzing column usage: {str(e)}', 'error')
         return render_template('admin_column_usage.html', 
                              column_usage={}, 
-                             is_development=(os.environ.get('REPL_ID') is not None and 
-                                           os.environ.get('REPL_DEPLOYMENT_URL') is None))
+                             is_development=(os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production'))
 
 @app.route('/admin/toggle-column', methods=['POST'])
 def toggle_column():
     """Toggle column usage for a specific screen (development only)"""
     # Only allow in development environment (not deployed)
-    if not (os.environ.get('REPL_ID') and not os.environ.get('REPL_DEPLOYMENT_URL')):
+    if os.environ.get('REPLIT_ENVIRONMENT', 'development') == 'production':
         return {"error": "Not available in production"}, 403
     
     try:
