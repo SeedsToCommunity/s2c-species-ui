@@ -132,19 +132,20 @@
                     <div class="col-lg-6 mb-2">
                         <div class="card h-100">
                             <div class="card-body py-2 px-3">
-                                <h6 class="card-title mb-1 text-primary">
-                                    {{ column.label }}
-                                </h6>
-                                <div class="field-value">
-                                    {% if column.type == 'link' and field_value %}
+                                {% if column.type == 'link' and field_value %}
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted me-2">{{ column.label }}:</small>
                                         <a href="{{ field_value }}" target="_blank" class="btn btn-outline-primary btn-sm">
                                             <i data-feather="external-link" class="me-1"></i>
                                             View Pictures
                                         </a>
-                                    {% else %}
-                                        <p class="card-text mb-0">{{ field_value }}</p>
-                                    {% endif %}
-                                </div>
+                                    </div>
+                                {% else %}
+                                    <div>
+                                        <small class="text-muted">{{ column.label }}:</small>
+                                        <span class="text-body-secondary ms-1">{{ field_value }}</span>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -293,38 +294,44 @@
                                        (column.field !== 'special_collect' || fieldValue === 'TRUE');
                 if (shouldShowField) {
                     hasData = true;
-                    content += `
-                        <div class="col-lg-6 mb-2">
-                            <div class="card h-100">
-                                <div class="card-body py-2 px-3">
-                                    <h6 class="card-title mb-1 text-primary">
-                                        ${column.label}
-                                    </h6>
-                                    <div class="field-value">
-                    `;
-                    
                     if (column.type === 'link' && fieldValue) {
                         content += `
-                            <a href="${fieldValue}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i data-feather="external-link" class="me-1"></i>
-                                View Pictures
-                            </a>
+                            <div class="col-lg-6 mb-2">
+                                <div class="card h-100">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted me-2">${column.label}:</small>
+                                            <a href="${fieldValue}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                <i data-feather="external-link" class="me-1"></i>
+                                                View Pictures
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         `;
                     } else {
                         // Handle special formatting for specific field types
                         let displayValue = fieldValue;
                         if (column.field === 'special_collect' && (fieldValue === 'TRUE' || fieldValue === true)) {
-                            displayValue = '<span class="badge bg-success">Requested Species</span>';
+                            displayValue = '<span class="badge bg-success ms-1">Requested Species</span>';
+                        } else {
+                            displayValue = `<span class="text-body-secondary ms-1">${displayValue}</span>`;
                         }
-                        content += `<p class="card-text mb-0">${displayValue}</p>`;
-                    }
-                    
-                    content += `
+                        
+                        content += `
+                            <div class="col-lg-6 mb-2">
+                                <div class="card h-100">
+                                    <div class="card-body py-2 px-3">
+                                        <div>
+                                            <small class="text-muted">${column.label}:</small>
+                                            ${displayValue}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 }
             });
             

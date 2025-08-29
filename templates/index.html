@@ -251,21 +251,21 @@
                                                             <div class="row mb-3">
                                                         {% endif %}
                                                         <div class="col-6 mb-2">
-                                                            <small class="text-muted">{{ column.display_name }}:</small><br>
-                                                            <span class="badge bg-{{ column.badge_color }}">{{ field_value }}</span>
+                                                            <small class="text-muted">{{ column.display_name }}:</small>
+                                                            <span class="badge bg-{{ column.badge_color }} ms-1">{{ field_value }}</span>
                                                         </div>
                                                         {% if loop.last or (loop.index0 < config.main_page_columns|length - 1 and config.main_page_columns[loop.index0+1].type != 'badge') %}
                                                             </div>
                                                         {% endif %}
                                                     {% elif column.type == 'text' %}
                                                         <div class="mb-1">
-                                                            <small class="text-muted">{{ column.display_name }}:</small><br>
-                                                            <span class="text-body-secondary">{{ field_value }}</span>
+                                                            <small class="text-muted">{{ column.display_name }}:</small>
+                                                            <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                                         </div>
                                                     {% elif column.type == 'text_small' %}
                                                         <div class="mb-1">
-                                                            <small class="text-muted">{{ column.display_name }}:</small><br>
-                                                            <span class="text-body-secondary small">{{ field_value }}</span>
+                                                            <small class="text-muted">{{ column.display_name }}:</small>
+                                                            <span class="text-body-secondary small ms-1">{{ field_value }}</span>
                                                         </div>
                                                     {% elif column.type == 'link' %}
                                                         <div class="mt-3">
