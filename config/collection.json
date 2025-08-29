@@ -1,0 +1,16 @@
+{
+  "screen_name": "Seed Collection",
+  "description": "Data relevant to collecting seeds from the plant",
+  "columns": [
+    {
+      "field": "start_seed_watch",
+      "label": "Start Seed Watch",
+      "type": "text"
+    },
+    {
+      "field": "special_collect",
+      "label": "Special Collect",
+      "width": "auto"
+    }
+  ]
+}
