@@ -334,7 +334,7 @@ def species_detail(botanical_name, screen_type='identification'):
             return abort(404)
         
         # Valid screen types
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         if screen_type not in valid_screens:
             return abort(404)
         
@@ -378,7 +378,7 @@ def api_species_screen(botanical_name, screen_type):
             return {"error": "Species not found"}, 404
         
         # Valid screen types
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         if screen_type not in valid_screens:
             return {"error": "Invalid screen type"}, 404
         
@@ -466,7 +466,7 @@ def admin_data_columns():
         
         # Load all screen configurations
         screen_configs = {}
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         for screen in valid_screens:
             screen_configs[screen] = load_screen_config(screen)
         
@@ -646,7 +646,7 @@ def admin_column_usage():
         
         # Load all screen configurations
         screen_configs = {}
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         for screen in valid_screens:
             screen_configs[screen] = load_screen_config(screen)
         
@@ -661,6 +661,7 @@ def admin_column_usage():
                 'processing': False,
                 'storage': False,
                 'stratification': False,
+                'planting': False,
                 'total_uses': 0
             }
             
@@ -745,7 +746,7 @@ def toggle_column():
         
         else:
             # Handle species screen configurations
-            valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+            valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
             if screen_name not in valid_screens:
                 return {"error": f"Invalid screen name: {screen_name}"}, 400
             

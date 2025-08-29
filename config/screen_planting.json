@@ -1,0 +1,16 @@
+{
+  "screen_name": "Planting",
+  "description": "Information about planting and growing the species",
+  "columns": [
+    {
+      "field": "light",
+      "label": "Light Requirements",
+      "type": "text"
+    },
+    {
+      "field": "moisture",
+      "label": "Moisture Requirements", 
+      "type": "text"
+    }
+  ]
+}
