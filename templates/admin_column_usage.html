@@ -281,6 +281,7 @@
                         <th class="usage-indicator">Processing</th>
                         <th class="usage-indicator">Storage</th>
                         <th class="usage-indicator">Stratification</th>
+                        <th class="usage-indicator">Planting</th>
                         <th class="usage-indicator">Total Uses</th>
                         <th>Sample Data</th>
                         <th>Fill %</th>
@@ -335,6 +336,14 @@
                         <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="stratification" data-enabled="{{ 'true' if usage.stratification else 'false' }}"{% endif %}>
                             {% if usage.stratification %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.planting else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="planting" data-enabled="{{ 'true' if usage.planting else 'false' }}"{% endif %}>
+                            {% if usage.planting %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
