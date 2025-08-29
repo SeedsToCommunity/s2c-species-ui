@@ -106,6 +106,7 @@
         </div>
 
         <!-- Announcement (if present) -->
+        <div id="announcement-container">
         {% if screen_config.announcement %}
         <div class="row mb-4">
             <div class="col-12">
@@ -121,6 +122,7 @@
             </div>
         </div>
         {% endif %}
+        </div>
 
         <!-- Species Data Fields -->
         <div class="row" id="species-content">
@@ -232,6 +234,9 @@
                 document.getElementById('screen-title').textContent = data.screen_config.screen_name;
                 document.getElementById('screen-description').textContent = data.screen_config.description || '';
                 
+                // Update announcement
+                updateAnnouncement(data.screen_config);
+                
                 // Update content
                 updateScreenContent(data.species, data.screen_config);
                 
@@ -249,6 +254,30 @@
                     </div>
                 `;
                 feather.replace();
+            }
+        }
+        
+        // Function to update announcement
+        function updateAnnouncement(screenConfig) {
+            const announcementContainer = document.getElementById('announcement-container');
+            if (screenConfig.announcement) {
+                announcementContainer.innerHTML = `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-warning border-warning">
+                                <div class="d-flex align-items-start">
+                                    <i data-feather="alert-triangle" class="me-2 mt-1 flex-shrink-0" style="color: #856404;"></i>
+                                    <div>
+                                        <strong>Important Notice:</strong><br>
+                                        ${screenConfig.announcement}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                announcementContainer.innerHTML = '';
             }
         }
         
