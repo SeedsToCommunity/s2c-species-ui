@@ -774,7 +774,7 @@ def toggle_column():
             
             # Save back to file
             import json
-            with open(f'config/{screen_name}.json', 'w') as f:
+            with open(f'config/screen_{screen_name}.json', 'w') as f:
                 json.dump(screen_config, f, indent=2)
         
         # Clear any cached configurations (if you have them)

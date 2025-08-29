@@ -9,12 +9,12 @@
     },
     {
       "field": "moisture",
-      "label": "Moisture Requirements", 
+      "label": "Moisture Requirements",
       "type": "text"
     },
     {
-      "field": "botanical_name",
-      "label": "Botanical Name",
+      "field": "common_name",
+      "label": "Common Name",
       "width": "auto"
     }
   ]

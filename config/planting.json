@@ -16,6 +16,11 @@
       "field": "botanical_name",
       "label": "Botanical Name",
       "width": "auto"
+    },
+    {
+      "field": "common_name",
+      "label": "Common Name",
+      "width": "auto"
     }
   ]
 }
