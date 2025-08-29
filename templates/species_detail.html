@@ -232,11 +232,9 @@
             
             screenConfig.columns.forEach(column => {
                 const fieldValue = species[column.field];
-                // Show all fields for boolean/status columns, or non-empty values for other fields
-                const shouldShowField = fieldValue !== null && fieldValue !== undefined && 
-                                       (fieldValue !== '' || column.field.includes('collect') || 
-                                        column.field.includes('code') || column.field.includes('light') || 
-                                        column.field.includes('moisture'));
+                // For special_collect, only show TRUE values; for other fields, show non-empty values
+                const shouldShowField = fieldValue !== null && fieldValue !== undefined && fieldValue !== '' &&
+                                       (column.field !== 'special_collect' || fieldValue === 'TRUE');
                 if (shouldShowField) {
                     hasData = true;
                     content += `
@@ -259,12 +257,8 @@
                     } else {
                         // Handle special formatting for specific field types
                         let displayValue = fieldValue;
-                        if (column.field === 'special_collect') {
-                            if (fieldValue === 'TRUE' || fieldValue === true) {
-                                displayValue = '<span class="badge bg-warning text-dark">Special Collection Required</span>';
-                            } else if (fieldValue === '' || fieldValue === 'FALSE' || fieldValue === false) {
-                                displayValue = '<span class="badge bg-success">Standard Collection</span>';
-                            }
+                        if (column.field === 'special_collect' && (fieldValue === 'TRUE' || fieldValue === true)) {
+                            displayValue = '<span class="badge bg-warning text-dark">Special Collection Required</span>';
                         }
                         content += `<p class="card-text mb-0">${displayValue}</p>`;
                     }
