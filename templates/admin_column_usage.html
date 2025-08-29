@@ -58,6 +58,39 @@
             width: 80px;
         }
         
+        .usage-indicator.interactive {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .usage-indicator.interactive:hover {
+            background-color: #e9ecef;
+            transform: scale(1.05);
+        }
+        
+        .usage-indicator.updating {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .development-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .static-mode-badge {
+            background: #6c757d;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
         .usage-yes {
             background-color: #d1ecf1;
             color: #0c5460;
@@ -138,8 +171,19 @@
                 <h1 class="h3 mb-1">
                     <i data-feather="grid" class="me-2"></i>
                     Column Usage Grid
+                    {% if is_development %}
+                        <span class="development-badge ms-3">Interactive Mode</span>
+                    {% else %}
+                        <span class="static-mode-badge ms-3">View Only</span>
+                    {% endif %}
                 </h1>
-                <p class="text-muted mb-0">See which columns are displayed on which pages</p>
+                <p class="text-muted mb-0">
+                    {% if is_development %}
+                        Click any cell to toggle column display on that page
+                    {% else %}
+                        View which columns are displayed on which pages
+                    {% endif %}
+                </p>
             </div>
             <a href="/admin" class="back-link">
                 <i data-feather="arrow-left" class="me-1"></i>
@@ -242,42 +286,48 @@
                         <td class="column-name">
                             <strong>{{ column_name }}</strong>
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.main_page else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.main_page else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="main_page" data-enabled="{{ 'true' if usage.main_page else 'false' }}"{% endif %}>
                             {% if usage.main_page %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.identification else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.identification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="identification" data-enabled="{{ 'true' if usage.identification else 'false' }}"{% endif %}>
                             {% if usage.identification %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.collection else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.collection else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="collection" data-enabled="{{ 'true' if usage.collection else 'false' }}"{% endif %}>
                             {% if usage.collection %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.processing else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.processing else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="processing" data-enabled="{{ 'true' if usage.processing else 'false' }}"{% endif %}>
                             {% if usage.processing %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.storage else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.storage else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="storage" data-enabled="{{ 'true' if usage.storage else 'false' }}"{% endif %}>
                             {% if usage.storage %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
                                 <i data-feather="minus" class="text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }}">
+                        <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                            {% if is_development %}data-column="{{ column_name }}" data-screen="stratification" data-enabled="{{ 'true' if usage.stratification else 'false' }}"{% endif %}>
                             {% if usage.stratification %}
                                 <i data-feather="check" class="text-success"></i>
                             {% else %}
@@ -333,6 +383,100 @@
                 }
             });
         }
+
+        // Interactive functionality for development mode
+        {% if is_development %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const interactiveCells = document.querySelectorAll('.usage-indicator.interactive');
+            
+            interactiveCells.forEach(cell => {
+                cell.addEventListener('click', async function() {
+                    const column = this.getAttribute('data-column');
+                    const screen = this.getAttribute('data-screen');
+                    const currentlyEnabled = this.getAttribute('data-enabled') === 'true';
+                    const newEnabled = !currentlyEnabled;
+                    
+                    // Visual feedback - show updating state
+                    this.classList.add('updating');
+                    
+                    try {
+                        const response = await fetch('/admin/toggle-column', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                column_name: column,
+                                screen_name: screen,
+                                enabled: newEnabled
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            // Update visual state
+                            this.setAttribute('data-enabled', newEnabled.toString());
+                            
+                            if (newEnabled) {
+                                this.className = this.className.replace('usage-no', 'usage-yes');
+                                this.innerHTML = '<i data-feather="check" class="text-success"></i>';
+                            } else {
+                                this.className = this.className.replace('usage-yes', 'usage-no');
+                                this.innerHTML = '<i data-feather="minus" class="text-muted"></i>';
+                            }
+                            
+                            // Update total uses count for this row
+                            const row = this.closest('tr');
+                            const totalCell = row.querySelector('.total-uses');
+                            const usageCells = row.querySelectorAll('.usage-indicator.interactive');
+                            let totalUses = 0;
+                            usageCells.forEach(cell => {
+                                if (cell.getAttribute('data-enabled') === 'true') {
+                                    totalUses++;
+                                }
+                            });
+                            totalCell.innerHTML = '<strong>' + totalUses + '</strong>';
+                            
+                            // Re-render feather icons
+                            feather.replace();
+                            
+                            // Show success feedback
+                            showNotification('Configuration updated! Click any species tab to see changes.', 'success');
+                        } else {
+                            throw new Error(result.error || 'Unknown error');
+                        }
+                    } catch (error) {
+                        console.error('Error toggling column:', error);
+                        showNotification('Error updating configuration: ' + error.message, 'error');
+                    } finally {
+                        // Remove updating state
+                        this.classList.remove('updating');
+                    }
+                });
+            });
+        });
+        
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        {% endif %}
     </script>
 </body>
 </html>

@@ -685,15 +685,108 @@ def admin_column_usage():
         # Keep original column order from CSV file (preserves data structure)
         ordered_columns = [(col, column_usage[col]) for col in all_columns]
         
+        # Check if running in development (Replit environment)
+        is_development = os.environ.get('REPL_ID') is not None
+        
         return render_template('admin_column_usage.html', 
                              column_usage=dict(ordered_columns),
                              total_columns=len(all_columns),
-                             total_species=len(df))
+                             total_species=len(df),
+                             is_development=is_development)
         
     except Exception as e:
         app.logger.error(f"Error analyzing column usage: {str(e)}")
         flash(f'Error analyzing column usage: {str(e)}', 'error')
-        return render_template('admin_column_usage.html', column_usage={})
+        return render_template('admin_column_usage.html', 
+                             column_usage={}, 
+                             is_development=os.environ.get('REPL_ID') is not None)
+
+@app.route('/admin/toggle-column', methods=['POST'])
+def toggle_column():
+    """Toggle column usage for a specific screen (development only)"""
+    # Only allow in development environment
+    if not os.environ.get('REPL_ID'):
+        return {"error": "Not available in production"}, 403
+    
+    try:
+        data = request.get_json()
+        column_name = data.get('column_name')
+        screen_name = data.get('screen_name')
+        enabled = data.get('enabled', False)
+        
+        if not column_name or not screen_name:
+            return {"error": "Missing column_name or screen_name"}, 400
+        
+        # Handle main page vs screen configurations
+        if screen_name == 'main_page':
+            # Load main page display config
+            display_config = load_display_config()
+            columns = display_config.get('main_page_columns', [])
+            
+            if enabled:
+                # Add column if not present
+                if not any(c.get('field') == column_name for c in columns):
+                    columns.append({
+                        "field": column_name,
+                        "label": column_name.replace('_', ' ').title(),
+                        "width": "auto"
+                    })
+            else:
+                # Remove column if present
+                columns = [c for c in columns if c.get('field') != column_name]
+            
+            # Update config
+            display_config['main_page_columns'] = columns
+            
+            # Save back to file
+            import json
+            with open('config/display_columns.json', 'w') as f:
+                json.dump(display_config, f, indent=2)
+        
+        else:
+            # Handle species screen configurations
+            valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+            if screen_name not in valid_screens:
+                return {"error": f"Invalid screen name: {screen_name}"}, 400
+            
+            # Load screen config
+            screen_config = load_screen_config(screen_name)
+            columns = screen_config.get('columns', [])
+            
+            if enabled:
+                # Add column if not present
+                if not any(c.get('field') == column_name for c in columns):
+                    columns.append({
+                        "field": column_name,
+                        "label": column_name.replace('_', ' ').title(),
+                        "width": "auto"
+                    })
+            else:
+                # Remove column if present (but ensure at least one remains)
+                if len([c for c in columns if c.get('field') != column_name]) > 0:
+                    columns = [c for c in columns if c.get('field') != column_name]
+                else:
+                    return {"error": "Cannot remove last column from screen"}, 400
+            
+            # Update config
+            screen_config['columns'] = columns
+            
+            # Save back to file
+            import json
+            with open(f'config/{screen_name}.json', 'w') as f:
+                json.dump(screen_config, f, indent=2)
+        
+        # Clear any cached configurations (if you have them)
+        global _cached_display_config, _cached_screen_configs
+        _cached_display_config = None
+        if '_cached_screen_configs' in globals():
+            _cached_screen_configs.clear()
+        
+        return {"success": True, "message": "Column configuration updated"}
+        
+    except Exception as e:
+        app.logger.error(f"Error toggling column: {str(e)}")
+        return {"error": str(e)}, 500
 
 @app.route('/admin/issues')
 def admin_issues():
