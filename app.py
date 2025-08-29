@@ -3,8 +3,9 @@ import pandas as pd
 import logging
 import json
 import requests
+from datetime import datetime
 from io import StringIO
-from flask import Flask, render_template, flash, request, url_for, abort
+from flask import Flask, render_template, flash, request, url_for, abort, redirect
 from urllib.parse import quote, unquote
 
 # Configure logging for debugging
@@ -486,6 +487,92 @@ def api_data_columns():
     except Exception as e:
         app.logger.error(f"Error in API column data: {str(e)}")
         return {"error": str(e)}, 500
+
+@app.route('/report-issue/<path:botanical_name>', methods=['GET', 'POST'])
+def report_issue(botanical_name):
+    """Report an issue with species data"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            issue_type = request.form.get('issue_type', '')
+            description = request.form.get('description', '')
+            user_email = request.form.get('user_email', 'anonymous')
+            
+            # Create issue record
+            issue_data = {
+                'timestamp': datetime.now().isoformat(),
+                'botanical_name': botanical_name,
+                'issue_type': issue_type,
+                'description': description,
+                'user_email': user_email,
+                'status': 'open'
+            }
+            
+            # Append to issues file
+            import json
+            import os
+            issues_file = 'reported_issues.json'
+            
+            # Load existing issues or create new list
+            if os.path.exists(issues_file):
+                with open(issues_file, 'r') as f:
+                    issues = json.load(f)
+            else:
+                issues = []
+            
+            # Add new issue
+            issues.append(issue_data)
+            
+            # Save back to file
+            with open(issues_file, 'w') as f:
+                json.dump(issues, f, indent=2)
+            
+            flash('Thank you! Your issue report has been submitted.', 'success')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+            
+        except Exception as e:
+            app.logger.error(f"Error submitting issue report: {str(e)}")
+            flash('Error submitting report. Please try again.', 'error')
+    
+    # Load species data for display
+    try:
+        df = load_plant_data()
+        species = get_species_by_name(df, botanical_name)
+        if not species:
+            flash('Species not found', 'error')
+            return redirect(url_for('index'))
+            
+        return render_template('report_issue.html', 
+                             species=species, 
+                             botanical_name=botanical_name)
+    except Exception as e:
+        app.logger.error(f"Error loading species for issue report: {str(e)}")
+        flash('Error loading species data', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/admin/issues')
+def admin_issues():
+    """View all reported issues"""
+    try:
+        import json
+        import os
+        issues_file = 'reported_issues.json'
+        
+        if os.path.exists(issues_file):
+            with open(issues_file, 'r') as f:
+                issues = json.load(f)
+        else:
+            issues = []
+        
+        # Sort by timestamp, newest first
+        issues.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        return render_template('admin_issues.html', issues=issues)
+        
+    except Exception as e:
+        app.logger.error(f"Error loading issues: {str(e)}")
+        flash('Error loading issues', 'error')
+        return render_template('admin_issues.html', issues=[])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

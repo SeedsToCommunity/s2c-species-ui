@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Reports - Plant Species Directory</title>
+    <link href="https://repls.us/cdn/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .issue-card {
+            transition: all 0.2s ease;
+            border-left: 4px solid #dee2e6;
+        }
+        .issue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .issue-card.urgent {
+            border-left-color: #dc3545;
+        }
+        .issue-card.normal {
+            border-left-color: #ffc107;
+        }
+        .issue-date {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .issue-type-badge {
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="text-dark mb-2">
+                            <i data-feather="alert-triangle" class="me-2"></i>
+                            Issue Reports
+                        </h1>
+                        <p class="text-muted mb-0">Community-reported data issues and corrections</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('admin_data_columns') }}" class="btn btn-outline-primary me-2">
+                            <i data-feather="database" class="me-1"></i>
+                            Manage Columns
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i data-feather="arrow-left" class="me-1"></i>
+                            Back to App
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ issues|length }}</h3>
+                        <small>Total Reports</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ issues|selectattr('status', 'equalto', 'open')|list|length }}</h3>
+                        <small>Open Issues</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ issues|selectattr('status', 'equalto', 'resolved')|list|length }}</h3>
+                        <small>Resolved</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ (issues|selectattr('user_email', 'ne', 'anonymous')|list|length) }}</h3>
+                        <small>With Contact Info</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues List -->
+        {% if issues %}
+        <div class="row">
+            {% for issue in issues %}
+            <div class="col-12 mb-3">
+                <div class="card issue-card {{ 'urgent' if issue.issue_type in ['incorrect_data', 'wrong_identification'] else 'normal' }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-3">{{ issue.botanical_name }}</h6>
+                                    <span class="badge bg-{{ 'danger' if issue.issue_type in ['incorrect_data', 'wrong_identification'] else 'warning' }} issue-type-badge">
+                                        {{ issue.issue_type.replace('_', ' ').title() }}
+                                    </span>
+                                    <span class="badge bg-{{ 'success' if issue.status == 'resolved' else 'secondary' }} issue-type-badge ms-2">
+                                        {{ issue.status.title() }}
+                                    </span>
+                                </div>
+                                <p class="mb-2">{{ issue.description }}</p>
+                                <div class="issue-date">
+                                    <i data-feather="clock" style="width: 14px; height: 14px;" class="me-1"></i>
+                                    Reported: {{ issue.timestamp[:19].replace('T', ' ') }}
+                                    {% if issue.user_email != 'anonymous' %}
+                                    <span class="ms-3">
+                                        <i data-feather="mail" style="width: 14px; height: 14px;" class="me-1"></i>
+                                        {{ issue.user_email }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <a href="{{ url_for('species_detail', botanical_name=issue.botanical_name) }}" 
+                                   class="btn btn-outline-primary btn-sm mb-2">
+                                    <i data-feather="eye" class="me-1"></i>
+                                    View Species
+                                </a>
+                                <br>
+                                <a href="{{ url_for('admin_data_columns') }}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i data-feather="edit" class="me-1"></i>
+                                    Edit Data
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Issues -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="check-circle" style="width: 64px; height: 64px;" class="text-success mb-3"></i>
+                        <h5 class="text-muted">No Issues Reported</h5>
+                        <p class="text-muted">Great! No one has reported any data issues yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Instructions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="info" class="me-2"></i>
+                            Managing Issue Reports
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">How Users Report Issues</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Users click "Report Issue" on species pages</li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Simple form captures issue details</li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Data stored in <code>reported_issues.json</code></li>
+                                    <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>No external services required</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-info">File Location</h6>
+                                <p class="text-muted mb-2">Issue reports are stored in:</p>
+                                <code class="bg-light p-2 d-block">reported_issues.json</code>
+                                <p class="text-muted mt-2 mb-0">
+                                    You can download this file from the file manager or access it programmatically 
+                                    to integrate with your data management workflow.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

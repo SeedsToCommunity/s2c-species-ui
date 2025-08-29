@@ -43,10 +43,16 @@
                 {% endfor %}
                 {% set query_string = '?' + filter_params|join('&') if filter_params else '' %}
                 
-                <a href="{{ url_for('index') }}{{ query_string }}" class="btn btn-outline-secondary">
-                    <i data-feather="arrow-left" class="me-1"></i>
-                    Back to Filter
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('index') }}{{ query_string }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Filter
+                    </a>
+                    <a href="{{ url_for('report_issue', botanical_name=botanical_name) }}" class="btn btn-outline-warning">
+                        <i data-feather="flag" class="me-1"></i>
+                        Report Issue
+                    </a>
+                </div>
             </div>
         </div>
 

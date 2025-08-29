@@ -326,9 +326,13 @@
                             <i data-feather="info" class="me-1"></i>
                             Displaying {{ plants|length if plants else 0 }} species
                         </p>
-                        <a href="{{ url_for('admin_data_columns') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ url_for('admin_data_columns') }}" class="btn btn-outline-secondary btn-sm me-2">
                             <i data-feather="database" class="me-1"></i>
                             Manage Columns
+                        </a>
+                        <a href="{{ url_for('admin_issues') }}" class="btn btn-outline-warning btn-sm">
+                            <i data-feather="flag" class="me-1"></i>
+                            View Issues
                         </a>
                     </div>
                 </div>
