@@ -169,6 +169,41 @@ def get_unique_values(df, column):
     
     return sorted(list(values))
 
+def get_unique_values_ordered(df, column, preferred_order):
+    """Get unique non-empty values from a column with custom ordering"""
+    if column not in df.columns:
+        return []
+    
+    values = set()
+    for val in df[column].dropna():
+        if pd.isna(val) or val == '':
+            continue
+        # Handle CSV values (comma-separated)
+        if ',' in str(val):
+            for item in str(val).split(','):
+                clean_item = item.strip()
+                if clean_item:
+                    values.add(clean_item)
+        else:
+            clean_val = str(val).strip()
+            if clean_val:
+                values.add(clean_val)
+    
+    # Order according to preferred_order, then alphabetically for any extras
+    unique_values = list(values)
+    ordered_values = []
+    
+    # Add values in preferred order first
+    for preferred_val in preferred_order:
+        if preferred_val in unique_values:
+            ordered_values.append(preferred_val)
+            unique_values.remove(preferred_val)
+    
+    # Add remaining values alphabetically
+    ordered_values.extend(sorted(unique_values))
+    
+    return ordered_values
+
 def load_screen_config(screen_type):
     """Load screen configuration for species detail view"""
     try:
@@ -264,7 +299,7 @@ def index():
         filter_options = {
             'start_seed_watch': get_unique_values(df, 'start_seed_watch'),
             'germination_code': get_unique_values(df, 'germination_code'),
-            'light': get_unique_values(df, 'light'),
+            'light': get_unique_values_ordered(df, 'light', ['Sn', 'P', 'Sh']),
             'moisture': get_unique_values(df, 'moisture'),
             'total_count': len(df)
         }
