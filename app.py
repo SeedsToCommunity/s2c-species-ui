@@ -423,6 +423,12 @@ def admin_dashboard():
             'url': '/api/columns',
             'description': 'JSON API endpoint for programmatic access to column data',
             'icon': 'code'
+        },
+        {
+            'title': 'Column Usage Grid',
+            'url': '/admin/column-usage',
+            'description': 'Grid view showing which columns are used on which pages',
+            'icon': 'grid'
         }
     ]
     
@@ -621,6 +627,73 @@ def report_issue(botanical_name):
         app.logger.error(f"Error loading species for issue report: {str(e)}")
         flash('Error loading species data', 'error')
         return redirect(url_for('index'))
+
+@app.route('/admin/column-usage')
+def admin_column_usage():
+    """Admin page showing column usage across all pages in a grid format"""
+    try:
+        # Load plant data to get all available columns
+        df = load_plant_data()
+        if df.empty:
+            flash('No plant data available to analyze columns', 'error')
+            return render_template('admin_column_usage.html', column_usage={})
+        
+        # Get all column names from the data
+        all_columns = list(df.columns)
+        
+        # Load current display configuration
+        display_config = load_display_config()
+        
+        # Load all screen configurations
+        screen_configs = {}
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification']
+        for screen in valid_screens:
+            screen_configs[screen] = load_screen_config(screen)
+        
+        # Build usage grid
+        column_usage = {}
+        for col in all_columns:
+            usage = {
+                'column_name': col,
+                'main_page': False,
+                'identification': False,
+                'collection': False,
+                'processing': False,
+                'storage': False,
+                'stratification': False,
+                'total_uses': 0
+            }
+            
+            # Check main page usage
+            if any(c.get('field') == col for c in display_config.get('main_page_columns', [])):
+                usage['main_page'] = True
+                usage['total_uses'] += 1
+            
+            # Check each screen usage
+            for screen_name, config in screen_configs.items():
+                if any(c.get('field') == col for c in config.get('columns', [])):
+                    usage[screen_name] = True
+                    usage['total_uses'] += 1
+            
+            # Get some sample data for context
+            non_empty_values = df[col].dropna()
+            usage['sample_data'] = non_empty_values.head(2).tolist() if len(non_empty_values) > 0 else []
+            usage['fill_percentage'] = round((len(non_empty_values) / len(df) * 100), 1) if len(df) > 0 else 0
+            
+            column_usage[col] = usage
+        
+        # Sort columns by usage (most used first, then alphabetically)
+        sorted_columns = sorted(column_usage.items(), key=lambda x: (-x[1]['total_uses'], x[0]))
+        
+        return render_template('admin_column_usage.html', 
+                             column_usage=dict(sorted_columns),
+                             total_columns=len(all_columns),
+                             total_species=len(df))
+        
+    except Exception as e:
+        app.logger.error(f"Error analyzing column usage: {str(e)}")
+        flash(f'Error analyzing column usage: {str(e)}', 'error')
+        return render_template('admin_column_usage.html', column_usage={})
 
 @app.route('/admin/issues')
 def admin_issues():

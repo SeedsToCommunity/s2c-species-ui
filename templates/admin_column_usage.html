@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column Usage Grid - Plant Species Directory</title>
+    <link href="https://replitcdn.com/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <style>
+        :root {
+            --bs-primary: #28a745;
+            --bs-primary-rgb: 40, 167, 69;
+        }
+        
+        body {
+            background: #f8f9fa;
+        }
+        
+        .usage-grid {
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .usage-table {
+            background: white;
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+        
+        .usage-table thead th {
+            background: var(--bs-primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            white-space: nowrap;
+            vertical-align: middle;
+            text-align: center;
+        }
+        
+        .usage-table td {
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+        
+        .column-name {
+            font-family: monospace;
+            font-weight: 600;
+            background: #f8f9fa;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            border-right: 2px solid #dee2e6;
+            min-width: 200px;
+        }
+        
+        .usage-indicator {
+            text-align: center;
+            width: 80px;
+        }
+        
+        .usage-yes {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .usage-no {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .total-uses {
+            font-weight: 600;
+            text-align: center;
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .sample-data {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-style: italic;
+            max-width: 200px;
+        }
+        
+        .fill-percentage {
+            font-size: 0.8rem;
+            color: #495057;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, var(--bs-primary), #20c997);
+            color: white;
+            border: none;
+        }
+        
+        .legend {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 0.5rem;
+        }
+        
+        .back-link {
+            color: #6c757d;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            color: var(--bs-primary);
+        }
+        
+        .filter-input {
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i data-feather="grid" class="me-2"></i>
+                    Column Usage Grid
+                </h1>
+                <p class="text-muted mb-0">See which columns are displayed on which pages</p>
+            </div>
+            <a href="/admin" class="back-link">
+                <i data-feather="arrow-left" class="me-1"></i>
+                Back to Admin Dashboard
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if column_usage %}
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">{{ total_columns }}</h3>
+                        <p class="mb-0">Total Columns</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">{{ column_usage.values() | selectattr('total_uses', 'greaterthan', 0) | list | length }}</h3>
+                        <p class="mb-0">Used Columns</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">{{ column_usage.values() | selectattr('total_uses', 'equalto', 0) | list | length }}</h3>
+                        <p class="mb-0">Unused Columns</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h6 class="mb-3">
+                <i data-feather="info" class="me-2"></i>
+                Legend
+            </h6>
+            <div class="legend-item">
+                <div class="legend-color usage-yes"></div>
+                <span>Column is displayed on this page</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color usage-no"></div>
+                <span>Column is not displayed</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color total-uses"></div>
+                <span>Total usage count</span>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <input type="text" 
+                       id="columnFilter" 
+                       class="form-control filter-input" 
+                       placeholder="Filter columns by name..."
+                       onkeyup="filterColumns()">
+            </div>
+        </div>
+
+        <!-- Usage Grid -->
+        <div class="usage-grid">
+            <table class="table usage-table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th class="column-name">Column Name</th>
+                        <th class="usage-indicator">Main Page</th>
+                        <th class="usage-indicator">Identification</th>
+                        <th class="usage-indicator">Collection</th>
+                        <th class="usage-indicator">Processing</th>
+                        <th class="usage-indicator">Storage</th>
+                        <th class="usage-indicator">Stratification</th>
+                        <th class="usage-indicator">Total Uses</th>
+                        <th>Sample Data</th>
+                        <th>Fill %</th>
+                    </tr>
+                </thead>
+                <tbody id="columnTableBody">
+                    {% for column_name, usage in column_usage.items() %}
+                    <tr class="column-row" data-column-name="{{ column_name.lower() }}">
+                        <td class="column-name">
+                            <strong>{{ column_name }}</strong>
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.main_page else 'usage-no' }}">
+                            {% if usage.main_page %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.identification else 'usage-no' }}">
+                            {% if usage.identification %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.collection else 'usage-no' }}">
+                            {% if usage.collection %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.processing else 'usage-no' }}">
+                            {% if usage.processing %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.storage else 'usage-no' }}">
+                            {% if usage.storage %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }}">
+                            {% if usage.stratification %}
+                                <i data-feather="check" class="text-success"></i>
+                            {% else %}
+                                <i data-feather="minus" class="text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="total-uses">
+                            <strong>{{ usage.total_uses }}</strong>
+                        </td>
+                        <td class="sample-data">
+                            {% if usage.sample_data %}
+                                {% for sample in usage.sample_data %}
+                                    <div>{{ sample[:50] }}{% if sample|length > 50 %}...{% endif %}</div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No data</span>
+                            {% endif %}
+                        </td>
+                        <td class="fill-percentage">
+                            {{ usage.fill_percentage }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i data-feather="info" class="me-2"></i>
+            No column usage data available. Please check your plant data source.
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://replitcdn.com/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+
+        function filterColumns() {
+            const input = document.getElementById('columnFilter');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.column-row');
+
+            rows.forEach(row => {
+                const columnName = row.getAttribute('data-column-name');
+                if (columnName.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
