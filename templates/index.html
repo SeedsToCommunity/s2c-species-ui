@@ -385,6 +385,7 @@
                 })
                 .then(response => response.text())
                 .then(html => {
+                    console.log('AJAX response received, length:', html.length);
                     // Parse the new HTML
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
@@ -392,8 +393,11 @@
                     // Update the entire results container (includes empty state)
                     const currentResultsContainer = document.getElementById('results-container');
                     const newResultsContainer = newDoc.getElementById('results-container');
+                    console.log('Current container found:', !!currentResultsContainer);
+                    console.log('New container found:', !!newResultsContainer);
                     if (currentResultsContainer && newResultsContainer) {
                         currentResultsContainer.innerHTML = newResultsContainer.innerHTML;
+                        console.log('Updated results container');
                     }
                     
                     // Update the footer count
