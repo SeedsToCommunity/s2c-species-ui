@@ -396,7 +396,7 @@ def api_species_screen(botanical_name, screen_type):
         app.logger.error(f"Error in API endpoint: {str(e)}")
         return {"error": str(e)}, 500
 
-@app.route('/admin/refresh-data')
+@app.route('/admin/refresh')
 def refresh_data():
     """Admin route to manually refresh cached data"""
     global _cached_plant_data
@@ -410,7 +410,7 @@ def refresh_data():
         flash(f'Error refreshing data: {str(e)}', 'error')
         return redirect(url_for('index'))
 
-@app.route('/admin/data-columns')
+@app.route('/admin/columns')
 def admin_data_columns():
     """Admin page to view all available columns and their current assignments"""
     try:
@@ -480,7 +480,7 @@ def admin_data_columns():
         flash(f'Error analyzing data columns: {str(e)}', 'error')
         return render_template('admin_columns.html', columns_info={})
 
-@app.route('/api/data-columns')
+@app.route('/api/columns')
 def api_data_columns():
     """API endpoint to get column information as JSON"""
     try:
