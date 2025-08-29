@@ -84,9 +84,9 @@
     </style>
 </head>
 <body>
-    <div class="container py-4">
+    <div class="container py-3">
         <!-- Header Section -->
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col">
                 <h1 class="display-4 mb-3">
                     <i data-feather="home" class="me-3"></i>
@@ -99,7 +99,7 @@
         </div>
 
         <!-- Seeds to Community Banner -->
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col">
                 <a href="https://stewardshipnetwork.org/projects/seeds-to-community/" target="_blank" rel="noopener noreferrer">
                     <img src="/static/seeds-to-community-banner.png" alt="Seeds to Community - Stewardship Network Project" class="seeds-banner">
@@ -108,7 +108,7 @@
         </div>
 
         <!-- Filter Controls -->
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col">
                 <div class="card">
                     <div class="card-body">
@@ -222,9 +222,9 @@
 
                     <div class="row" id="species-cards-container">
                         {% for plant in plants %}
-                            <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="col-lg-6 col-xl-4 mb-3">
                                 <div class="card h-100">
-                                    <div class="card-body">
+                                    <div class="card-body py-3 px-3">
                                         {% if config.main_page_columns %}
                                             {% for column in config.main_page_columns %}
                                                 {% set field_value = plant.get(column.field, '') %}
@@ -235,7 +235,7 @@
                                                             {{ field_value }}
                                                         </h5>
                                                     {% elif column.type == 'subtitle' %}
-                                                        <h6 class="card-subtitle mb-3 text-muted fst-italic">
+                                                        <h6 class="card-subtitle mb-2 text-muted fst-italic">
                                                             {% if column.field == 'botanical_name' %}
                                                                 <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **current_filters) }}" 
                                                                    class="species-link text-info">
@@ -258,12 +258,12 @@
                                                             </div>
                                                         {% endif %}
                                                     {% elif column.type == 'text' %}
-                                                        <div class="mb-2">
+                                                        <div class="mb-1">
                                                             <small class="text-muted">{{ column.display_name }}:</small><br>
                                                             <span class="text-body-secondary">{{ field_value }}</span>
                                                         </div>
                                                     {% elif column.type == 'text_small' %}
-                                                        <div class="mb-2">
+                                                        <div class="mb-1">
                                                             <small class="text-muted">{{ column.display_name }}:</small><br>
                                                             <span class="text-body-secondary small">{{ field_value }}</span>
                                                         </div>
