@@ -204,7 +204,7 @@
 
         <!-- Plant Species List -->
         <div class="row">
-            <div class="col">
+            <div class="col" id="results-container">
                 {% if plants %}
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h3>
@@ -389,18 +389,11 @@
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
                     
-                    // Update the plant species cards container
-                    const currentCardsContainer = document.getElementById('species-cards-container');
-                    const newCardsContainer = newDoc.getElementById('species-cards-container');
-                    if (currentCardsContainer && newCardsContainer) {
-                        currentCardsContainer.innerHTML = newCardsContainer.innerHTML;
-                    }
-                    
-                    // Update the species count badge
-                    const currentBadge = document.querySelector('.badge.bg-info');
-                    const newBadge = newDoc.querySelector('.badge.bg-info');
-                    if (currentBadge && newBadge) {
-                        currentBadge.innerHTML = newBadge.innerHTML;
+                    // Update the entire results container (includes empty state)
+                    const currentResultsContainer = document.getElementById('results-container');
+                    const newResultsContainer = newDoc.getElementById('results-container');
+                    if (currentResultsContainer && newResultsContainer) {
+                        currentResultsContainer.innerHTML = newResultsContainer.innerHTML;
                     }
                     
                     // Update the footer count
