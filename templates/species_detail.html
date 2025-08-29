@@ -232,7 +232,12 @@
             
             screenConfig.columns.forEach(column => {
                 const fieldValue = species[column.field];
-                if (fieldValue && fieldValue !== '') {
+                // Show all fields for boolean/status columns, or non-empty values for other fields
+                const shouldShowField = fieldValue !== null && fieldValue !== undefined && 
+                                       (fieldValue !== '' || column.field.includes('collect') || 
+                                        column.field.includes('code') || column.field.includes('light') || 
+                                        column.field.includes('moisture'));
+                if (shouldShowField) {
                     hasData = true;
                     content += `
                         <div class="col-lg-6 mb-4">
@@ -252,7 +257,16 @@
                             </a>
                         `;
                     } else {
-                        content += `<p class="card-text mb-0">${fieldValue}</p>`;
+                        // Handle special formatting for specific field types
+                        let displayValue = fieldValue;
+                        if (column.field === 'special_collect') {
+                            if (fieldValue === 'TRUE' || fieldValue === true) {
+                                displayValue = '<span class="badge bg-warning text-dark">Special Collection Required</span>';
+                            } else if (fieldValue === '' || fieldValue === 'FALSE' || fieldValue === false) {
+                                displayValue = '<span class="badge bg-success">Standard Collection</span>';
+                            }
+                        }
+                        content += `<p class="card-text mb-0">${displayValue}</p>`;
                     }
                     
                     content += `

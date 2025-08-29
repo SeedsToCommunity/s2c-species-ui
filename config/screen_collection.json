@@ -6,6 +6,11 @@
       "field": "start_seed_watch",
       "label": "Start Seed Watch",
       "type": "text"
+    },
+    {
+      "field": "special_collect",
+      "label": "Special Collect",
+      "width": "auto"
     }
   ]
 }
