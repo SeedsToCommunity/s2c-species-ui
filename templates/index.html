@@ -510,27 +510,41 @@
                         })
                         .then(response => response.text())
                         .then(html => {
+                            console.log('Dropdown AJAX response received, length:', html.length);
                             const parser = new DOMParser();
                             const newDoc = parser.parseFromString(html, 'text/html');
                             
-                            const currentCardsContainer = document.getElementById('species-cards-container');
-                            const newCardsContainer = newDoc.getElementById('species-cards-container');
-                            if (currentCardsContainer && newCardsContainer) {
-                                currentCardsContainer.innerHTML = newCardsContainer.innerHTML;
+                            // Check if the response contains the empty state message
+                            if (html.includes('No Species Match Your Filters')) {
+                                console.log('Empty state message found in dropdown response');
                             }
                             
+                            // Update the entire results container (includes empty state)
+                            const currentResultsContainer = document.getElementById('results-container');
+                            const newResultsContainer = newDoc.getElementById('results-container');
+                            console.log('Dropdown - Current container found:', !!currentResultsContainer);
+                            console.log('Dropdown - New container found:', !!newResultsContainer);
+                            if (currentResultsContainer && newResultsContainer) {
+                                console.log('Dropdown - New container content:', newResultsContainer.innerHTML.substring(0, 200));
+                                currentResultsContainer.innerHTML = newResultsContainer.innerHTML;
+                                console.log('Dropdown - Updated results container');
+                            }
+                            
+                            // Update the filter results badge
                             const currentBadge = document.querySelector('.badge.bg-info');
                             const newBadge = newDoc.querySelector('.badge.bg-info');
                             if (currentBadge && newBadge) {
                                 currentBadge.innerHTML = newBadge.innerHTML;
                             }
                             
+                            // Update the footer count
                             const currentFooterCount = document.querySelector('footer .col-md-6.text-md-end p');
                             const newFooterCount = newDoc.querySelector('footer .col-md-6.text-md-end p');
                             if (currentFooterCount && newFooterCount) {
                                 currentFooterCount.innerHTML = newFooterCount.innerHTML;
                             }
                             
+                            // Re-initialize feather icons and species links
                             feather.replace();
                             initializeSpeciesLinks();
                             
