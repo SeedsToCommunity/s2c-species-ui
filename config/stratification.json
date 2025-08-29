@@ -1,0 +1,21 @@
+{
+  "screen_name": "Stratification",
+  "description": "Stratification requirements and procedures",
+  "columns": [
+    {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "type": "text"
+    },
+    {
+      "field": "strat_notes",
+      "label": "Strat Notes",
+      "type": "text"
+    },
+    {
+      "field": "planting_notes",
+      "label": "Planting Notes",
+      "width": "auto"
+    }
+  ]
+}
