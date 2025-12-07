@@ -5,8 +5,16 @@ import json
 import requests
 from datetime import datetime
 from io import StringIO
-from flask import Flask, render_template, flash, request, url_for, abort, redirect
+from flask import Flask, render_template, flash, request, url_for, abort, redirect, jsonify
 from urllib.parse import quote, unquote
+
+# Google Drive API imports
+try:
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    GOOGLE_API_AVAILABLE = True
+except ImportError:
+    GOOGLE_API_AVAILABLE = False
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,6 +26,73 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 # Global cache for plant data to avoid reloading on every request
 _cached_plant_data = None
 _data_cache_timestamp = None
+_last_known_modified_time = None  # Track Google Drive file modification time
+
+def get_google_drive_service():
+    """Get an authenticated Google Drive API service"""
+    if not GOOGLE_API_AVAILABLE:
+        app.logger.warning("Google API libraries not available")
+        return None
+    
+    # Check for service account credentials JSON
+    service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+    if not service_account_json:
+        app.logger.info("GOOGLE_SERVICE_ACCOUNT_JSON not configured")
+        return None
+    
+    try:
+        # Parse the JSON credentials
+        credentials_info = json.loads(service_account_json)
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_info,
+            scopes=['https://www.googleapis.com/auth/drive.readonly']
+        )
+        service = build('drive', 'v3', credentials=credentials)
+        return service
+    except Exception as e:
+        app.logger.error(f"Error creating Google Drive service: {str(e)}")
+        return None
+
+def get_file_id_from_url(url):
+    """Extract file ID from a Google Drive URL"""
+    if 'drive.google.com' in url and 'file/d/' in url:
+        return url.split('file/d/')[1].split('/')[0]
+    return None
+
+def check_google_drive_file_modified(file_id):
+    """Check if a Google Drive file has been modified since last check"""
+    global _last_known_modified_time
+    
+    service = get_google_drive_service()
+    if not service:
+        return None, "Google Drive API not configured"
+    
+    try:
+        # Get file metadata including modifiedTime
+        file_metadata = service.files().get(
+            fileId=file_id,
+            fields='id, name, modifiedTime'
+        ).execute()
+        
+        current_modified_time = file_metadata.get('modifiedTime')
+        file_name = file_metadata.get('name', 'Unknown')
+        
+        if _last_known_modified_time is None:
+            # First check - no previous time to compare
+            _last_known_modified_time = current_modified_time
+            return True, f"First check for '{file_name}'"
+        
+        if current_modified_time != _last_known_modified_time:
+            # File has been modified
+            old_time = _last_known_modified_time
+            _last_known_modified_time = current_modified_time
+            return True, f"'{file_name}' was updated (changed from {old_time} to {current_modified_time})"
+        else:
+            return False, f"'{file_name}' has not changed (last modified: {current_modified_time})"
+            
+    except Exception as e:
+        app.logger.error(f"Error checking Google Drive file: {str(e)}")
+        return None, f"Error: {str(e)}"
 
 def load_display_config():
     """Load display configuration from JSON file"""
@@ -451,6 +526,65 @@ def refresh_data():
         app.logger.error(f"Error refreshing data: {str(e)}")
         flash(f'Error refreshing data: {str(e)}', 'error')
         return redirect(url_for('index'))
+
+@app.route('/api/check-updates')
+def check_for_updates():
+    """API endpoint to check if Google Drive data has been updated and reload if needed"""
+    global _cached_plant_data
+    
+    # Get the Google Drive URL from settings
+    settings = load_app_settings()
+    google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
+    
+    if not google_drive_url:
+        return jsonify({
+            'status': 'error',
+            'message': 'No Google Drive URL configured',
+            'reloaded': False
+        })
+    
+    # Extract file ID from URL
+    file_id = get_file_id_from_url(google_drive_url)
+    if not file_id:
+        return jsonify({
+            'status': 'error', 
+            'message': 'Could not extract file ID from Google Drive URL',
+            'reloaded': False
+        })
+    
+    # Check if file has been modified
+    was_modified, message = check_google_drive_file_modified(file_id)
+    
+    if was_modified is None:
+        # Error occurred or API not configured - fall back to simple reload
+        _cached_plant_data = None
+        df = load_plant_data(force_reload=True)
+        return jsonify({
+            'status': 'reloaded',
+            'message': f'API not available - forced reload. Loaded {len(df)} species. ({message})',
+            'reloaded': True,
+            'species_count': len(df)
+        })
+    
+    if was_modified:
+        # File was modified - reload the data
+        _cached_plant_data = None
+        df = load_plant_data(force_reload=True)
+        return jsonify({
+            'status': 'updated',
+            'message': f'Data updated! Loaded {len(df)} species. {message}',
+            'reloaded': True,
+            'species_count': len(df)
+        })
+    else:
+        # File not modified - no reload needed
+        df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
+        return jsonify({
+            'status': 'unchanged',
+            'message': f'Data is up to date. {message}',
+            'reloaded': False,
+            'species_count': len(df) if df is not None else 0
+        })
 
 @app.route('/admin/columns')
 def admin_data_columns():
