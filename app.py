@@ -552,8 +552,10 @@ def load_plant_data(force_reload=False, file_id_override=None):
         try:
             if folder_id and file_prefix:
                 # Use override file_id if provided, otherwise find the latest
+                file_name = None  # Initialize to avoid UnboundLocalError
                 if file_id_override:
                     file_id = file_id_override
+                    file_name = f"{file_prefix}_override"  # Placeholder name for override
                     app.logger.info(f"Using provided file ID: {file_id}")
                 else:
                     file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
