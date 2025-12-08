@@ -153,55 +153,73 @@
                     </div>
                 </div>
 
-                <h2 class="section-heading">Two Scales, Same Idea</h2>
+                <h2 class="section-heading">Key Distinctions: Don't Get These Confused!</h2>
                 <div class="callout callout-warning">
-                    <strong>Heads up:</strong> There are two different wetland rating systems in common use. This can cause confusion if you're comparing data from different sources.
+                    <strong>Heads up:</strong> There are several different moisture-related scales you might encounter. They measure different things and can cause confusion if you mix them up.
                 </div>
 
-                <h4>1. Coefficient of Wetness (CW): What We Use</h4>
-                <p>This app uses the <strong>Coefficient of Wetness</strong> scale from -5 to +5. It's part of the Floristic Quality Assessment (FQA) system developed by Ladd & Thomas (2015) for Missouri and used by <a href="https://michiganflora.net" target="_blank">Michigan Flora Online</a>. This scale is directly applicable to SE Michigan restoration work.</p>
+                <div class="card mb-3" style="border-left: 4px solid var(--bs-primary);">
+                    <div class="card-body">
+                        <h5 class="mb-2">Coefficient of Wetness (CW): What We Use</h5>
+                        <p class="mb-2"><strong>Scale:</strong> -5 to +5 &nbsp; | &nbsp; <strong>Measures:</strong> Where the plant naturally grows</p>
+                        <p class="mb-0">This is a <strong>biological classification</strong> based on a plant's natural occurrence in wetland environments. Negative numbers indicate wet-loving plants; positive numbers indicate dry-preferring plants. It's part of the Floristic Quality Assessment (FQA) system and is used by <a href="https://michiganflora.net" target="_blank">Michigan Flora Online</a>. This is the scale used in this app.</p>
+                    </div>
+                </div>
 
-                <h4>2. National Wetland Plant List (NWPL): The Other System</h4>
-                <p>The U.S. Army Corps of Engineers maintains a different system using letter codes:</p>
-                
-                <table class="table table-sm mb-4">
-                    <thead>
-                        <tr>
-                            <th>NWPL Code</th>
-                            <th>Meaning</th>
-                            <th>Roughly Equivalent CW</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="badge bg-info">OBL</span></td>
-                            <td>Obligate Wetland</td>
-                            <td>-5</td>
-                        </tr>
-                        <tr>
-                            <td><span class="badge bg-success">FACW</span></td>
-                            <td>Facultative Wetland</td>
-                            <td>-3 to -4</td>
-                        </tr>
-                        <tr>
-                            <td><span class="badge bg-warning text-dark">FAC</span></td>
-                            <td>Facultative</td>
-                            <td>-1 to +1</td>
-                        </tr>
-                        <tr>
-                            <td><span class="badge" style="background-color: #fd7e14;">FACU</span></td>
-                            <td>Facultative Upland</td>
-                            <td>+3 to +4</td>
-                        </tr>
-                        <tr>
-                            <td><span class="badge bg-danger">UPL</span></td>
-                            <td>Obligate Upland</td>
-                            <td>+5</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="card mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="card-body">
+                        <h5 class="mb-2">Grower Scale: A Different Thing Entirely</h5>
+                        <p class="mb-2"><strong>Scale:</strong> 1 to 5 &nbsp; | &nbsp; <strong>Measures:</strong> How much to water</p>
+                        <p class="mb-0">Some nurseries and growers use a 1-5 scale as a <strong>practical irrigation guide</strong>, where 1 means "keep it bone dry" and 5 means "keep it fully saturated." This refers to <em>soil moisture management</em>, not plant biology. Don't confuse this with the CW scale—they're measuring completely different things!</p>
+                    </div>
+                </div>
 
-                <p>Both systems measure the same concept—how likely a plant is to grow in wet vs. dry conditions—but they use different notation. The CW scale gives you more precision with its 11-point range.</p>
+                <div class="card mb-4" style="border-left: 4px solid #6c757d;">
+                    <div class="card-body">
+                        <h5 class="mb-2">National Wetland Plant List (NWPL): Letter Codes</h5>
+                        <p class="mb-2"><strong>Scale:</strong> Letter codes &nbsp; | &nbsp; <strong>Measures:</strong> Same concept as CW</p>
+                        <p class="mb-2">The U.S. Army Corps of Engineers uses letter codes (OBL, FACW, FAC, FACU, UPL) to classify plants by their wetland affinity. This measures the same biological concept as the CW scale, just with different notation.</p>
+                        
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>NWPL Code</th>
+                                    <th>Meaning</th>
+                                    <th>Roughly Equivalent CW</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-info">OBL</span></td>
+                                    <td>Obligate Wetland</td>
+                                    <td>-5</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-success">FACW</span></td>
+                                    <td>Facultative Wetland</td>
+                                    <td>-3 to -4</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">FAC</span></td>
+                                    <td>Facultative</td>
+                                    <td>-1 to +1</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background-color: #fd7e14;">FACU</span></td>
+                                    <td>Facultative Upland</td>
+                                    <td>+3 to +4</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger">UPL</span></td>
+                                    <td>Obligate Upland</td>
+                                    <td>+5</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p>The CW and NWPL systems both describe where a plant naturally grows—they're just different ways of expressing the same biological information. The Grower Scale is something else entirely: a practical watering guide that tells you how to care for a plant, not where it comes from.</p>
 
                 <h2 class="section-heading">Practical Tips for SE Michigan</h2>
                 
