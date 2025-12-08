@@ -48,6 +48,14 @@ def contains_html(text):
         return False
     return bool(HTML_TAG_PATTERN.search(text))
 
+def is_chart_data(data):
+    """Check if data is suitable for rendering as a chart (dict with string keys and numeric values)"""
+    if not isinstance(data, dict) or len(data) < 2:
+        return False
+    # Check if all values are numeric
+    numeric_count = sum(1 for v in data.values() if isinstance(v, (int, float)))
+    return numeric_count >= len(data) * 0.8  # At least 80% numeric values
+
 # Custom Jinja filter to parse JSON and detect URL dictionaries
 @app.template_filter('parse_json_urls')
 def parse_json_urls_filter(value):
@@ -92,6 +100,9 @@ def parse_json_urls_filter(value):
                 return {'type': 'image_dict', 'data': parsed}
             if url_count > 0 and url_count >= len(parsed) * 0.5:
                 return {'type': 'url_dict', 'data': parsed}
+            # Check if it's chart data (numeric values)
+            if is_chart_data(parsed):
+                return {'type': 'chart', 'data': parsed}
             return {'type': 'json_dict', 'data': parsed}
         
         # Check if it's a list of URLs

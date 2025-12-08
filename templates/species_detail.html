@@ -193,6 +193,17 @@
                                         <small class="text-muted d-block mb-1">{{ column.label }}:</small>
                                         <div class="text-body-secondary">{{ parsed.data|safe }}</div>
                                     </div>
+                                {% elif parsed.type == 'chart' %}
+                                    <!-- Chart data -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <div style="max-height: 200px;">
+                                            <canvas id="chart-{{ column.field }}" class="chart-canvas" 
+                                                    data-labels="{{ parsed.data.keys()|list|tojson }}"
+                                                    data-values="{{ parsed.data.values()|list|tojson }}"
+                                                    data-label="{{ column.label }}"></canvas>
+                                        </div>
+                                    </div>
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="text-muted me-2">{{ column.label }}:</small>
@@ -259,11 +270,77 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
     <script>
         // Initialize Feather icons
         feather.replace();
+        
+        // Store active chart instances for cleanup
+        const activeCharts = {};
+        
+        // Function to initialize all charts on the page
+        function initializeCharts() {
+            document.querySelectorAll('.chart-canvas').forEach(canvas => {
+                const chartId = canvas.id;
+                
+                // Destroy existing chart if any
+                if (activeCharts[chartId]) {
+                    activeCharts[chartId].destroy();
+                }
+                
+                const labels = JSON.parse(canvas.dataset.labels || '[]');
+                const values = JSON.parse(canvas.dataset.values || '[]');
+                const label = canvas.dataset.label || 'Data';
+                
+                if (labels.length > 0 && values.length > 0) {
+                    activeCharts[chartId] = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: label,
+                                data: values,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                tension: 0.3,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Observations'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Month'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Initialize charts on page load
+        initializeCharts();
         
         // Current botanical name for API calls
         const botanicalName = '{{ botanical_name }}';
@@ -393,12 +470,17 @@
                     const values = Object.values(parsed);
                     const imageCount = values.filter(v => isImageUrl(v)).length;
                     const urlCount = values.filter(v => typeof v === 'string' && v.startsWith('http')).length;
+                    const numericCount = values.filter(v => typeof v === 'number').length;
                     
                     if (imageCount > 0 && imageCount >= Object.keys(parsed).length * 0.5) {
                         return { type: 'image_dict', data: parsed };
                     }
                     if (urlCount > 0 && urlCount >= Object.keys(parsed).length * 0.5) {
                         return { type: 'url_dict', data: parsed };
+                    }
+                    // Check for chart data (numeric values)
+                    if (numericCount >= Object.keys(parsed).length * 0.8 && Object.keys(parsed).length >= 2) {
+                        return { type: 'chart', data: parsed };
                     }
                 }
                 if (Array.isArray(parsed)) {
@@ -518,6 +600,28 @@
                                 </div>
                             </div>
                         `;
+                    } else if (parsed.type === 'chart') {
+                        // Chart data - render as line chart
+                        const chartId = `chart-${column.field}-${Date.now()}`;
+                        const labels = JSON.stringify(Object.keys(parsed.data));
+                        const values = JSON.stringify(Object.values(parsed.data));
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <div style="max-height: 200px;">
+                                                <canvas id="${chartId}" class="chart-canvas" 
+                                                        data-labels='${labels}'
+                                                        data-values='${values}'
+                                                        data-label="${column.label}"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                     } else if (column.type === 'link' && fieldValue) {
                         content += `
                             <div class="col-lg-6 mb-1">
@@ -576,6 +680,9 @@
             }
             
             document.getElementById('species-content').innerHTML = content;
+            
+            // Initialize any charts in the new content
+            initializeCharts();
         }
     </script>
 </body>
