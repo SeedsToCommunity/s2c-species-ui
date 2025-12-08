@@ -183,7 +183,7 @@
                                         <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for name, url in parsed.data.items() %}
-                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                                     <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>{{ name }}
                                                 </a>
                                             {% endfor %}
@@ -195,7 +195,7 @@
                                         <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for url in parsed.data %}
-                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                                     <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link {{ loop.index }}
                                                 </a>
                                             {% endfor %}
@@ -221,7 +221,7 @@
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="field-label me-2">{{ column.label }}:</small>
-                                        <a href="{{ field_value }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <a href="{{ field_value }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                             <i data-feather="external-link" class="me-1"></i>
                                             View Pictures
                                         </a>
@@ -229,28 +229,30 @@
                                 {% elif column.field == 'coefficient_of_conservatism_(c)' %}
                                     {% set c_interp = field_value|interpret_c_value %}
                                     <div>
-                                        <small class="field-label">
-                                            <a href="{{ url_for('explain_conservatism') }}">
-                                                {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
-                                            </a>:
-                                        </small>
+                                        <small class="field-label">{{ column.label }}:</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if c_interp %}
                                             <span class="text-info ms-1">— {{ c_interp.short }}</span>
+                                        {% endif %}
+                                        <a href="{{ url_for('explain_conservatism') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
+                                            <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
+                                        </a>
+                                        {% if c_interp %}
                                             <small class="d-block text-muted mt-1">{{ c_interp.description }}</small>
                                         {% endif %}
                                     </div>
                                 {% elif column.field == 'coefficient_of_wetness_(cw)' %}
                                     {% set w_interp = field_value|interpret_w_value %}
                                     <div>
-                                        <small class="field-label">
-                                            <a href="{{ url_for('explain_wetland') }}">
-                                                {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
-                                            </a>:
-                                        </small>
+                                        <small class="field-label">{{ column.label }}:</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if w_interp %}
                                             <span class="text-info ms-1">— {{ w_interp.short }}</span>
+                                        {% endif %}
+                                        <a href="{{ url_for('explain_wetland') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
+                                            <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
+                                        </a>
+                                        {% if w_interp %}
                                             <small class="d-block text-muted mt-1">{{ w_interp.description }}</small>
                                         {% endif %}
                                     </div>
@@ -578,7 +580,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <a href="${parsed.data}" target="_blank">
                                                 <img src="${parsed.data}" alt="${column.label}" class="img-fluid rounded" style="max-height: 200px;">
                                             </a>
@@ -598,7 +600,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <div class="d-flex flex-wrap gap-2">${imagesHtml}</div>
                                         </div>
                                     </div>
@@ -609,14 +611,14 @@
                         // JSON dictionary of labeled URLs
                         let linksHtml = '';
                         for (const [name, url] of Object.entries(parsed.data)) {
-                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>${name}</a>`;
+                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>${name}</a>`;
                         }
                         content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
                                         </div>
                                     </div>
@@ -627,14 +629,14 @@
                         // JSON array of URLs
                         let linksHtml = '';
                         parsed.data.forEach((url, index) => {
-                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link ${index + 1}</a>`;
+                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link ${index + 1}</a>`;
                         });
                         content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
                                         </div>
                                     </div>
@@ -648,7 +650,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <div class="text-body-secondary">${parsed.data}</div>
                                         </div>
                                     </div>
@@ -665,7 +667,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
                                             <div style="max-height: 200px;">
                                                 <canvas id="${chartId}" class="chart-canvas" 
                                                         data-labels='${labels}'
@@ -683,8 +685,8 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div class="d-flex align-items-center">
-                                            <small class="text-muted me-2">${column.label}:</small>
-                                            <a href="${fieldValue}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <small class="field-label me-2">${column.label}:</small>
+                                            <a href="${fieldValue}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                                 <i data-feather="external-link" class="me-1"></i>
                                                 View Pictures
                                             </a>
@@ -707,7 +709,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="text-muted">${column.label}:</small>
+                                            <small class="field-label">${column.label}:</small>
                                             ${displayValue}
                                         </div>
                                     </div>
