@@ -232,13 +232,13 @@
                                         <small class="field-label">{{ column.label }}:</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if c_interp %}
-                                            <span class="text-info ms-1">— {{ c_interp.short }}</span>
-                                        {% endif %}
-                                        <a href="{{ url_for('explain_conservatism') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
-                                            <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
-                                        </a>
-                                        {% if c_interp %}
-                                            <small class="d-block text-muted mt-1">{{ c_interp.description }}</small>
+                                            <span class="text-body-secondary ms-1">— {{ c_interp.short }}</span>
+                                            <small class="d-block text-muted mt-1">
+                                                {{ c_interp.description }}
+                                                <a href="{{ url_for('explain_conservatism') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
+                                                    <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
+                                                </a>
+                                            </small>
                                         {% endif %}
                                     </div>
                                 {% elif column.field == 'coefficient_of_wetness_(cw)' %}
@@ -247,13 +247,13 @@
                                         <small class="field-label">{{ column.label }}:</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if w_interp %}
-                                            <span class="text-info ms-1">— {{ w_interp.short }}</span>
-                                        {% endif %}
-                                        <a href="{{ url_for('explain_wetland') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
-                                            <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
-                                        </a>
-                                        {% if w_interp %}
-                                            <small class="d-block text-muted mt-1">{{ w_interp.description }}</small>
+                                            <span class="text-body-secondary ms-1">— {{ w_interp.short }}</span>
+                                            <small class="d-block text-muted mt-1">
+                                                {{ w_interp.description }}
+                                                <a href="{{ url_for('explain_wetland') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
+                                                    <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
+                                                </a>
+                                            </small>
                                         {% endif %}
                                     </div>
                                 {% else %}
