@@ -143,7 +143,27 @@
                     <div class="col-lg-6 mb-1">
                         <div class="card h-100">
                             <div class="card-body py-1 px-2">
-                                {% if parsed.type == 'url_dict' %}
+                                {% if parsed.type == 'image' %}
+                                    <!-- Single image URL -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <a href="{{ parsed.data }}" target="_blank">
+                                            <img src="{{ parsed.data }}" alt="{{ column.label }}" class="img-fluid rounded" style="max-height: 200px;">
+                                        </a>
+                                    </div>
+                                {% elif parsed.type == 'image_dict' %}
+                                    <!-- JSON dictionary of labeled image URLs -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for name, url in parsed.data.items() %}
+                                                <a href="{{ url }}" target="_blank" title="{{ name }}">
+                                                    <img src="{{ url }}" alt="{{ name }}" class="img-fluid rounded" style="max-height: 150px;">
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% elif parsed.type == 'url_dict' %}
                                     <!-- JSON dictionary of labeled URLs -->
                                     <div>
                                         <small class="text-muted d-block mb-1">{{ column.label }}:</small>
@@ -317,26 +337,58 @@
             }
         }
         
+        // Image file extensions for detection
+        const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
+        
+        // Helper function to check if URL is an image
+        function isImageUrl(url) {
+            if (typeof url !== 'string' || !url.startsWith('http')) return false;
+            const urlPath = url.split('?')[0].toLowerCase();
+            return IMAGE_EXTENSIONS.some(ext => urlPath.endsWith(ext));
+        }
+        
         // Helper function to parse JSON URLs
         function parseJsonUrls(value) {
             if (!value || typeof value !== 'string') {
                 return { type: 'text', data: value };
             }
             const trimmed = value.trim();
+            
+            // Check for single image URL (not JSON)
+            if (trimmed.startsWith('http') && isImageUrl(trimmed)) {
+                return { type: 'image', data: trimmed };
+            }
+            
+            // Check for single non-image URL (not JSON)
+            if (trimmed.startsWith('http') && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                return { type: 'url', data: trimmed };
+            }
+            
             if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
                 return { type: 'text', data: value };
             }
             try {
                 const parsed = JSON.parse(trimmed);
                 if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-                    const urls = Object.values(parsed).filter(v => typeof v === 'string' && v.startsWith('http'));
-                    if (urls.length > 0 && urls.length >= Object.keys(parsed).length * 0.5) {
+                    const values = Object.values(parsed);
+                    const imageCount = values.filter(v => isImageUrl(v)).length;
+                    const urlCount = values.filter(v => typeof v === 'string' && v.startsWith('http')).length;
+                    
+                    if (imageCount > 0 && imageCount >= Object.keys(parsed).length * 0.5) {
+                        return { type: 'image_dict', data: parsed };
+                    }
+                    if (urlCount > 0 && urlCount >= Object.keys(parsed).length * 0.5) {
                         return { type: 'url_dict', data: parsed };
                     }
                 }
                 if (Array.isArray(parsed)) {
-                    const urls = parsed.filter(v => typeof v === 'string' && v.startsWith('http'));
-                    if (urls.length > 0 && urls.length >= parsed.length * 0.5) {
+                    const imageCount = parsed.filter(v => isImageUrl(v)).length;
+                    const urlCount = parsed.filter(v => typeof v === 'string' && v.startsWith('http')).length;
+                    
+                    if (imageCount > 0 && imageCount >= parsed.length * 0.5) {
+                        return { type: 'image_list', data: parsed };
+                    }
+                    if (urlCount > 0 && urlCount >= parsed.length * 0.5) {
                         return { type: 'url_list', data: parsed };
                     }
                 }
@@ -362,7 +414,41 @@
                     // Parse JSON URLs
                     const parsed = parseJsonUrls(fieldValue);
                     
-                    if (parsed.type === 'url_dict') {
+                    if (parsed.type === 'image') {
+                        // Single image URL
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <a href="${parsed.data}" target="_blank">
+                                                <img src="${parsed.data}" alt="${column.label}" class="img-fluid rounded" style="max-height: 200px;">
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'image_dict') {
+                        // JSON dictionary of labeled image URLs
+                        let imagesHtml = '';
+                        for (const [name, url] of Object.entries(parsed.data)) {
+                            imagesHtml += `<a href="${url}" target="_blank" title="${name}"><img src="${url}" alt="${name}" class="img-fluid rounded" style="max-height: 150px;"></a>`;
+                        }
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <div class="d-flex flex-wrap gap-2">${imagesHtml}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'url_dict') {
                         // JSON dictionary of labeled URLs
                         let linksHtml = '';
                         for (const [name, url] of Object.entries(parsed.data)) {

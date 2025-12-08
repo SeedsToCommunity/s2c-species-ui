@@ -27,19 +27,41 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 # Global cache for plant data to avoid reloading on every request
 _cached_plant_data = None
 
+# Image file extensions for detection
+IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp')
+
+def is_image_url(url):
+    """Check if a URL points to an image file"""
+    if not isinstance(url, str) or not url.startswith('http'):
+        return False
+    # Check extension (handle URLs with query params)
+    url_path = url.split('?')[0].lower()
+    return any(url_path.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
 # Custom Jinja filter to parse JSON and detect URL dictionaries
 @app.template_filter('parse_json_urls')
 def parse_json_urls_filter(value):
     """
     Parse a JSON string and return structured data for rendering.
     Returns a dict with 'type' and 'data' keys:
-    - type: 'url_dict' for {name: url} dicts, 'url_list' for [url] lists, 'text' for plain text
+    - type: 'url_dict' for {name: url} dicts, 'url_list' for [url] lists, 
+            'image' for single image URLs, 'image_dict' for {name: image_url} dicts,
+            'text' for plain text
     - data: the parsed data or original value
     """
     if not value or not isinstance(value, str):
         return {'type': 'text', 'data': value}
     
     value = value.strip()
+    
+    # Check for single image URL (not JSON)
+    if value.startswith('http') and is_image_url(value):
+        return {'type': 'image', 'data': value}
+    
+    # Check for single non-image URL (not JSON)
+    if value.startswith('http') and not value.startswith('{') and not value.startswith('['):
+        return {'type': 'url', 'data': value}
+    
     if not (value.startswith('{') or value.startswith('[')):
         return {'type': 'text', 'data': value}
     
@@ -48,15 +70,23 @@ def parse_json_urls_filter(value):
         
         # Check if it's a dict with URL values
         if isinstance(parsed, dict):
-            # Check if most values look like URLs
+            # Check if values are image URLs
+            image_count = sum(1 for v in parsed.values() if is_image_url(v))
             url_count = sum(1 for v in parsed.values() if isinstance(v, str) and v.startswith('http'))
+            
+            if image_count > 0 and image_count >= len(parsed) * 0.5:
+                return {'type': 'image_dict', 'data': parsed}
             if url_count > 0 and url_count >= len(parsed) * 0.5:
                 return {'type': 'url_dict', 'data': parsed}
             return {'type': 'json_dict', 'data': parsed}
         
         # Check if it's a list of URLs
         if isinstance(parsed, list):
+            image_count = sum(1 for v in parsed if is_image_url(v))
             url_count = sum(1 for v in parsed if isinstance(v, str) and v.startswith('http'))
+            
+            if image_count > 0 and image_count >= len(parsed) * 0.5:
+                return {'type': 'image_list', 'data': parsed}
             if url_count > 0 and url_count >= len(parsed) * 0.5:
                 return {'type': 'url_list', 'data': parsed}
             return {'type': 'json_list', 'data': parsed}
