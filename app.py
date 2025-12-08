@@ -1905,6 +1905,74 @@ def toggle_column():
         app.logger.error(f"Error toggling column: {str(e)}")
         return {"error": str(e)}, 500
 
+@app.route('/admin/column-reorder')
+def admin_column_reorder():
+    """Admin page for reordering columns on species screens"""
+    screen = request.args.get('screen', 'identification')
+    valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+    
+    if screen not in valid_screens:
+        screen = 'identification'
+    
+    screens = [
+        {'id': 'identification', 'name': 'Identification', 'icon': 'search'},
+        {'id': 'collection', 'name': 'Collection', 'icon': 'package'},
+        {'id': 'processing', 'name': 'Processing', 'icon': 'settings'},
+        {'id': 'storage', 'name': 'Storage', 'icon': 'archive'},
+        {'id': 'stratification', 'name': 'Stratification', 'icon': 'thermometer'},
+        {'id': 'planting', 'name': 'Planting', 'icon': 'sun'}
+    ]
+    
+    screen_config = load_screen_config(screen)
+    columns = screen_config.get('columns', [])
+    active_screen_name = screen_config.get('screen_name', screen.title())
+    
+    return render_template('admin_column_reorder.html',
+                         screens=screens,
+                         active_screen=screen,
+                         active_screen_name=active_screen_name,
+                         columns=columns)
+
+@app.route('/admin/save-column-order', methods=['POST'])
+def save_column_order():
+    """Save the new column order for a screen"""
+    try:
+        data = request.get_json()
+        screen = data.get('screen')
+        order = data.get('order', [])
+        
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+        if screen not in valid_screens:
+            return {"error": f"Invalid screen: {screen}"}, 400
+        
+        if not order:
+            return {"error": "No column order provided"}, 400
+        
+        screen_config = load_screen_config(screen)
+        current_columns = screen_config.get('columns', [])
+        
+        columns_by_field = {c.get('field'): c for c in current_columns}
+        
+        new_columns = []
+        for field in order:
+            if field in columns_by_field:
+                new_columns.append(columns_by_field[field])
+        
+        screen_config['columns'] = new_columns
+        
+        with open(f'config/screen_{screen}.json', 'w') as f:
+            json.dump(screen_config, f, indent=2)
+        
+        global _cached_column_usage
+        _cached_column_usage = None
+        
+        app.logger.info(f"Column order saved for screen: {screen}")
+        return {"success": True}
+        
+    except Exception as e:
+        app.logger.error(f"Error saving column order: {str(e)}")
+        return {"error": str(e)}, 500
+
 @app.route('/admin/issues')
 def admin_issues():
     """View all reported issues"""
