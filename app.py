@@ -233,46 +233,57 @@ def interpret_conservatism(c_value):
     return None
 
 def interpret_wetland(w_value):
-    """Interpret Wetland Indicator value for display"""
+    """Interpret Coefficient of Wetness (CW) value for display
+    
+    Uses the -5 to +5 scale from Floristic Quality Assessment (Ladd & Thomas 2015):
+    -5 = Obligate wetland (almost always in wetlands)
+    -3 to -4 = Facultative wetland
+    0 = Facultative (equally likely in wetlands or uplands)
+    +3 to +4 = Facultative upland
+    +5 = Dry upland (almost never in wetlands)
+    """
     try:
         w = int(float(w_value))
     except (ValueError, TypeError):
         return None
     
-    interpretations = {
-        5: {
-            "code": "OBL",
-            "short": "Wetland plant",
-            "description": "This plant almost always grows in wetlands. It loves having its feet wet and is rarely found in dry areas."
-        },
-        4: {
-            "code": "FACW",
-            "short": "Usually in wetlands",
-            "description": "This plant is usually found in wetlands but can sometimes grow in drier spots. It prefers moist conditions."
-        },
-        3: {
-            "code": "FAC",
-            "short": "Flexible about moisture",
-            "description": "This plant is equally happy in wet or dry spots. It's adaptable and doesn't have a strong preference."
-        },
-        2: {
-            "code": "FACU",
-            "short": "Usually in dry areas",
-            "description": "This plant usually grows in drier, upland areas but can occasionally be found in wetlands."
-        },
-        1: {
-            "code": "UPL",
-            "short": "Dry land plant",
-            "description": "This plant almost never grows in wetlands. It prefers well-drained, dry conditions."
-        },
-        0: {
-            "code": "N/A",
-            "short": "Not rated",
-            "description": "This plant hasn't been assigned a wetland rating."
+    if w == -5:
+        return {
+            "short": "Loves wet feet",
+            "description": "This plant almost always grows in wetlands. It thrives standing in water or saturated soil."
         }
-    }
-    
-    return interpretations.get(w, None)
+    elif w in [-4, -3]:
+        return {
+            "short": "Prefers wet conditions",
+            "description": "This plant is usually found in wetlands or very moist areas, but can sometimes grow in drier spots."
+        }
+    elif w in [-2, -1]:
+        return {
+            "short": "Leans toward moist",
+            "description": "This plant does well with consistent moisture but isn't strictly a wetland species."
+        }
+    elif w == 0:
+        return {
+            "short": "Flexible about moisture",
+            "description": "This plant is equally happy in wet or dry spots. It's adaptable with no strong preference."
+        }
+    elif w in [1, 2]:
+        return {
+            "short": "Leans toward dry",
+            "description": "This plant prefers drier conditions but can tolerate occasional moisture."
+        }
+    elif w in [3, 4]:
+        return {
+            "short": "Prefers dry conditions",
+            "description": "This plant usually grows in well-drained, drier upland areas and may struggle in wet soils."
+        }
+    elif w == 5:
+        return {
+            "short": "Needs dry ground",
+            "description": "This plant almost never grows in wetlands. It needs well-drained soil and can rot in soggy conditions."
+        }
+    else:
+        return None
 
 def _ensure_cache_dir():
     """Ensure cache directory exists"""

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Understanding Wetland Indicator Status</title>
+    <title>Understanding the Coefficient of Wetness</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <style>
         .hero-section {
@@ -18,16 +18,11 @@
         .rating-card:hover {
             transform: translateY(-2px);
         }
-        .rating-obl { border-left: 4px solid #0dcaf0; }
-        .rating-facw { border-left: 4px solid #198754; }
-        .rating-fac { border-left: 4px solid #ffc107; }
-        .rating-facu { border-left: 4px solid #fd7e14; }
-        .rating-upl { border-left: 4px solid #dc3545; }
-        .ecosystem-img {
-            max-width: 100%;
-            border-radius: 0.5rem;
-            margin: 1.5rem 0;
-        }
+        .rating-wet { border-left: 4px solid #0dcaf0; }
+        .rating-moist { border-left: 4px solid #198754; }
+        .rating-neutral { border-left: 4px solid #ffc107; }
+        .rating-dry { border-left: 4px solid #fd7e14; }
+        .rating-very-dry { border-left: 4px solid #dc3545; }
         .callout {
             background: rgba(13, 110, 253, 0.1);
             border-left: 4px solid var(--bs-primary);
@@ -35,11 +30,36 @@
             border-radius: 0 0.5rem 0.5rem 0;
             margin: 1.5rem 0;
         }
+        .callout-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+        }
         .section-heading {
             margin-top: 2.5rem;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid var(--bs-primary);
+        }
+        .scale-visual {
+            display: flex;
+            align-items: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0.5rem;
+        }
+        .scale-bar {
+            flex-grow: 1;
+            height: 30px;
+            background: linear-gradient(to right, #0dcaf0, #198754, #ffc107, #fd7e14, #dc3545);
+            border-radius: 4px;
+            position: relative;
+        }
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -50,8 +70,8 @@
         </a>
 
         <div class="hero-section">
-            <h1 class="display-5 mb-3">Understanding Wetland Indicator Status</h1>
-            <p class="lead mb-0">A practical guide to one of the most useful tools for choosing the right plant for your site.</p>
+            <h1 class="display-5 mb-3">Understanding the Coefficient of Wetness</h1>
+            <p class="lead mb-0">A practical guide to matching plants with your site's moisture conditions.</p>
         </div>
 
         <div class="row">
@@ -59,31 +79,41 @@
                 <h2 class="section-heading">Why This Matters</h2>
                 <p>We preach "right plant, right place" because matching a plant to where you're putting it makes it more likely to thrive. It uses fewer resources than constantly babying a plant to keep it happy. And, holy cow, it can make gardening much less frustrating.</p>
                 
-                <p>Plant tags list moisture requirements, but that doesn't give the complete picture. <strong>Wetland indicator status</strong> tells you more about how a plant interacts with water and soil. Many popular species used in home gardens can be considered wetland plants, even though they may grow nowhere near a wetland. No matter where you garden in SE Michigan, this information helps you make better choices.</p>
+                <p>Plant tags list moisture requirements, but that doesn't give the complete picture. The <strong>Coefficient of Wetness</strong> tells you more about how a plant interacts with water and soil. No matter where you garden in SE Michigan, this information helps you make better choices.</p>
 
                 <div class="callout">
-                    <strong>The bottom line:</strong> This rating tells you how much a plant likes to have "wet feet." Some plants thrive standing in water. Others will rot if the soil stays soggy. This number helps you match plants to your actual conditions.
+                    <strong>The bottom line:</strong> This rating tells you how much a plant likes to have "wet feet." Negative numbers mean wet-loving. Positive numbers mean dry-preferring. Zero means the plant doesn't have a strong preference.
                 </div>
 
-                <h2 class="section-heading">What is a Wetland, Anyway?</h2>
-                <p>There are many definitions of a wetland—it's surprisingly difficult to nail it down technically—but the basics have to do with water, soils, and plants.</p>
-                
-                <p>In wetlands, water is present either at the surface or within the root zone of plants. Water may come from streams, rivers, rain, seasonal floods, or even underground seeps. The amount of water and how it moves around determines what kinds of plants can live there.</p>
+                <h2 class="section-heading">The Scale: -5 to +5</h2>
+                <p>The Coefficient of Wetness (CW) is an 11-point scale ranging from <strong>-5 (wet)</strong> to <strong>+5 (dry)</strong>, with <strong>0 in the middle</strong> representing species with no strong preference.</p>
 
-                <img src="{{ url_for('static', filename='images/wetland_upland_ecosystems.png') }}" alt="Diagram comparing upland and wetland ecosystems" class="ecosystem-img">
-                <p class="text-muted small">Wetlands form where water stays near the soil surface. Uplands have water farther below. This difference shapes everything about what grows there.</p>
+                <div class="scale-visual">
+                    <div style="text-align: center; margin-right: 1rem;">
+                        <i data-feather="droplet" style="color: #0dcaf0;"></i><br>
+                        <small>Wet</small>
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <div class="scale-bar"></div>
+                        <div class="scale-labels">
+                            <span>-5</span>
+                            <span>-3</span>
+                            <span>0</span>
+                            <span>+3</span>
+                            <span>+5</span>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-left: 1rem;">
+                        <i data-feather="sun" style="color: #dc3545;"></i><br>
+                        <small>Dry</small>
+                    </div>
+                </div>
 
-                <p>The soils in wetlands are quite different from drier areas. In wetland soils, water fills the spaces between soil particles, and there's very little oxygen available. This affects which plants can survive—they need special adaptations to handle these "waterlogged" conditions.</p>
-
-                <h2 class="section-heading">The Rating System</h2>
-                <p>Scientists have rated thousands of plants based on how often they naturally occur in wetlands versus drier upland areas. Here's what each rating means:</p>
-
-                <div class="card rating-card rating-obl mb-3">
+                <div class="card rating-card rating-wet mb-3">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h5 class="mb-1">OBL — Obligate Wetland <span class="badge bg-info">Rating: 5</span></h5>
-                                <p class="mb-0"><strong>Almost always in wetlands</strong></p>
+                                <h5 class="mb-1">-5: Obligate Wetland <span class="badge bg-info">Loves wet feet</span></h5>
                             </div>
                         </div>
                         <p class="mt-2 mb-0">These plants love water. They almost always grow in standing water or soils that stay wet. They're typically intolerant of drought. In SE Michigan, think of plants like <em>Caltha palustris</em> (marsh marigold) or <em>Asclepias incarnata</em> (swamp milkweed).</p>
@@ -91,64 +121,106 @@
                     </div>
                 </div>
 
-                <div class="card rating-card rating-facw mb-3">
+                <div class="card rating-card rating-moist mb-3">
                     <div class="card-body">
-                        <h5 class="mb-1">FACW — Facultative Wetland <span class="badge bg-success">Rating: 4</span></h5>
-                        <p class="mb-0"><strong>Usually in wetlands, but flexible</strong></p>
+                        <h5 class="mb-1">-3 to -4: Facultative Wetland <span class="badge bg-success">Prefers wet conditions</span></h5>
                         <p class="mt-2 mb-0">These plants prefer wet conditions but can sometimes grow in drier spots. They're adaptable but still lean toward moisture. <em>Lobelia cardinalis</em> (cardinal flower) is a great example—stunning in a wet garden but can adapt to regular moisture.</p>
                         <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Stream banks, bioswales, low rain gardens, areas with consistent moisture</p>
                     </div>
                 </div>
 
-                <div class="card rating-card rating-fac mb-3">
+                <div class="card rating-card rating-neutral mb-3">
                     <div class="card-body">
-                        <h5 class="mb-1">FAC — Facultative <span class="badge bg-warning text-dark">Rating: 3</span></h5>
-                        <p class="mb-0"><strong>Equally happy wet or dry</strong></p>
+                        <h5 class="mb-1">0: Facultative <span class="badge bg-warning text-dark">Flexible about moisture</span></h5>
                         <p class="mt-2 mb-0">These are the flexible generalists. They occur in wetlands and non-wetlands about equally. They can handle a range of moisture conditions, which makes them versatile for many garden situations.</p>
                         <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Most garden situations, areas with variable moisture, rain gardens that drain</p>
                     </div>
                 </div>
 
-                <div class="card rating-card rating-facu mb-3">
+                <div class="card rating-card rating-dry mb-3">
                     <div class="card-body">
-                        <h5 class="mb-1">FACU — Facultative Upland <span class="badge bg-orange" style="background-color: #fd7e14;">Rating: 2</span></h5>
-                        <p class="mb-0"><strong>Usually in dry areas</strong></p>
+                        <h5 class="mb-1">+3 to +4: Facultative Upland <span class="badge" style="background-color: #fd7e14;">Prefers dry conditions</span></h5>
                         <p class="mt-2 mb-0">These plants prefer well-drained soils but can occasionally tolerate wet conditions. If your site tends toward dry, these are good candidates.</p>
                         <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Well-drained gardens, slopes, sandy soils, areas that dry out between rains</p>
                     </div>
                 </div>
 
-                <div class="card rating-card rating-upl mb-3">
+                <div class="card rating-card rating-very-dry mb-3">
                     <div class="card-body">
-                        <h5 class="mb-1">UPL — Obligate Upland <span class="badge bg-danger">Rating: 1</span></h5>
-                        <p class="mb-0"><strong>Almost never in wetlands</strong></p>
+                        <h5 class="mb-1">+5: Obligate Upland <span class="badge bg-danger">Needs dry ground</span></h5>
                         <p class="mt-2 mb-0">These plants need good drainage and will struggle or die in soggy soils. Don't plant these where water pools or soil stays wet.</p>
                         <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Dry slopes, sandy or rocky areas, well-drained raised beds</p>
                     </div>
                 </div>
+
+                <h2 class="section-heading">Two Scales, Same Idea</h2>
+                <div class="callout callout-warning">
+                    <strong>Heads up:</strong> There are two different wetland rating systems in common use. This can cause confusion if you're comparing data from different sources.
+                </div>
+
+                <h4>1. Coefficient of Wetness (CW): What We Use</h4>
+                <p>This app uses the <strong>Coefficient of Wetness</strong> scale from -5 to +5. It's part of the Floristic Quality Assessment (FQA) system developed by Ladd & Thomas (2015) for Missouri and used by <a href="https://michiganflora.net" target="_blank">Michigan Flora Online</a>. This scale is directly applicable to SE Michigan restoration work.</p>
+
+                <h4>2. National Wetland Plant List (NWPL): The Other System</h4>
+                <p>The U.S. Army Corps of Engineers maintains a different system using letter codes:</p>
+                
+                <table class="table table-sm mb-4">
+                    <thead>
+                        <tr>
+                            <th>NWPL Code</th>
+                            <th>Meaning</th>
+                            <th>Roughly Equivalent CW</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge bg-info">OBL</span></td>
+                            <td>Obligate Wetland</td>
+                            <td>-5</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-success">FACW</span></td>
+                            <td>Facultative Wetland</td>
+                            <td>-3 to -4</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-warning text-dark">FAC</span></td>
+                            <td>Facultative</td>
+                            <td>-1 to +1</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge" style="background-color: #fd7e14;">FACU</span></td>
+                            <td>Facultative Upland</td>
+                            <td>+3 to +4</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">UPL</span></td>
+                            <td>Obligate Upland</td>
+                            <td>+5</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Both systems measure the same concept—how likely a plant is to grow in wet vs. dry conditions—but they use different notation. The CW scale gives you more precision with its 11-point range.</p>
 
                 <h2 class="section-heading">Practical Tips for SE Michigan</h2>
                 
                 <h4>Reading Your Site</h4>
                 <p>Before choosing plants, spend some time observing your site:</p>
                 <ul>
-                    <li>Where does water pool after a rain? Those spots can handle OBL or FACW plants.</li>
-                    <li>Where does the soil dry out quickly? Stick to FAC, FACU, or UPL plants there.</li>
+                    <li>Where does water pool after a rain? Those spots can handle plants with CW values of -3 to -5.</li>
+                    <li>Where does the soil dry out quickly? Stick to plants with CW values of 0 to +5 there.</li>
                     <li>Is there a slope? The bottom will be wetter than the top—use different plants accordingly.</li>
                 </ul>
 
                 <h4>The Shade Factor</h4>
-                <p>Here's a useful trick: a plant that typically needs lots of water can often get by with less if it's in shade. Less sun means less evaporation. A FACW plant in full sun needs consistently moist soil, but the same plant in part shade might tolerate drier conditions.</p>
+                <p>Here's a useful trick: a plant that typically needs lots of water can often get by with less if it's in shade. Less sun means less evaporation. A wet-loving plant in full sun needs consistently moist soil, but the same plant in part shade might tolerate drier conditions.</p>
 
                 <h4>SE Michigan Considerations</h4>
                 <p>Our region has clay soils in many areas, which can hold water longer than sandy soils. A spot that looks dry on the surface might stay wet underground. This can work for or against you—clay can sustain moisture-loving plants through dry spells, but it can also rot the roots of plants that need good drainage.</p>
 
-                <div class="callout">
-                    <strong>A note about regional differences:</strong> Wetland ratings can vary by region. The ratings in our database are specific to the Northcentral & Northeast region, which includes SE Michigan. A plant might have a different rating in other parts of the country.
-                </div>
-
                 <h2 class="section-heading">Learn More</h2>
-                <p>The official wetland plant list is maintained by the U.S. Army Corps of Engineers. You can look up any plant at <a href="https://wetland-plants.sec.usace.army.mil/" target="_blank" rel="noopener">the National Wetland Plant List</a>.</p>
+                <p>The Coefficient of Wetness is part of the Floristic Quality Assessment system. You can learn more at <a href="https://michiganflora.net" target="_blank">Michigan Flora Online</a> or look up any plant's NWPL status at the <a href="https://wetland-plants.sec.usace.army.mil/" target="_blank">National Wetland Plant List</a>.</p>
             </div>
 
             <div class="col-lg-4">
@@ -157,42 +229,43 @@
                         <h5 class="mb-0">Quick Reference</h5>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm mb-0">
+                        <p class="small text-muted mb-2">Coefficient of Wetness Scale</p>
+                        <table class="table table-sm mb-3">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Rating</th>
+                                    <th>CW</th>
                                     <th>Meaning</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><span class="badge bg-info">OBL</span></td>
-                                    <td>5</td>
-                                    <td>Wetland plant</td>
+                                    <td><span class="badge bg-info">-5</span></td>
+                                    <td>Obligate wetland</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="badge bg-success">FACW</span></td>
-                                    <td>4</td>
-                                    <td>Usually wet</td>
+                                    <td><span class="badge bg-success">-3, -4</span></td>
+                                    <td>Usually wetland</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="badge bg-warning text-dark">FAC</span></td>
-                                    <td>3</td>
-                                    <td>Flexible</td>
+                                    <td><span class="badge bg-warning text-dark">0</span></td>
+                                    <td>No preference</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="badge" style="background-color: #fd7e14;">FACU</span></td>
-                                    <td>2</td>
-                                    <td>Usually dry</td>
+                                    <td><span class="badge" style="background-color: #fd7e14;">+3, +4</span></td>
+                                    <td>Usually upland</td>
                                 </tr>
                                 <tr>
-                                    <td><span class="badge bg-danger">UPL</span></td>
-                                    <td>1</td>
-                                    <td>Dry land</td>
+                                    <td><span class="badge bg-danger">+5</span></td>
+                                    <td>Obligate upland</td>
                                 </tr>
                             </tbody>
                         </table>
+                        <p class="small text-muted mb-0">
+                            <strong>Remember:</strong><br>
+                            Negative = Wet-loving<br>
+                            Positive = Dry-preferring<br>
+                            Zero = Flexible
+                        </p>
                     </div>
                 </div>
             </div>
