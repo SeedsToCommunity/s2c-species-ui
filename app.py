@@ -134,6 +134,54 @@ _cached_supplemental_data = None
 _supplemental_file_id = None
 _supplemental_file_name = None
 
+# Column labels mapping file - stores original headers for display
+COLUMN_LABELS_FILE = 'config/column_labels.json'
+
+def load_column_labels():
+    """Load the column labels mapping from config file"""
+    try:
+        if os.path.exists(COLUMN_LABELS_FILE):
+            with open(COLUMN_LABELS_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        app.logger.warning(f"Could not load column labels: {e}")
+    return {}
+
+def save_column_labels(labels_mapping):
+    """Save the column labels mapping to config file"""
+    try:
+        # Ensure config directory exists
+        os.makedirs(os.path.dirname(COLUMN_LABELS_FILE), exist_ok=True)
+        with open(COLUMN_LABELS_FILE, 'w') as f:
+            json.dump(labels_mapping, f, indent=2)
+        app.logger.info(f"Saved {len(labels_mapping)} column labels to {COLUMN_LABELS_FILE}")
+    except Exception as e:
+        app.logger.warning(f"Could not save column labels: {e}")
+
+def update_column_labels_from_headers(original_columns):
+    """Update the column labels mapping with original headers before normalization"""
+    # Load existing labels
+    labels = load_column_labels()
+    
+    # Create normalized -> original mapping
+    for original in original_columns:
+        normalized = str(original).replace(' ', '_').lower()
+        # Only update if we have a valid original header
+        if original and str(original).strip() and not str(original).startswith('Unnamed'):
+            labels[normalized] = str(original).strip()
+    
+    # Save updated labels
+    save_column_labels(labels)
+    return labels
+
+def get_column_label(field_name):
+    """Get the display label for a column field name"""
+    labels = load_column_labels()
+    if field_name in labels:
+        return labels[field_name]
+    # Fallback to generated label
+    return field_name.replace('_', ' ').title()
+
 def _ensure_cache_dir():
     """Ensure cache directory exists"""
     if not os.path.exists(CACHE_DIR):
@@ -467,6 +515,9 @@ def load_supplemental_data(force_reload=False):
         csv_data = StringIO(csv_content)
         df = pd.read_csv(csv_data)
         
+        # Capture original column headers before normalization
+        update_column_labels_from_headers(df.columns.tolist())
+        
         # Clean up column names - replace spaces with underscores and make lowercase
         df.columns = df.columns.str.replace(' ', '_').str.lower()
         df = df.fillna('')
@@ -677,6 +728,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
                         df.columns = new_columns
                         df = df.iloc[1:].reset_index(drop=True)
                     
+                    # Capture original column headers before normalization
+                    update_column_labels_from_headers(df.columns.tolist())
+                    
                     # Clean up column names
                     df.columns = df.columns.str.replace(' ', '_').str.lower()
                     df = df.fillna('')
@@ -715,6 +769,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
                     df.columns = new_columns
                     df = df.iloc[1:].reset_index(drop=True)
                 
+                # Capture original column headers before normalization
+                update_column_labels_from_headers(df.columns.tolist())
+                
                 df.columns = df.columns.str.replace(' ', '_').str.lower()
                 df = df.fillna('')
                 
@@ -752,6 +809,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
             else:
                 app.logger.error("No data files found (local or Google Drive)")
                 return pd.DataFrame()
+            
+            # Capture original column headers before normalization
+            update_column_labels_from_headers(df.columns.tolist())
             
             # Clean up column names - replace spaces with underscores and make lowercase
             df.columns = df.columns.str.replace(' ', '_').str.lower()
