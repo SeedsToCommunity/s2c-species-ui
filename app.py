@@ -1527,7 +1527,7 @@ def toggle_column():
                 if not any(c.get('field') == column_name for c in columns):
                     columns.append({
                         "field": column_name,
-                        "label": column_name.replace('_', ' ').title(),
+                        "label": get_column_label(column_name),
                         "width": "auto"
                     })
             else:
@@ -1557,7 +1557,7 @@ def toggle_column():
                 if not any(c.get('field') == column_name for c in columns):
                     columns.append({
                         "field": column_name,
-                        "label": column_name.replace('_', ' ').title(),
+                        "label": get_column_label(column_name),
                         "width": "auto"
                     })
             else:
