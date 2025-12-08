@@ -193,6 +193,104 @@ def get_column_label(field_name):
     # Fallback to generated label
     return field_name.replace('_', ' ').title()
 
+def cleanup_missing_columns(valid_columns):
+    """Remove columns from config files that no longer exist in the data.
+    
+    Args:
+        valid_columns: Set of column names that exist in the current DataFrame
+        
+    Returns:
+        List of removed column names for logging/notification
+    """
+    removed_columns = []
+    
+    # 1. Clean up screen config files
+    screen_files = [
+        'config/screen_identification.json',
+        'config/screen_collection.json',
+        'config/screen_processing.json',
+        'config/screen_storage.json',
+        'config/screen_stratification.json',
+        'config/screen_planting.json'
+    ]
+    
+    for screen_file in screen_files:
+        try:
+            if os.path.exists(screen_file):
+                with open(screen_file, 'r') as f:
+                    config = json.load(f)
+                
+                original_columns = config.get('columns', [])
+                cleaned_columns = [
+                    col for col in original_columns 
+                    if col.get('field') in valid_columns
+                ]
+                
+                # Track removed columns
+                for col in original_columns:
+                    field = col.get('field')
+                    if field not in valid_columns and field not in removed_columns:
+                        removed_columns.append(field)
+                
+                if len(cleaned_columns) < len(original_columns):
+                    config['columns'] = cleaned_columns
+                    with open(screen_file, 'w') as f:
+                        json.dump(config, f, indent=2)
+                    app.logger.info(f"Cleaned {len(original_columns) - len(cleaned_columns)} missing columns from {screen_file}")
+        except Exception as e:
+            app.logger.warning(f"Error cleaning {screen_file}: {e}")
+    
+    # 2. Clean up display_columns.json (main page and filters)
+    try:
+        display_config_file = 'config/display_columns.json'
+        if os.path.exists(display_config_file):
+            with open(display_config_file, 'r') as f:
+                display_config = json.load(f)
+            
+            modified = False
+            
+            # Clean main page columns
+            main_cols = display_config.get('main_page_columns', [])
+            cleaned_main = [col for col in main_cols if col.get('field') in valid_columns]
+            for col in main_cols:
+                field = col.get('field')
+                if field not in valid_columns and field not in removed_columns:
+                    removed_columns.append(field)
+            if len(cleaned_main) < len(main_cols):
+                display_config['main_page_columns'] = cleaned_main
+                modified = True
+            
+            # Clean filter columns
+            filter_cols = display_config.get('filter_columns', [])
+            cleaned_filters = [col for col in filter_cols if col.get('field') in valid_columns]
+            for col in filter_cols:
+                field = col.get('field')
+                if field not in valid_columns and field not in removed_columns:
+                    removed_columns.append(field)
+            if len(cleaned_filters) < len(filter_cols):
+                display_config['filter_columns'] = cleaned_filters
+                modified = True
+            
+            if modified:
+                with open(display_config_file, 'w') as f:
+                    json.dump(display_config, f, indent=2)
+                app.logger.info(f"Cleaned missing columns from {display_config_file}")
+    except Exception as e:
+        app.logger.warning(f"Error cleaning display_columns.json: {e}")
+    
+    # 3. Clean up column_labels.json (remove stale labels)
+    try:
+        labels = load_column_labels()
+        cleaned_labels = {k: v for k, v in labels.items() if k in valid_columns}
+        stale_count = len(labels) - len(cleaned_labels)
+        if stale_count > 0:
+            save_column_labels(cleaned_labels)
+            app.logger.info(f"Removed {stale_count} stale entries from column_labels.json")
+    except Exception as e:
+        app.logger.warning(f"Error cleaning column_labels.json: {e}")
+    
+    return removed_columns
+
 def interpret_conservatism(c_value):
     """Interpret Coefficient of Conservatism value for display"""
     try:
@@ -853,6 +951,12 @@ def load_plant_data(force_reload=False, file_id_override=None):
                     if supplemental_df is not None:
                         df = merge_supplemental_data(df, supplemental_df)
                     
+                    # Clean up any configured columns that no longer exist
+                    valid_columns = set(df.columns.tolist())
+                    removed = cleanup_missing_columns(valid_columns)
+                    if removed:
+                        app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
+                    
                     _cached_plant_data = df
                     _data_cache_timestamp = pd.Timestamp.now()
                     # Save to disk for fast restarts
@@ -892,6 +996,12 @@ def load_plant_data(force_reload=False, file_id_override=None):
                 supplemental_df = load_supplemental_data(force_reload=force_reload)
                 if supplemental_df is not None:
                     df = merge_supplemental_data(df, supplemental_df)
+                
+                # Clean up any configured columns that no longer exist
+                valid_columns = set(df.columns.tolist())
+                removed = cleanup_missing_columns(valid_columns)
+                if removed:
+                    app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
                 
                 _cached_plant_data = df
                 _data_cache_timestamp = pd.Timestamp.now()
@@ -936,6 +1046,12 @@ def load_plant_data(force_reload=False, file_id_override=None):
             supplemental_df = load_supplemental_data(force_reload=force_reload)
             if supplemental_df is not None:
                 df = merge_supplemental_data(df, supplemental_df)
+            
+            # Clean up any configured columns that no longer exist
+            valid_columns = set(df.columns.tolist())
+            removed = cleanup_missing_columns(valid_columns)
+            if removed:
+                app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
             
             # Cache the data
             _cached_plant_data = df
