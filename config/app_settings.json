@@ -2,6 +2,7 @@
   "data_source": {
     "google_drive_folder_id": "1oQq7kjAn1yV2--e9p3pUi9XsEwDvIr7G",
     "file_prefix": "S2C_Species_Data_Main",
+    "supplemental_file_prefix": "PlantData",
     "google_drive_csv_url": "https://drive.google.com/file/d/1X78-BA3QGtegriBpPPBWSZVG1FfeSbN9/view?usp=drive_link",
     "fallback_files": ["origdata.tabsv", "plants.csv"]
   },

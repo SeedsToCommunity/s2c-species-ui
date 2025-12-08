@@ -55,6 +55,16 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Automatic URL conversion** - Handles both Google Drive share URLs and direct download URLs
 - **Environment configuration** - Uses `GOOGLE_DRIVE_CSV_URL` environment variable for setup
 
+### Supplemental Data Integration ✅ (December 2025)
+- **Two-file data model** - Main species list (S2C_Species_Data_Main) controls which species are available, supplemental data (PlantData Google Sheet) provides additional columns
+- **Google Sheets support** - Automatically exports Google Sheets as CSV for processing
+- **Genus + Species matching** - Joins supplemental data to main species using normalized genus/species key
+- **Automatic column discovery** - New columns from supplemental data automatically appear in admin UI
+- **Existing column assignment** - Supplemental columns can be assigned to screens using the same admin interface as main columns
+- **Graceful fallback** - App continues to work if supplemental data is unavailable
+- **Cache management** - Both main and supplemental data caches are cleared together on refresh
+- **Configuration** - Uses `supplemental_file_prefix` in app_settings.json (default: "PlantData")
+
 ### Development vs Production Environment Detection ✅
 - **Proper environment detection** - Uses REPLIT_ENVIRONMENT variable to distinguish development from production
 - **Development-only features** - Edit capabilities and admin tools only appear in development workspace
@@ -101,7 +111,8 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Configuration**: Environment-based configuration for session secrets
 
 ### Data Storage
-- **Primary Data Source**: Google Drive CSV file (configurable via `GOOGLE_DRIVE_CSV_URL` environment variable)
+- **Primary Data Source**: Google Drive CSV file (S2C_Species_Data_Main prefix) controls species availability
+- **Supplemental Data Source**: Google Sheets file (PlantData prefix) provides additional columns merged on genus+species
 - **Fallback Sources**: Local tab-separated file (`origdata.tabsv`) or CSV file (`plants.csv`)
 - **Dynamic Loading**: Application fetches fresh data from Google Drive on each startup
 - **Auto-conversion**: Handles both Google Drive share URLs and direct download URLs

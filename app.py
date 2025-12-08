@@ -28,6 +28,11 @@ _cached_plant_data = None
 _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
 
+# Global cache for supplemental data (PlantData Google Sheet)
+_cached_supplemental_data = None
+_supplemental_file_id = None
+_supplemental_file_name = None
+
 def get_google_drive_service():
     """Get an authenticated Google Drive API service"""
     if not GOOGLE_API_AVAILABLE:
@@ -176,6 +181,192 @@ def check_for_new_data_file():
     
     return was_different_file, message
 
+def find_google_sheet_in_folder(folder_id, file_prefix):
+    """Find a Google Sheet in a folder that matches the prefix"""
+    global _supplemental_file_id, _supplemental_file_name
+    
+    service = get_google_drive_service()
+    if not service:
+        return None, None, "Google Drive API not configured"
+    
+    try:
+        # Search for Google Sheets in the folder that match the prefix
+        query = f"'{folder_id}' in parents and name contains '{file_prefix}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
+        
+        results = service.files().list(
+            q=query,
+            fields='files(id, name, modifiedTime)',
+            orderBy='modifiedTime desc',
+            pageSize=10
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        if not files:
+            app.logger.info(f"No Google Sheets found in folder with prefix '{file_prefix}'")
+            return None, None, f"No Google Sheets found with prefix '{file_prefix}'"
+        
+        # Get the most recently modified file
+        latest_file = files[0]
+        file_id = latest_file['id']
+        file_name = latest_file['name']
+        modified_time = latest_file.get('modifiedTime', 'Unknown')
+        
+        _supplemental_file_id = file_id
+        _supplemental_file_name = file_name
+        app.logger.info(f"Found supplemental Google Sheet: '{file_name}' (modified: {modified_time})")
+        
+        return file_id, file_name, f"Found Google Sheet: '{file_name}' (modified: {modified_time})"
+            
+    except Exception as e:
+        app.logger.error(f"Error searching for Google Sheet: {str(e)}")
+        return None, None, f"Error: {str(e)}"
+
+def export_google_sheet_as_csv(file_id):
+    """Export a Google Sheet as CSV data"""
+    service = get_google_drive_service()
+    if not service:
+        return None, "Google Drive API not configured"
+    
+    try:
+        # Export the Google Sheet as CSV
+        request = service.files().export_media(
+            fileId=file_id,
+            mimeType='text/csv'
+        )
+        
+        # Execute the request and get the content
+        from io import BytesIO
+        from googleapiclient.http import MediaIoBaseDownload
+        
+        fh = BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+        
+        fh.seek(0)
+        csv_content = fh.read().decode('utf-8')
+        return csv_content, None
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting Google Sheet as CSV: {str(e)}")
+        return None, f"Error: {str(e)}"
+
+def load_supplemental_data(force_reload=False):
+    """Load supplemental data from PlantData Google Sheet"""
+    global _cached_supplemental_data, _supplemental_file_id, _supplemental_file_name
+    
+    # Return cached data if available and not forcing reload
+    if not force_reload and _cached_supplemental_data is not None:
+        return _cached_supplemental_data
+    
+    settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    supplemental_prefix = settings.get('data_source', {}).get('supplemental_file_prefix', 'PlantData')
+    
+    if not folder_id or not supplemental_prefix:
+        app.logger.info("Supplemental data not configured")
+        return None
+    
+    try:
+        # Find the Google Sheet
+        file_id, file_name, message = find_google_sheet_in_folder(folder_id, supplemental_prefix)
+        
+        if not file_id:
+            app.logger.info(f"No supplemental data file found: {message}")
+            return None
+        
+        # Export as CSV
+        csv_content, error = export_google_sheet_as_csv(file_id)
+        if error:
+            app.logger.error(f"Error exporting supplemental data: {error}")
+            return None
+        
+        # Parse CSV
+        csv_data = StringIO(csv_content)
+        df = pd.read_csv(csv_data)
+        
+        # Clean up column names - replace spaces with underscores and make lowercase
+        df.columns = df.columns.str.replace(' ', '_').str.lower()
+        df = df.fillna('')
+        
+        app.logger.info(f"Successfully loaded {len(df)} rows of supplemental data from '{file_name}'")
+        app.logger.info(f"Supplemental columns: {list(df.columns)}")
+        
+        _cached_supplemental_data = df
+        return df
+        
+    except Exception as e:
+        app.logger.error(f"Error loading supplemental data: {str(e)}")
+        return None
+
+def create_species_key(row):
+    """Create a normalized key from genus and species for matching"""
+    genus = str(row.get('genus', '')).strip().lower()
+    species = str(row.get('species', '')).strip().lower()
+    return f"{genus}_{species}"
+
+def merge_supplemental_data(main_df, supplemental_df):
+    """Merge supplemental data into main dataframe using genus + species as key"""
+    if supplemental_df is None or supplemental_df.empty:
+        return main_df
+    
+    try:
+        # Check if both dataframes have genus and species columns
+        main_has_keys = 'genus' in main_df.columns and 'species' in main_df.columns
+        supp_has_keys = 'genus' in supplemental_df.columns and 'species' in supplemental_df.columns
+        
+        if not main_has_keys:
+            app.logger.warning("Main data missing genus/species columns - cannot merge supplemental data")
+            return main_df
+        
+        if not supp_has_keys:
+            app.logger.warning("Supplemental data missing genus/species columns - cannot merge")
+            return main_df
+        
+        # Create merge keys
+        main_df = main_df.copy()
+        supplemental_df = supplemental_df.copy()
+        
+        main_df['_merge_key'] = main_df.apply(create_species_key, axis=1)
+        supplemental_df['_merge_key'] = supplemental_df.apply(create_species_key, axis=1)
+        
+        # Get columns that are only in supplemental data (excluding merge key and common columns)
+        main_cols = set(main_df.columns)
+        supp_cols = set(supplemental_df.columns)
+        new_cols = supp_cols - main_cols - {'_merge_key', 'genus', 'species'}
+        
+        if not new_cols:
+            app.logger.info("No new columns in supplemental data to merge")
+            main_df = main_df.drop('_merge_key', axis=1)
+            return main_df
+        
+        # Select only the merge key and new columns from supplemental data
+        supp_subset = supplemental_df[['_merge_key'] + list(new_cols)].copy()
+        
+        # Remove duplicates in supplemental data (keep first occurrence)
+        supp_subset = supp_subset.drop_duplicates(subset=['_merge_key'], keep='first')
+        
+        # Merge
+        merged_df = main_df.merge(supp_subset, on='_merge_key', how='left')
+        
+        # Clean up merge key
+        merged_df = merged_df.drop('_merge_key', axis=1)
+        
+        # Fill NaN in new columns with empty string
+        for col in new_cols:
+            if col in merged_df.columns:
+                merged_df[col] = merged_df[col].fillna('')
+        
+        app.logger.info(f"Successfully merged {len(new_cols)} supplemental columns: {list(new_cols)}")
+        
+        return merged_df
+        
+    except Exception as e:
+        app.logger.error(f"Error merging supplemental data: {str(e)}")
+        return main_df
+
 def load_display_config():
     """Load display configuration from JSON file"""
     try:
@@ -270,6 +461,11 @@ def load_plant_data(force_reload=False, file_id_override=None):
                 
                 app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (folder-based)")
                 
+                # Load and merge supplemental data
+                supplemental_df = load_supplemental_data(force_reload=force_reload)
+                if supplemental_df is not None:
+                    df = merge_supplemental_data(df, supplemental_df)
+                
                 _cached_plant_data = df
                 _data_cache_timestamp = pd.Timestamp.now()
                 return df
@@ -299,6 +495,11 @@ def load_plant_data(force_reload=False, file_id_override=None):
             df = df.fillna('')
             
             app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (URL-based)")
+            
+            # Load and merge supplemental data
+            supplemental_df = load_supplemental_data(force_reload=force_reload)
+            if supplemental_df is not None:
+                df = merge_supplemental_data(df, supplemental_df)
             
             _cached_plant_data = df
             _data_cache_timestamp = pd.Timestamp.now()
@@ -333,6 +534,11 @@ def load_plant_data(force_reload=False, file_id_override=None):
         df = df.fillna('')
         
         app.logger.info(f"Successfully loaded {len(df)} rows from local files")
+        
+        # Load and merge supplemental data
+        supplemental_df = load_supplemental_data(force_reload=force_reload)
+        if supplemental_df is not None:
+            df = merge_supplemental_data(df, supplemental_df)
         
         # Cache the data
         _cached_plant_data = df
@@ -637,9 +843,10 @@ def admin_dashboard():
 @app.route('/admin/refresh')
 def refresh_data():
     """Admin route to manually refresh cached data"""
-    global _cached_plant_data
+    global _cached_plant_data, _cached_supplemental_data
     try:
         _cached_plant_data = None  # Clear cache
+        _cached_supplemental_data = None  # Clear supplemental cache
         df = load_plant_data(force_reload=True)
         flash(f'Data refreshed successfully! Loaded {len(df)} plant species.', 'success')
         return redirect(url_for('index'))
@@ -651,7 +858,7 @@ def refresh_data():
 @app.route('/api/check-updates')
 def check_for_updates_endpoint():
     """API endpoint to check if a new data file exists in Google Drive folder and reload if needed"""
-    global _cached_plant_data, _current_file_id, _current_file_name
+    global _cached_plant_data, _cached_supplemental_data, _current_file_id, _current_file_name
     
     settings = load_app_settings()
     folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
@@ -678,6 +885,7 @@ def check_for_updates_endpoint():
         if is_new_file:
             # New file found - reload the data
             _cached_plant_data = None
+            _cached_supplemental_data = None
             df = load_plant_data(force_reload=True, file_id_override=file_id)
             return jsonify({
                 'status': 'updated',
@@ -719,6 +927,7 @@ def check_for_updates_endpoint():
     
     if was_modified is None:
         _cached_plant_data = None
+        _cached_supplemental_data = None
         df = load_plant_data(force_reload=True)
         return jsonify({
             'status': 'reloaded',
@@ -729,6 +938,7 @@ def check_for_updates_endpoint():
     
     if was_modified:
         _cached_plant_data = None
+        _cached_supplemental_data = None
         df = load_plant_data(force_reload=True)
         return jsonify({
             'status': 'updated',
@@ -1075,10 +1285,7 @@ def toggle_column():
                 json.dump(screen_config, f, indent=2)
         
         # Clear any cached configurations (if you have them)
-        global _cached_display_config, _cached_screen_configs
-        _cached_display_config = None
-        if '_cached_screen_configs' in globals():
-            _cached_screen_configs.clear()
+        # Note: Screen configs are loaded fresh on each request, no cache to clear
         
         return {"success": True, "message": "Column configuration updated"}
         
