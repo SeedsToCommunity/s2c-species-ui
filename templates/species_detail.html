@@ -139,10 +139,35 @@
             {% for column in screen_config.columns %}
                 {% set field_value = species.get(column.field, '') %}
                 {% if field_value and field_value != '' %}
+                    {% set parsed = field_value|parse_json_urls %}
                     <div class="col-lg-6 mb-1">
                         <div class="card h-100">
                             <div class="card-body py-1 px-2">
-                                {% if column.type == 'link' and field_value %}
+                                {% if parsed.type == 'url_dict' %}
+                                    <!-- JSON dictionary of labeled URLs -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for name, url in parsed.data.items() %}
+                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                                    <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>{{ name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% elif parsed.type == 'url_list' %}
+                                    <!-- JSON array of URLs -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for url in parsed.data %}
+                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                                    <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link {{ loop.index }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="text-muted me-2">{{ column.label }}:</small>
                                         <a href="{{ field_value }}" target="_blank" class="btn btn-outline-primary btn-sm">
@@ -292,6 +317,35 @@
             }
         }
         
+        // Helper function to parse JSON URLs
+        function parseJsonUrls(value) {
+            if (!value || typeof value !== 'string') {
+                return { type: 'text', data: value };
+            }
+            const trimmed = value.trim();
+            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                return { type: 'text', data: value };
+            }
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    const urls = Object.values(parsed).filter(v => typeof v === 'string' && v.startsWith('http'));
+                    if (urls.length > 0 && urls.length >= Object.keys(parsed).length * 0.5) {
+                        return { type: 'url_dict', data: parsed };
+                    }
+                }
+                if (Array.isArray(parsed)) {
+                    const urls = parsed.filter(v => typeof v === 'string' && v.startsWith('http'));
+                    if (urls.length > 0 && urls.length >= parsed.length * 0.5) {
+                        return { type: 'url_list', data: parsed };
+                    }
+                }
+                return { type: 'text', data: value };
+            } catch (e) {
+                return { type: 'text', data: value };
+            }
+        }
+        
         // Function to update screen content
         function updateScreenContent(species, screenConfig) {
             let content = '';
@@ -304,7 +358,47 @@
                                        (column.field !== 'special_collect' || fieldValue === 'TRUE');
                 if (shouldShowField) {
                     hasData = true;
-                    if (column.type === 'link' && fieldValue) {
+                    
+                    // Parse JSON URLs
+                    const parsed = parseJsonUrls(fieldValue);
+                    
+                    if (parsed.type === 'url_dict') {
+                        // JSON dictionary of labeled URLs
+                        let linksHtml = '';
+                        for (const [name, url] of Object.entries(parsed.data)) {
+                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>${name}</a>`;
+                        }
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'url_list') {
+                        // JSON array of URLs
+                        let linksHtml = '';
+                        parsed.data.forEach((url, index) => {
+                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link ${index + 1}</a>`;
+                        });
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (column.type === 'link' && fieldValue) {
                         content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">

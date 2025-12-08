@@ -26,6 +26,44 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
 # Global cache for plant data to avoid reloading on every request
 _cached_plant_data = None
+
+# Custom Jinja filter to parse JSON and detect URL dictionaries
+@app.template_filter('parse_json_urls')
+def parse_json_urls_filter(value):
+    """
+    Parse a JSON string and return structured data for rendering.
+    Returns a dict with 'type' and 'data' keys:
+    - type: 'url_dict' for {name: url} dicts, 'url_list' for [url] lists, 'text' for plain text
+    - data: the parsed data or original value
+    """
+    if not value or not isinstance(value, str):
+        return {'type': 'text', 'data': value}
+    
+    value = value.strip()
+    if not (value.startswith('{') or value.startswith('[')):
+        return {'type': 'text', 'data': value}
+    
+    try:
+        parsed = json.loads(value)
+        
+        # Check if it's a dict with URL values
+        if isinstance(parsed, dict):
+            # Check if most values look like URLs
+            url_count = sum(1 for v in parsed.values() if isinstance(v, str) and v.startswith('http'))
+            if url_count > 0 and url_count >= len(parsed) * 0.5:
+                return {'type': 'url_dict', 'data': parsed}
+            return {'type': 'json_dict', 'data': parsed}
+        
+        # Check if it's a list of URLs
+        if isinstance(parsed, list):
+            url_count = sum(1 for v in parsed if isinstance(v, str) and v.startswith('http'))
+            if url_count > 0 and url_count >= len(parsed) * 0.5:
+                return {'type': 'url_list', 'data': parsed}
+            return {'type': 'json_list', 'data': parsed}
+        
+        return {'type': 'text', 'data': value}
+    except (json.JSONDecodeError, TypeError):
+        return {'type': 'text', 'data': value}
 _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
 _data_load_lock = threading.Lock()  # Prevent concurrent data loads
