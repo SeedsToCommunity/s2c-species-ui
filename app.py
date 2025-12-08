@@ -307,29 +307,48 @@ def create_species_key(row):
     species = str(row.get('species', '')).strip().lower()
     return f"{genus}_{species}"
 
+def create_species_key_from_botanical_name(botanical_name):
+    """Extract genus and species from botanical_name to create a merge key"""
+    name = str(botanical_name).strip().lower()
+    parts = name.split()
+    if len(parts) >= 2:
+        return f"{parts[0]}_{parts[1]}"
+    elif len(parts) == 1:
+        return f"{parts[0]}_"
+    return ""
+
 def merge_supplemental_data(main_df, supplemental_df):
     """Merge supplemental data into main dataframe using genus + species as key"""
     if supplemental_df is None or supplemental_df.empty:
         return main_df
     
     try:
-        # Check if both dataframes have genus and species columns
-        main_has_keys = 'genus' in main_df.columns and 'species' in main_df.columns
+        # Check if supplemental data has genus and species columns
         supp_has_keys = 'genus' in supplemental_df.columns and 'species' in supplemental_df.columns
-        
-        if not main_has_keys:
-            app.logger.warning("Main data missing genus/species columns - cannot merge supplemental data")
-            return main_df
         
         if not supp_has_keys:
             app.logger.warning("Supplemental data missing genus/species columns - cannot merge")
+            return main_df
+        
+        # Check if main data has genus/species or botanical_name
+        main_has_keys = 'genus' in main_df.columns and 'species' in main_df.columns
+        main_has_botanical = 'botanical_name' in main_df.columns
+        
+        if not main_has_keys and not main_has_botanical:
+            app.logger.warning("Main data missing genus/species and botanical_name columns - cannot merge supplemental data")
             return main_df
         
         # Create merge keys
         main_df = main_df.copy()
         supplemental_df = supplemental_df.copy()
         
-        main_df['_merge_key'] = main_df.apply(create_species_key, axis=1)
+        # Create merge key for main data
+        if main_has_keys:
+            main_df['_merge_key'] = main_df.apply(create_species_key, axis=1)
+        else:
+            main_df['_merge_key'] = main_df['botanical_name'].apply(create_species_key_from_botanical_name)
+        
+        # Create merge key for supplemental data
         supplemental_df['_merge_key'] = supplemental_df.apply(create_species_key, axis=1)
         
         # Get columns that are only in supplemental data (excluding merge key and common columns)
