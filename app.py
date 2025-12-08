@@ -154,23 +154,34 @@ _cached_column_usage = None
 # Column labels mapping file - stores original headers for display
 COLUMN_LABELS_FILE = 'config/column_labels.json'
 
+# In-memory cache for column labels (avoid repeated disk reads)
+_cached_column_labels = None
+
 def load_column_labels():
-    """Load the column labels mapping from config file"""
+    """Load the column labels mapping from config file (cached in memory)"""
+    global _cached_column_labels
+    if _cached_column_labels is not None:
+        return _cached_column_labels
     try:
         if os.path.exists(COLUMN_LABELS_FILE):
             with open(COLUMN_LABELS_FILE, 'r') as f:
-                return json.load(f)
+                _cached_column_labels = json.load(f)
+                return _cached_column_labels
     except Exception as e:
         app.logger.warning(f"Could not load column labels: {e}")
-    return {}
+    _cached_column_labels = {}
+    return _cached_column_labels
 
 def save_column_labels(labels_mapping):
-    """Save the column labels mapping to config file"""
+    """Save the column labels mapping to config file and update cache"""
+    global _cached_column_labels
     try:
         # Ensure config directory exists
         os.makedirs(os.path.dirname(COLUMN_LABELS_FILE), exist_ok=True)
         with open(COLUMN_LABELS_FILE, 'w') as f:
             json.dump(labels_mapping, f, indent=2)
+        # Update in-memory cache
+        _cached_column_labels = labels_mapping
         app.logger.info(f"Saved {len(labels_mapping)} column labels to {COLUMN_LABELS_FILE}")
     except Exception as e:
         app.logger.warning(f"Could not save column labels: {e}")
@@ -1213,20 +1224,34 @@ def get_unique_values_ordered(df, column, preferred_order):
     
     return ordered_values
 
-def load_screen_config(screen_type):
-    """Load screen configuration for species detail view"""
+# In-memory cache for screen configs (invalidated on save)
+_cached_screen_configs = {}
+
+def load_screen_config(screen_type, force_reload=False):
+    """Load screen configuration for species detail view (cached in memory)"""
+    global _cached_screen_configs
+    
+    # Check cache first
+    if not force_reload and screen_type in _cached_screen_configs:
+        return _cached_screen_configs[screen_type]
+    
     try:
         with open(f'config/screen_{screen_type}.json', 'r') as f:
             config = json.load(f)
         
         # Apply original column labels from column_labels.json
         # This ensures labels match original spreadsheet headers
+        labels = load_column_labels()
         for col in config.get('columns', []):
             field_name = col.get('field')
             if field_name:
-                original_label = get_column_label(field_name)
-                col['label'] = original_label
+                if field_name in labels:
+                    col['label'] = labels[field_name]
+                else:
+                    col['label'] = field_name.replace('_', ' ').title()
         
+        # Cache the result
+        _cached_screen_configs[screen_type] = config
         return config
     except FileNotFoundError:
         app.logger.error(f"Screen configuration file for {screen_type} not found")
@@ -1234,6 +1259,14 @@ def load_screen_config(screen_type):
     except Exception as e:
         app.logger.error(f"Error loading screen configuration for {screen_type}: {str(e)}")
         return {"screen_name": screen_type.title(), "columns": []}
+
+def invalidate_screen_config_cache(screen_type=None):
+    """Invalidate the screen config cache (all or specific screen)"""
+    global _cached_screen_configs
+    if screen_type:
+        _cached_screen_configs.pop(screen_type, None)
+    else:
+        _cached_screen_configs = {}
 
 def get_species_by_name(df, botanical_name):
     """Get a single species by botanical name"""
@@ -1889,6 +1922,9 @@ def toggle_column():
             import json
             with open(f'config/screen_{screen_name}.json', 'w') as f:
                 json.dump(screen_config, f, indent=2)
+            
+            # Invalidate screen config cache for this screen
+            invalidate_screen_config_cache(screen_name)
         
         # Invalidate column usage cache so changes appear immediately
         global _cached_column_usage
@@ -1963,6 +1999,8 @@ def save_column_order():
         with open(f'config/screen_{screen}.json', 'w') as f:
             json.dump(screen_config, f, indent=2)
         
+        # Invalidate caches
+        invalidate_screen_config_cache(screen)
         global _cached_column_usage
         _cached_column_usage = None
         
