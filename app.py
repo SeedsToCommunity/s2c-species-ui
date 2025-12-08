@@ -30,10 +30,76 @@ _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
 _data_load_lock = threading.Lock()  # Prevent concurrent data loads
 
+# Disk cache paths for persistence across restarts
+CACHE_DIR = '/tmp/plant_data_cache'
+MAIN_CACHE_FILE = os.path.join(CACHE_DIR, 'main_data.pkl')
+SUPPLEMENTAL_CACHE_FILE = os.path.join(CACHE_DIR, 'supplemental_data.pkl')
+CACHE_META_FILE = os.path.join(CACHE_DIR, 'cache_meta.json')
+
 # Global cache for supplemental data (PlantData Google Sheet)
 _cached_supplemental_data = None
 _supplemental_file_id = None
 _supplemental_file_name = None
+
+def _ensure_cache_dir():
+    """Ensure cache directory exists"""
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+
+def _save_cache_to_disk(df, supplemental_df, file_name, supplemental_file_name):
+    """Save data to disk cache for persistence across restarts"""
+    try:
+        _ensure_cache_dir()
+        # Save main data
+        df.to_pickle(MAIN_CACHE_FILE)
+        # Save supplemental data if exists
+        if supplemental_df is not None:
+            supplemental_df.to_pickle(SUPPLEMENTAL_CACHE_FILE)
+        # Save metadata
+        meta = {
+            'timestamp': datetime.now().isoformat(),
+            'main_file': file_name,
+            'supplemental_file': supplemental_file_name,
+            'row_count': len(df)
+        }
+        with open(CACHE_META_FILE, 'w') as f:
+            json.dump(meta, f)
+        app.logger.info(f"Saved cache to disk: {len(df)} rows")
+    except Exception as e:
+        app.logger.warning(f"Failed to save disk cache: {e}")
+
+def _load_cache_from_disk():
+    """Load data from disk cache if available"""
+    global _cached_plant_data, _cached_supplemental_data, _supplemental_file_name
+    try:
+        if os.path.exists(MAIN_CACHE_FILE) and os.path.exists(CACHE_META_FILE):
+            # Load metadata to check cache age
+            with open(CACHE_META_FILE, 'r') as f:
+                meta = json.load(f)
+            cache_time = datetime.fromisoformat(meta['timestamp'])
+            age_hours = (datetime.now() - cache_time).total_seconds() / 3600
+            
+            # Use disk cache if less than 24 hours old
+            if age_hours < 24:
+                df = pd.read_pickle(MAIN_CACHE_FILE)
+                supp_df = None
+                if os.path.exists(SUPPLEMENTAL_CACHE_FILE):
+                    supp_df = pd.read_pickle(SUPPLEMENTAL_CACHE_FILE)
+                app.logger.info(f"Loaded {len(df)} rows from disk cache (age: {age_hours:.1f}h)")
+                return df, supp_df, meta.get('supplemental_file')
+    except Exception as e:
+        app.logger.warning(f"Failed to load disk cache: {e}")
+    return None, None, None
+
+def _clear_disk_cache():
+    """Clear disk cache when data is refreshed"""
+    try:
+        for f in [MAIN_CACHE_FILE, SUPPLEMENTAL_CACHE_FILE, CACHE_META_FILE]:
+            if os.path.exists(f):
+                os.remove(f)
+        app.logger.info("Cleared disk cache")
+    except Exception as e:
+        app.logger.warning(f"Failed to clear disk cache: {e}")
 
 def _get_supplemental_file_info():
     """Get info about the current supplemental data file"""
@@ -451,6 +517,10 @@ def load_plant_data(force_reload=False, file_id_override=None):
     """Load and process plant data from Google Drive CSV or fallback to local files"""
     global _cached_plant_data, _data_cache_timestamp, _current_file_id
     
+    # Clear disk cache when forcing reload
+    if force_reload:
+        _clear_disk_cache()
+    
     # Return cached data if available and not forcing reload (fast path, no lock needed)
     if not force_reload and _cached_plant_data is not None:
         return _cached_plant_data
@@ -460,6 +530,17 @@ def load_plant_data(force_reload=False, file_id_override=None):
         # Double-check cache after acquiring lock (another thread may have loaded it)
         if not force_reload and _cached_plant_data is not None:
             return _cached_plant_data
+        
+        # Try disk cache for fast startup after restarts
+        if not force_reload:
+            disk_df, disk_supp_df, supp_file_name = _load_cache_from_disk()
+            if disk_df is not None:
+                global _cached_supplemental_data, _supplemental_file_name
+                _cached_plant_data = disk_df
+                _cached_supplemental_data = disk_supp_df
+                _supplemental_file_name = supp_file_name
+                _data_cache_timestamp = pd.Timestamp.now()
+                return disk_df
         
         # Load settings
         settings = load_app_settings()
@@ -514,6 +595,8 @@ def load_plant_data(force_reload=False, file_id_override=None):
                     
                     _cached_plant_data = df
                     _data_cache_timestamp = pd.Timestamp.now()
+                    # Save to disk for fast restarts
+                    _save_cache_to_disk(df, _cached_supplemental_data, file_name, _supplemental_file_name)
                     return df
                     
         except Exception as e:
@@ -549,6 +632,8 @@ def load_plant_data(force_reload=False, file_id_override=None):
                 
                 _cached_plant_data = df
                 _data_cache_timestamp = pd.Timestamp.now()
+                # Save to disk for fast restarts
+                _save_cache_to_disk(df, _cached_supplemental_data, 'url_based', _supplemental_file_name)
                 return df
                 
         except requests.RequestException as e:
@@ -589,6 +674,8 @@ def load_plant_data(force_reload=False, file_id_override=None):
             # Cache the data
             _cached_plant_data = df
             _data_cache_timestamp = pd.Timestamp.now()
+            # Save to disk for fast restarts
+            _save_cache_to_disk(df, _cached_supplemental_data, 'local_fallback', _supplemental_file_name)
             return df
             
         except Exception as e:
