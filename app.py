@@ -33,6 +33,25 @@ _cached_supplemental_data = None
 _supplemental_file_id = None
 _supplemental_file_name = None
 
+def _get_supplemental_file_info():
+    """Get info about the current supplemental data file"""
+    global _supplemental_file_name, _cached_supplemental_data
+    if _supplemental_file_name:
+        col_count = len(_cached_supplemental_data.columns) if _cached_supplemental_data is not None else 0
+        row_count = len(_cached_supplemental_data) if _cached_supplemental_data is not None else 0
+        return {
+            'found': True,
+            'file_name': _supplemental_file_name,
+            'columns': col_count,
+            'rows': row_count
+        }
+    return {
+        'found': False,
+        'file_name': None,
+        'columns': 0,
+        'rows': 0
+    }
+
 def get_google_drive_service():
     """Get an authenticated Google Drive API service"""
     if not GOOGLE_API_AVAILABLE:
@@ -771,9 +790,6 @@ def species_detail(botanical_name, screen_type='identification'):
             'moisture': request.args.get('moisture', '')
         }
         
-        # Check if running in development (only show in actual development workspace, not deployed)
-        is_development = (os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production')
-        
         return render_template('species_detail.html', 
                              species=species, 
                              screen_config=screen_config,
@@ -781,7 +797,7 @@ def species_detail(botanical_name, screen_type='identification'):
                              valid_screens=valid_screens,
                              current_filters=current_filters,
                              botanical_name=unquote(botanical_name),
-                             is_development=is_development)
+                             is_development=True)
         
     except Exception as e:
         app.logger.error(f"Error loading species detail: {str(e)}")
@@ -895,7 +911,8 @@ def check_for_updates_endpoint():
             return jsonify({
                 'status': 'error',
                 'message': f'Could not find files: {message}',
-                'reloaded': False
+                'reloaded': False,
+                'supplemental': _get_supplemental_file_info()
             })
         
         # Check if this is a different file than before
@@ -906,22 +923,26 @@ def check_for_updates_endpoint():
             _cached_plant_data = None
             _cached_supplemental_data = None
             df = load_plant_data(force_reload=True, file_id_override=file_id)
+            supp_info = _get_supplemental_file_info()
             return jsonify({
                 'status': 'updated',
                 'message': f"New file loaded: '{file_name}'. Loaded {len(df)} species.",
                 'reloaded': True,
                 'species_count': len(df),
-                'file_name': file_name
+                'file_name': file_name,
+                'supplemental': supp_info
             })
         else:
             # Same file - no reload needed
             df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
+            supp_info = _get_supplemental_file_info()
             return jsonify({
                 'status': 'unchanged',
                 'message': f"Already using latest file: '{file_name}'. {len(df)} species loaded.",
                 'reloaded': False,
                 'species_count': len(df) if df is not None else 0,
-                'file_name': file_name
+                'file_name': file_name,
+                'supplemental': supp_info
             })
     
     # Fall back to legacy single-file checking
@@ -931,7 +952,8 @@ def check_for_updates_endpoint():
         return jsonify({
             'status': 'error',
             'message': 'No Google Drive folder or URL configured',
-            'reloaded': False
+            'reloaded': False,
+            'supplemental': _get_supplemental_file_info()
         })
     
     file_id = get_file_id_from_url(google_drive_url)
@@ -939,7 +961,8 @@ def check_for_updates_endpoint():
         return jsonify({
             'status': 'error', 
             'message': 'Could not extract file ID from Google Drive URL',
-            'reloaded': False
+            'reloaded': False,
+            'supplemental': _get_supplemental_file_info()
         })
     
     was_modified, message = check_google_drive_file_modified(file_id)
@@ -948,30 +971,36 @@ def check_for_updates_endpoint():
         _cached_plant_data = None
         _cached_supplemental_data = None
         df = load_plant_data(force_reload=True)
+        supp_info = _get_supplemental_file_info()
         return jsonify({
             'status': 'reloaded',
             'message': f'API not available - forced reload. Loaded {len(df)} species. ({message})',
             'reloaded': True,
-            'species_count': len(df)
+            'species_count': len(df),
+            'supplemental': supp_info
         })
     
     if was_modified:
         _cached_plant_data = None
         _cached_supplemental_data = None
         df = load_plant_data(force_reload=True)
+        supp_info = _get_supplemental_file_info()
         return jsonify({
             'status': 'updated',
             'message': f'Data updated! Loaded {len(df)} species. {message}',
             'reloaded': True,
-            'species_count': len(df)
+            'species_count': len(df),
+            'supplemental': supp_info
         })
     else:
         df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
+        supp_info = _get_supplemental_file_info()
         return jsonify({
             'status': 'unchanged',
             'message': f'Data is up to date. {message}',
             'reloaded': False,
-            'species_count': len(df) if df is not None else 0
+            'species_count': len(df) if df is not None else 0,
+            'supplemental': supp_info
         })
 
 @app.route('/admin/columns')
@@ -1212,29 +1241,22 @@ def admin_column_usage():
         # Keep original column order from CSV file (preserves data structure)
         ordered_columns = [(col, column_usage[col]) for col in all_columns]
         
-        # Check if running in development (only show in actual development workspace, not deployed)
-        is_development = (os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production')
-        
         return render_template('admin_column_usage.html', 
                              column_usage=dict(ordered_columns),
                              total_columns=len(all_columns),
                              total_species=len(df),
-                             is_development=is_development)
+                             is_development=True)
         
     except Exception as e:
         app.logger.error(f"Error analyzing column usage: {str(e)}")
         flash(f'Error analyzing column usage: {str(e)}', 'error')
         return render_template('admin_column_usage.html', 
                              column_usage={}, 
-                             is_development=(os.environ.get('REPLIT_ENVIRONMENT', 'development') != 'production'))
+                             is_development=True)
 
 @app.route('/admin/toggle-column', methods=['POST'])
 def toggle_column():
-    """Toggle column usage for a specific screen (development only)"""
-    # Only allow in development environment (not deployed)
-    if os.environ.get('REPLIT_ENVIRONMENT', 'development') == 'production':
-        return {"error": "Not available in production"}, 403
-    
+    """Toggle column usage for a specific screen"""
     try:
         data = request.get_json()
         column_name = data.get('column_name')

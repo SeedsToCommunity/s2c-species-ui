@@ -568,10 +568,20 @@
                     btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Check for Updates';
                     feather.replace();
                     
+                    // Build supplemental info string
+                    let suppInfo = '';
+                    if (data.supplemental) {
+                        if (data.supplemental.found) {
+                            suppInfo = ` | Supplemental: ${data.supplemental.file_name} (${data.supplemental.columns} columns)`;
+                        } else {
+                            suppInfo = ' | Supplemental: not found';
+                        }
+                    }
+                    
                     // Show status message
                     if (data.status === 'updated' || data.status === 'reloaded') {
                         statusSpan.className = 'ms-2 small text-success';
-                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message;
+                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message + suppInfo;
                         feather.replace();
                         // Reload the page to show new data
                         setTimeout(() => {
@@ -579,12 +589,12 @@
                         }, 1500);
                     } else if (data.status === 'unchanged') {
                         statusSpan.className = 'ms-2 small text-info';
-                        statusSpan.innerHTML = '<i data-feather="check" class="me-1"></i>' + data.message;
+                        statusSpan.innerHTML = '<i data-feather="check" class="me-1"></i>' + data.message + suppInfo;
                         feather.replace();
-                        // Clear message after 5 seconds
+                        // Clear message after 8 seconds
                         setTimeout(() => {
                             statusSpan.innerHTML = '';
-                        }, 5000);
+                        }, 8000);
                     } else {
                         statusSpan.className = 'ms-2 small text-warning';
                         statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
