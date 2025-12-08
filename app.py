@@ -622,6 +622,14 @@ def load_display_config():
     try:
         with open('config/display_columns.json', 'r') as f:
             config = json.load(f)
+        
+        # Apply original column labels from column_labels.json
+        for col in config.get('main_page_columns', []):
+            field_name = col.get('field')
+            if field_name:
+                original_label = get_column_label(field_name)
+                col['label'] = original_label
+        
         return config
     except FileNotFoundError:
         app.logger.error("Display configuration file not found")
@@ -899,6 +907,15 @@ def load_screen_config(screen_type):
     try:
         with open(f'config/screen_{screen_type}.json', 'r') as f:
             config = json.load(f)
+        
+        # Apply original column labels from column_labels.json
+        # This ensures labels match original spreadsheet headers
+        for col in config.get('columns', []):
+            field_name = col.get('field')
+            if field_name:
+                original_label = get_column_label(field_name)
+                col['label'] = original_label
+        
         return config
     except FileNotFoundError:
         app.logger.error(f"Screen configuration file for {screen_type} not found")
