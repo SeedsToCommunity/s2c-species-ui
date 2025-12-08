@@ -3,6 +3,26 @@
   "description": "Information needed to identify the plant in the field",
   "columns": [
     {
+      "field": "wikipedia_summary",
+      "label": "Wikipedia Summary",
+      "width": "auto"
+    },
+    {
+      "field": "native_check_notes",
+      "label": "Native Check Notes",
+      "width": "auto"
+    },
+    {
+      "field": "common_names",
+      "label": "Common Names",
+      "width": "auto"
+    },
+    {
+      "field": "external_reference_urls",
+      "label": "External Reference URLs",
+      "width": "auto"
+    },
+    {
       "field": "height",
       "label": "Height",
       "type": "text"
@@ -33,13 +53,13 @@
       "type": "text"
     },
     {
-      "field": "link_to_pictures",
-      "label": "Link to Pictures",
-      "type": "link"
-    },
-    {
       "field": "duration",
       "label": "Duration",
+      "width": "auto"
+    },
+    {
+      "field": "previously_known_as",
+      "label": "Previously Known As",
       "width": "auto"
     },
     {
@@ -48,8 +68,8 @@
       "width": "auto"
     },
     {
-      "field": "common_names",
-      "label": "Common Names",
+      "field": "coefficient_of_wetness_(cw)",
+      "label": "Coefficient of Wetness (CW)",
       "width": "auto"
     },
     {
@@ -68,28 +88,8 @@
       "width": "auto"
     },
     {
-      "field": "external_reference_urls",
-      "label": "External Reference URLs",
-      "width": "auto"
-    },
-    {
-      "field": "wikipedia_summary",
-      "label": "Wikipedia Summary",
-      "width": "auto"
-    },
-    {
-      "field": "previously_known_as",
-      "label": "Previously Known As",
-      "width": "auto"
-    },
-    {
       "field": "family",
       "label": "Family",
-      "width": "auto"
-    },
-    {
-      "field": "native_check_notes",
-      "label": "Native Check Notes",
       "width": "auto"
     },
     {
@@ -98,9 +98,9 @@
       "width": "auto"
     },
     {
-      "field": "coefficient_of_wetness_(cw)",
-      "label": "Coefficient of Wetness (CW)",
-      "width": "auto"
+      "field": "link_to_pictures",
+      "label": "Link to Pictures",
+      "type": "link"
     }
   ]
 }
