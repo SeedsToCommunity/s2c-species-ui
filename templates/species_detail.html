@@ -199,8 +199,8 @@
                                         <small class="text-muted d-block mb-1">{{ column.label }}:</small>
                                         <div style="max-height: 200px;">
                                             <canvas id="chart-{{ column.field }}" class="chart-canvas" 
-                                                    data-labels="{{ parsed.data.keys()|list|tojson }}"
-                                                    data-values="{{ parsed.data.values()|list|tojson }}"
+                                                    data-labels='{{ parsed.data.keys()|list|tojson|e }}'
+                                                    data-values='{{ parsed.data.values()|list|tojson|e }}'
                                                     data-label="{{ column.label }}"></canvas>
                                         </div>
                                     </div>
