@@ -2004,6 +2004,11 @@ def save_column_order():
         global _cached_column_usage
         _cached_column_usage = None
         
+        # Rebuild cache with updated configuration
+        df = load_plant_data()
+        if not df.empty:
+            compute_column_usage(df)
+        
         app.logger.info(f"Column order saved for screen: {screen}")
         return {"success": True}
         
