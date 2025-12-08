@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 import json
 import requests
+import threading
 from datetime import datetime
 from io import StringIO
 from flask import Flask, render_template, flash, request, url_for, abort, redirect, jsonify
@@ -27,6 +28,7 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 _cached_plant_data = None
 _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
+_data_load_lock = threading.Lock()  # Prevent concurrent data loads
 
 # Global cache for supplemental data (PlantData Google Sheet)
 _cached_supplemental_data = None
@@ -449,55 +451,96 @@ def load_plant_data(force_reload=False, file_id_override=None):
     """Load and process plant data from Google Drive CSV or fallback to local files"""
     global _cached_plant_data, _data_cache_timestamp, _current_file_id
     
-    # Return cached data if available and not forcing reload
+    # Return cached data if available and not forcing reload (fast path, no lock needed)
     if not force_reload and _cached_plant_data is not None:
         return _cached_plant_data
     
-    # Load settings
-    settings = load_app_settings()
-    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
-    file_prefix = settings.get('data_source', {}).get('file_prefix', '')
-    google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
-    
-    # First try folder-based approach if configured
-    try:
-        if folder_id and file_prefix:
-            # Use override file_id if provided, otherwise find the latest
-            if file_id_override:
-                file_id = file_id_override
-                app.logger.info(f"Using provided file ID: {file_id}")
-            else:
-                file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
-                if file_id:
-                    app.logger.info(f"Found latest file: {file_name} ({file_id})")
+    # Use lock to prevent concurrent loading from Google Drive
+    with _data_load_lock:
+        # Double-check cache after acquiring lock (another thread may have loaded it)
+        if not force_reload and _cached_plant_data is not None:
+            return _cached_plant_data
+        
+        # Load settings
+        settings = load_app_settings()
+        folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+        file_prefix = settings.get('data_source', {}).get('file_prefix', '')
+        google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
+        
+        # First try folder-based approach if configured
+        try:
+            if folder_id and file_prefix:
+                # Use override file_id if provided, otherwise find the latest
+                if file_id_override:
+                    file_id = file_id_override
+                    app.logger.info(f"Using provided file ID: {file_id}")
                 else:
-                    app.logger.warning(f"Could not find file in folder: {message}")
-                    file_id = None
-            
-            if file_id:
-                # Download using the file ID
-                download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
-                app.logger.info(f"Loading data from Google Drive file ID: {file_id}")
+                    file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
+                    if file_id:
+                        app.logger.info(f"Found latest file: {file_name} ({file_id})")
+                    else:
+                        app.logger.warning(f"Could not find file in folder: {message}")
+                        file_id = None
                 
+                if file_id:
+                    # Download using the file ID
+                    download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
+                    app.logger.info(f"Loading data from Google Drive file ID: {file_id}")
+                    
+                    response = requests.get(download_url, timeout=30)
+                    response.raise_for_status()
+                    
+                    # Read CSV from the response text
+                    csv_data = StringIO(response.text)
+                    df = pd.read_csv(csv_data)
+                    
+                    # Check if first row contains the actual headers (Google Sheets issue)
+                    if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
+                        app.logger.info("Detected header row in data, fixing column names")
+                        new_columns = df.iloc[0].tolist()
+                        df.columns = new_columns
+                        df = df.iloc[1:].reset_index(drop=True)
+                    
+                    # Clean up column names
+                    df.columns = df.columns.str.replace(' ', '_').str.lower()
+                    df = df.fillna('')
+                    
+                    app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (folder-based)")
+                    
+                    # Load and merge supplemental data
+                    supplemental_df = load_supplemental_data(force_reload=force_reload)
+                    if supplemental_df is not None:
+                        df = merge_supplemental_data(df, supplemental_df)
+                    
+                    _cached_plant_data = df
+                    _data_cache_timestamp = pd.Timestamp.now()
+                    return df
+                    
+        except Exception as e:
+            app.logger.error(f"Error with folder-based loading: {str(e)}")
+        
+        # Fall back to legacy single-URL approach
+        try:
+            if google_drive_url:
+                app.logger.info(f"Loading data from Google Drive URL: {google_drive_url}")
+                
+                download_url = convert_google_drive_url(google_drive_url)
                 response = requests.get(download_url, timeout=30)
                 response.raise_for_status()
                 
-                # Read CSV from the response text
                 csv_data = StringIO(response.text)
                 df = pd.read_csv(csv_data)
                 
-                # Check if first row contains the actual headers (Google Sheets issue)
                 if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
                     app.logger.info("Detected header row in data, fixing column names")
                     new_columns = df.iloc[0].tolist()
                     df.columns = new_columns
                     df = df.iloc[1:].reset_index(drop=True)
                 
-                # Clean up column names
                 df.columns = df.columns.str.replace(' ', '_').str.lower()
                 df = df.fillna('')
                 
-                app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (folder-based)")
+                app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (URL-based)")
                 
                 # Load and merge supplemental data
                 supplemental_df = load_supplemental_data(force_reload=force_reload)
@@ -508,84 +551,49 @@ def load_plant_data(force_reload=False, file_id_override=None):
                 _data_cache_timestamp = pd.Timestamp.now()
                 return df
                 
-    except Exception as e:
-        app.logger.error(f"Error with folder-based loading: {str(e)}")
-    
-    # Fall back to legacy single-URL approach
-    try:
-        if google_drive_url:
-            app.logger.info(f"Loading data from Google Drive URL: {google_drive_url}")
+        except requests.RequestException as e:
+            app.logger.error(f"Error downloading from Google Drive: {str(e)}")
+        except Exception as e:
+            app.logger.error(f"Error processing Google Drive data: {str(e)}")
+        
+        # Fallback to local files
+        try:
+            app.logger.info("Falling back to local data files")
+            fallback_files = settings.get('data_source', {}).get('fallback_files', ['origdata.tabsv', 'plants.csv'])
             
-            download_url = convert_google_drive_url(google_drive_url)
-            response = requests.get(download_url, timeout=30)
-            response.raise_for_status()
+            # Try each fallback file in order
+            for filename in fallback_files:
+                if os.path.exists(filename):
+                    if filename.endswith('.tabsv'):
+                        df = pd.read_csv(filename, sep='\t')
+                    else:
+                        df = pd.read_csv(filename)
+                    break
+            else:
+                app.logger.error("No data files found (local or Google Drive)")
+                return pd.DataFrame()
             
-            csv_data = StringIO(response.text)
-            df = pd.read_csv(csv_data)
-            
-            if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
-                app.logger.info("Detected header row in data, fixing column names")
-                new_columns = df.iloc[0].tolist()
-                df.columns = new_columns
-                df = df.iloc[1:].reset_index(drop=True)
-            
+            # Clean up column names - replace spaces with underscores and make lowercase
             df.columns = df.columns.str.replace(' ', '_').str.lower()
+            
+            # Clean up the data - fill NaN values with empty strings
             df = df.fillna('')
             
-            app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (URL-based)")
+            app.logger.info(f"Successfully loaded {len(df)} rows from local files")
             
             # Load and merge supplemental data
             supplemental_df = load_supplemental_data(force_reload=force_reload)
             if supplemental_df is not None:
                 df = merge_supplemental_data(df, supplemental_df)
             
+            # Cache the data
             _cached_plant_data = df
             _data_cache_timestamp = pd.Timestamp.now()
             return df
             
-    except requests.RequestException as e:
-        app.logger.error(f"Error downloading from Google Drive: {str(e)}")
-    except Exception as e:
-        app.logger.error(f"Error processing Google Drive data: {str(e)}")
-    
-    # Fallback to local files
-    try:
-        app.logger.info("Falling back to local data files")
-        fallback_files = settings.get('data_source', {}).get('fallback_files', ['origdata.tabsv', 'plants.csv'])
-        
-        # Try each fallback file in order
-        for filename in fallback_files:
-            if os.path.exists(filename):
-                if filename.endswith('.tabsv'):
-                    df = pd.read_csv(filename, sep='\t')
-                else:
-                    df = pd.read_csv(filename)
-                break
-        else:
-            app.logger.error("No data files found (local or Google Drive)")
+        except Exception as e:
+            app.logger.error(f"Error reading local plant data: {str(e)}")
             return pd.DataFrame()
-        
-        # Clean up column names - replace spaces with underscores and make lowercase
-        df.columns = df.columns.str.replace(' ', '_').str.lower()
-        
-        # Clean up the data - fill NaN values with empty strings
-        df = df.fillna('')
-        
-        app.logger.info(f"Successfully loaded {len(df)} rows from local files")
-        
-        # Load and merge supplemental data
-        supplemental_df = load_supplemental_data(force_reload=force_reload)
-        if supplemental_df is not None:
-            df = merge_supplemental_data(df, supplemental_df)
-        
-        # Cache the data
-        _cached_plant_data = df
-        _data_cache_timestamp = pd.Timestamp.now()
-        return df
-        
-    except Exception as e:
-        app.logger.error(f"Error reading local plant data: {str(e)}")
-        return pd.DataFrame()
 
 def get_unique_values(df, column):
     """Get unique non-empty values from a column, handling CSV values"""
