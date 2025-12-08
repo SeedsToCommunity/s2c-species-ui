@@ -36,8 +36,6 @@
   "wash_s3_barn": "WASH S3 Barn",
   "wash_s3_quantiy": "WASH S3 Quantiy",
   "barn_action": "Barn Action",
-  "genus": "Genus",
-  "species": "Species",
   "family": "Family",
   "botanical_name_notes": "Botanical Name Notes",
   "se_mi_native": "SE MI Native",
@@ -46,10 +44,10 @@
   "common_names": "Common Names",
   "previously_known_as": "Previously Known As",
   "coefficient_of_conservatism_(c)": "Coefficient of Conservatism (C)",
-  "wetland_indicator_(w)": "Wetland Indicator (W)",
   "physiognomy": "Physiognomy",
   "duration": "Duration",
   "se_michigan_monthly_observations": "SE Michigan Monthly Observations",
   "wikipedia_summary": "Wikipedia Summary",
-  "bonap_range_map": "BONAP Range Map"
+  "bonap_range_map": "BONAP Range Map",
+  "coefficient_of_wetness_(cw)": "Coefficient of Wetness (CW)"
 }

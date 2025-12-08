@@ -33,9 +33,5 @@ waitForPort = 5000
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 34001
-externalPort = 3000
-
 [agent]
 integrations = ["python_sendgrid==1.0.0", "styling_replit==1.0.0"]

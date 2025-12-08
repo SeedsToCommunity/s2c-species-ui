@@ -19,22 +19,22 @@
     },
     {
       "field": "compact_bloom_range",
-      "label": "Bloom Range",
+      "label": "Compact Bloom Range",
       "type": "text"
     },
     {
       "field": "light",
-      "label": "Light Requirements",
+      "label": "Light",
       "type": "text"
     },
     {
       "field": "moisture",
-      "label": "Moisture Requirements",
+      "label": "Moisture",
       "type": "text"
     },
     {
       "field": "link_to_pictures",
-      "label": "Pictures",
+      "label": "Link to Pictures",
       "type": "link"
     },
     {
@@ -44,12 +44,7 @@
     },
     {
       "field": "coefficient_of_conservatism_(c)",
-      "label": "Coefficient Of Conservatism (C)",
-      "width": "auto"
-    },
-    {
-      "field": "wetland_indicator_(w)",
-      "label": "Wetland Indicator (W)",
+      "label": "Coefficient of Conservatism (C)",
       "width": "auto"
     },
     {
@@ -64,17 +59,17 @@
     },
     {
       "field": "bonap_range_map",
-      "label": "Bonap Range Map",
+      "label": "BONAP Range Map",
       "width": "auto"
     },
     {
       "field": "se_michigan_monthly_observations",
-      "label": "Se Michigan Monthly Observations",
+      "label": "SE Michigan Monthly Observations",
       "width": "auto"
     },
     {
       "field": "external_reference_urls",
-      "label": "External Reference Urls",
+      "label": "External Reference URLs",
       "width": "auto"
     },
     {
@@ -99,7 +94,12 @@
     },
     {
       "field": "se_mi_native",
-      "label": "Se Mi Native",
+      "label": "SE MI Native",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_wetness_(cw)",
+      "label": "Coefficient of Wetness (CW)",
       "width": "auto"
     }
   ]

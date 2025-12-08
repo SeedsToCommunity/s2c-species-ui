@@ -148,6 +148,9 @@ _supplemental_file_name = None
 # Track columns removed during last cleanup (for admin notification)
 _last_removed_columns = []
 
+# Cached column usage statistics (computed during data load for fast admin page)
+_cached_column_usage = None
+
 # Column labels mapping file - stores original headers for display
 COLUMN_LABELS_FILE = 'config/column_labels.json'
 
@@ -301,6 +304,75 @@ def get_last_removed_columns():
     """Get the list of columns removed during the last data load cleanup"""
     global _last_removed_columns
     return _last_removed_columns
+
+def compute_column_usage(df):
+    """Compute column usage statistics and cache them for fast admin page access.
+    
+    This is called during data load so the admin page doesn't have to recalculate.
+    """
+    global _cached_column_usage
+    
+    if df is None or df.empty:
+        _cached_column_usage = None
+        return
+    
+    all_columns = list(df.columns)
+    
+    # Load current display configuration
+    display_config = load_display_config()
+    
+    # Load all screen configurations
+    screen_configs = {}
+    valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+    for screen in valid_screens:
+        screen_configs[screen] = load_screen_config(screen)
+    
+    # Build usage grid
+    column_usage = {}
+    for col in all_columns:
+        usage = {
+            'column_name': col,
+            'main_page': False,
+            'identification': False,
+            'collection': False,
+            'processing': False,
+            'storage': False,
+            'stratification': False,
+            'planting': False,
+            'total_uses': 0
+        }
+        
+        # Check main page usage
+        if any(c.get('field') == col for c in display_config.get('main_page_columns', [])):
+            usage['main_page'] = True
+            usage['total_uses'] += 1
+        
+        # Check each screen usage
+        for screen_name, config in screen_configs.items():
+            if any(c.get('field') == col for c in config.get('columns', [])):
+                usage[screen_name] = True
+                usage['total_uses'] += 1
+        
+        # Get some sample data for context
+        non_empty_values = df[col].dropna()
+        usage['sample_data'] = non_empty_values.head(2).tolist() if len(non_empty_values) > 0 else []
+        usage['fill_percentage'] = round((len(non_empty_values) / len(df) * 100), 1) if len(df) > 0 else 0
+        
+        column_usage[col] = usage
+    
+    # Store in cache with metadata
+    _cached_column_usage = {
+        'data': column_usage,
+        'columns_order': all_columns,
+        'total_columns': len(all_columns),
+        'total_species': len(df)
+    }
+    app.logger.info(f"Cached column usage stats for {len(all_columns)} columns")
+
+def get_cached_column_usage():
+    """Get the cached column usage data, returns None if not cached"""
+    global _cached_column_usage
+    return _cached_column_usage
 
 def interpret_conservatism(c_value):
     """Interpret Coefficient of Conservatism value for display"""
@@ -968,6 +1040,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
                     if removed:
                         app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
                     
+                    # Pre-compute column usage stats for fast admin page
+                    compute_column_usage(df)
+                    
                     _cached_plant_data = df
                     _data_cache_timestamp = pd.Timestamp.now()
                     # Save to disk for fast restarts
@@ -1013,6 +1088,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
                 removed = cleanup_missing_columns(valid_columns)
                 if removed:
                     app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
+                
+                # Pre-compute column usage stats for fast admin page
+                compute_column_usage(df)
                 
                 _cached_plant_data = df
                 _data_cache_timestamp = pd.Timestamp.now()
@@ -1063,6 +1141,9 @@ def load_plant_data(force_reload=False, file_id_override=None):
             removed = cleanup_missing_columns(valid_columns)
             if removed:
                 app.logger.warning(f"Removed {len(removed)} missing columns from configs: {removed}")
+            
+            # Pre-compute column usage stats for fast admin page
+            compute_column_usage(df)
             
             # Cache the data
             _cached_plant_data = df
@@ -1701,65 +1782,35 @@ def report_issue(botanical_name):
 def admin_column_usage():
     """Admin page showing column usage across all pages in a grid format"""
     try:
-        # Load plant data to get all available columns
+        # Use cached column usage data for fast page load
+        cached = get_cached_column_usage()
+        
+        if cached is not None:
+            # Use cached data - much faster
+            return render_template('admin_column_usage.html', 
+                                 column_usage=cached['data'],
+                                 total_columns=cached['total_columns'],
+                                 total_species=cached['total_species'],
+                                 is_development=True)
+        
+        # Fallback: load data if cache not available (triggers cache rebuild)
         df = load_plant_data()
         if df.empty:
             flash('No plant data available to analyze columns', 'error')
             return render_template('admin_column_usage.html', column_usage={})
         
-        # Get all column names from the data
-        all_columns = list(df.columns)
+        # Cache should now be populated, try again
+        cached = get_cached_column_usage()
+        if cached:
+            return render_template('admin_column_usage.html', 
+                                 column_usage=cached['data'],
+                                 total_columns=cached['total_columns'],
+                                 total_species=cached['total_species'],
+                                 is_development=True)
         
-        # Load current display configuration
-        display_config = load_display_config()
-        
-        # Load all screen configurations
-        screen_configs = {}
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
-        for screen in valid_screens:
-            screen_configs[screen] = load_screen_config(screen)
-        
-        # Build usage grid
-        column_usage = {}
-        for col in all_columns:
-            usage = {
-                'column_name': col,
-                'main_page': False,
-                'identification': False,
-                'collection': False,
-                'processing': False,
-                'storage': False,
-                'stratification': False,
-                'planting': False,
-                'total_uses': 0
-            }
-            
-            # Check main page usage
-            if any(c.get('field') == col for c in display_config.get('main_page_columns', [])):
-                usage['main_page'] = True
-                usage['total_uses'] += 1
-            
-            # Check each screen usage
-            for screen_name, config in screen_configs.items():
-                if any(c.get('field') == col for c in config.get('columns', [])):
-                    usage[screen_name] = True
-                    usage['total_uses'] += 1
-            
-            # Get some sample data for context
-            non_empty_values = df[col].dropna()
-            usage['sample_data'] = non_empty_values.head(2).tolist() if len(non_empty_values) > 0 else []
-            usage['fill_percentage'] = round((len(non_empty_values) / len(df) * 100), 1) if len(df) > 0 else 0
-            
-            column_usage[col] = usage
-        
-        # Keep original column order from CSV file (preserves data structure)
-        ordered_columns = [(col, column_usage[col]) for col in all_columns]
-        
-        return render_template('admin_column_usage.html', 
-                             column_usage=dict(ordered_columns),
-                             total_columns=len(all_columns),
-                             total_species=len(df),
-                             is_development=True)
+        # Ultimate fallback - shouldn't happen but handle gracefully
+        flash('Column usage data not available', 'error')
+        return render_template('admin_column_usage.html', column_usage={}, is_development=True)
         
     except Exception as e:
         app.logger.error(f"Error analyzing column usage: {str(e)}")
@@ -1839,8 +1890,14 @@ def toggle_column():
             with open(f'config/screen_{screen_name}.json', 'w') as f:
                 json.dump(screen_config, f, indent=2)
         
-        # Clear any cached configurations (if you have them)
-        # Note: Screen configs are loaded fresh on each request, no cache to clear
+        # Invalidate column usage cache so changes appear immediately
+        global _cached_column_usage
+        _cached_column_usage = None
+        
+        # Rebuild cache with updated configuration
+        df = load_plant_data()
+        if not df.empty:
+            compute_column_usage(df)
         
         return {"success": True, "message": "Column configuration updated"}
         
