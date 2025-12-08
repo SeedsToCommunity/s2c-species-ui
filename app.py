@@ -145,6 +145,9 @@ _cached_supplemental_data = None
 _supplemental_file_id = None
 _supplemental_file_name = None
 
+# Track columns removed during last cleanup (for admin notification)
+_last_removed_columns = []
+
 # Column labels mapping file - stores original headers for display
 COLUMN_LABELS_FILE = 'config/column_labels.json'
 
@@ -202,6 +205,7 @@ def cleanup_missing_columns(valid_columns):
     Returns:
         List of removed column names for logging/notification
     """
+    global _last_removed_columns
     removed_columns = []
     
     # 1. Clean up screen config files
@@ -289,7 +293,14 @@ def cleanup_missing_columns(valid_columns):
     except Exception as e:
         app.logger.warning(f"Error cleaning column_labels.json: {e}")
     
+    # Store for admin notification
+    _last_removed_columns = removed_columns
     return removed_columns
+
+def get_last_removed_columns():
+    """Get the list of columns removed during the last data load cleanup"""
+    global _last_removed_columns
+    return _last_removed_columns
 
 def interpret_conservatism(c_value):
     """Interpret Coefficient of Conservatism value for display"""
@@ -1370,6 +1381,13 @@ def refresh_data():
         _cached_supplemental_data = None  # Clear supplemental cache
         df = load_plant_data(force_reload=True)
         flash(f'Data refreshed successfully! Loaded {len(df)} plant species.', 'success')
+        
+        # Notify about any columns that were cleaned up
+        removed = get_last_removed_columns()
+        if removed:
+            readable_names = [col.replace('_', ' ').title() for col in removed]
+            flash(f'Cleaned up {len(removed)} missing columns from configurations: {", ".join(readable_names[:5])}{"..." if len(removed) > 5 else ""}', 'warning')
+        
         return redirect(url_for('index'))
     except Exception as e:
         app.logger.error(f"Error refreshing data: {str(e)}")
