@@ -30,6 +30,20 @@
             border-width: 1px;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
         }
+        /* Field labels - bold and colored for visibility */
+        .field-label {
+            font-weight: 600;
+            color: #5cb377;
+            font-size: 0.85rem;
+        }
+        .field-label a {
+            color: #5cb377;
+            text-decoration: none;
+        }
+        .field-label a:hover {
+            color: #7ec994;
+            text-decoration: underline;
+        }
 
     </style>
 </head>
@@ -146,7 +160,7 @@
                                 {% if parsed.type == 'image' %}
                                     <!-- Single image URL -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <a href="{{ parsed.data }}" target="_blank">
                                             <img src="{{ parsed.data }}" alt="{{ column.label }}" class="img-fluid rounded" style="max-height: 200px;">
                                         </a>
@@ -154,7 +168,7 @@
                                 {% elif parsed.type == 'image_dict' %}
                                     <!-- JSON dictionary of labeled image URLs -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="d-flex flex-wrap gap-2">
                                             {% for name, url in parsed.data.items() %}
                                                 <a href="{{ url }}" target="_blank" title="{{ name }}">
@@ -166,7 +180,7 @@
                                 {% elif parsed.type == 'url_dict' %}
                                     <!-- JSON dictionary of labeled URLs -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for name, url in parsed.data.items() %}
                                                 <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
@@ -178,7 +192,7 @@
                                 {% elif parsed.type == 'url_list' %}
                                     <!-- JSON array of URLs -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for url in parsed.data %}
                                                 <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm">
@@ -190,13 +204,13 @@
                                 {% elif parsed.type == 'html' %}
                                     <!-- HTML-formatted content -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div class="text-body-secondary">{{ parsed.data|safe }}</div>
                                     </div>
                                 {% elif parsed.type == 'chart' %}
                                     <!-- Chart data -->
                                     <div>
-                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
                                         <div style="max-height: 200px;">
                                             <canvas id="chart-{{ column.field }}" class="chart-canvas" 
                                                     data-labels='{{ parsed.data.keys()|list|tojson|e }}'
@@ -206,7 +220,7 @@
                                     </div>
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
-                                        <small class="text-muted me-2">{{ column.label }}:</small>
+                                        <small class="field-label me-2">{{ column.label }}:</small>
                                         <a href="{{ field_value }}" target="_blank" class="btn btn-outline-primary btn-sm">
                                             <i data-feather="external-link" class="me-1"></i>
                                             View Pictures
@@ -215,8 +229,8 @@
                                 {% elif column.field == 'coefficient_of_conservatism_(c)' %}
                                     {% set c_interp = field_value|interpret_c_value %}
                                     <div>
-                                        <small class="text-muted">
-                                            <a href="{{ url_for('explain_conservatism') }}" class="text-decoration-none text-muted">
+                                        <small class="field-label">
+                                            <a href="{{ url_for('explain_conservatism') }}">
                                                 {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
                                             </a>:
                                         </small>
@@ -229,8 +243,8 @@
                                 {% elif column.field == 'coefficient_of_wetness_(cw)' %}
                                     {% set w_interp = field_value|interpret_w_value %}
                                     <div>
-                                        <small class="text-muted">
-                                            <a href="{{ url_for('explain_wetland') }}" class="text-decoration-none text-muted">
+                                        <small class="field-label">
+                                            <a href="{{ url_for('explain_wetland') }}">
                                                 {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
                                             </a>:
                                         </small>
@@ -242,7 +256,7 @@
                                     </div>
                                 {% else %}
                                     <div>
-                                        <small class="text-muted">{{ column.label }}:</small>
+                                        <small class="field-label">{{ column.label }}:</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                     </div>
                                 {% endif %}
