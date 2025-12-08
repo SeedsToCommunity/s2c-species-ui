@@ -30,6 +30,10 @@ _cached_plant_data = None
 # Image file extensions for detection
 IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp')
 
+# HTML tags to detect formatted content
+import re
+HTML_TAG_PATTERN = re.compile(r'<(b|i|strong|em|p|br|ul|li|ol|a|span|div|h[1-6])[^>]*>', re.IGNORECASE)
+
 def is_image_url(url):
     """Check if a URL points to an image file"""
     if not isinstance(url, str) or not url.startswith('http'):
@@ -37,6 +41,12 @@ def is_image_url(url):
     # Check extension (handle URLs with query params)
     url_path = url.split('?')[0].lower()
     return any(url_path.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
+def contains_html(text):
+    """Check if text contains HTML formatting tags"""
+    if not isinstance(text, str):
+        return False
+    return bool(HTML_TAG_PATTERN.search(text))
 
 # Custom Jinja filter to parse JSON and detect URL dictionaries
 @app.template_filter('parse_json_urls')
@@ -61,6 +71,10 @@ def parse_json_urls_filter(value):
     # Check for single non-image URL (not JSON)
     if value.startswith('http') and not value.startswith('{') and not value.startswith('['):
         return {'type': 'url', 'data': value}
+    
+    # Check for HTML-formatted content
+    if contains_html(value):
+        return {'type': 'html', 'data': value}
     
     if not (value.startswith('{') or value.startswith('[')):
         return {'type': 'text', 'data': value}

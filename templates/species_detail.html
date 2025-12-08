@@ -187,6 +187,12 @@
                                             {% endfor %}
                                         </div>
                                     </div>
+                                {% elif parsed.type == 'html' %}
+                                    <!-- HTML-formatted content -->
+                                    <div>
+                                        <small class="text-muted d-block mb-1">{{ column.label }}:</small>
+                                        <div class="text-body-secondary">{{ parsed.data|safe }}</div>
+                                    </div>
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="text-muted me-2">{{ column.label }}:</small>
@@ -340,11 +346,20 @@
         // Image file extensions for detection
         const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
         
+        // HTML tag pattern for detecting formatted content
+        const HTML_TAG_PATTERN = /<(b|i|strong|em|p|br|ul|li|ol|a|span|div|h[1-6])[^>]*>/i;
+        
         // Helper function to check if URL is an image
         function isImageUrl(url) {
             if (typeof url !== 'string' || !url.startsWith('http')) return false;
             const urlPath = url.split('?')[0].toLowerCase();
             return IMAGE_EXTENSIONS.some(ext => urlPath.endsWith(ext));
+        }
+        
+        // Helper function to check if text contains HTML
+        function containsHtml(text) {
+            if (typeof text !== 'string') return false;
+            return HTML_TAG_PATTERN.test(text);
         }
         
         // Helper function to parse JSON URLs
@@ -362,6 +377,11 @@
             // Check for single non-image URL (not JSON)
             if (trimmed.startsWith('http') && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
                 return { type: 'url', data: trimmed };
+            }
+            
+            // Check for HTML-formatted content
+            if (containsHtml(trimmed)) {
+                return { type: 'html', data: trimmed };
             }
             
             if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
@@ -479,6 +499,20 @@
                                         <div>
                                             <small class="text-muted d-block mb-1">${column.label}:</small>
                                             <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'html') {
+                        // HTML-formatted content
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">${column.label}:</small>
+                                            <div class="text-body-secondary">${parsed.data}</div>
                                         </div>
                                     </div>
                                 </div>
