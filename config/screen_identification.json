@@ -36,6 +36,71 @@
       "field": "link_to_pictures",
       "label": "Pictures",
       "type": "link"
+    },
+    {
+      "field": "duration",
+      "label": "Duration",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_conservatism_(c)",
+      "label": "Coefficient Of Conservatism (C)",
+      "width": "auto"
+    },
+    {
+      "field": "wetland_indicator_(w)",
+      "label": "Wetland Indicator (W)",
+      "width": "auto"
+    },
+    {
+      "field": "common_names",
+      "label": "Common Names",
+      "width": "auto"
+    },
+    {
+      "field": "physiognomy",
+      "label": "Physiognomy",
+      "width": "auto"
+    },
+    {
+      "field": "bonap_range_map",
+      "label": "Bonap Range Map",
+      "width": "auto"
+    },
+    {
+      "field": "se_michigan_monthly_observations",
+      "label": "Se Michigan Monthly Observations",
+      "width": "auto"
+    },
+    {
+      "field": "external_reference_urls",
+      "label": "External Reference Urls",
+      "width": "auto"
+    },
+    {
+      "field": "wikipedia_summary",
+      "label": "Wikipedia Summary",
+      "width": "auto"
+    },
+    {
+      "field": "previously_known_as",
+      "label": "Previously Known As",
+      "width": "auto"
+    },
+    {
+      "field": "family",
+      "label": "Family",
+      "width": "auto"
+    },
+    {
+      "field": "native_check_notes",
+      "label": "Native Check Notes",
+      "width": "auto"
+    },
+    {
+      "field": "se_mi_native",
+      "label": "Se Mi Native",
+      "width": "auto"
     }
   ]
 }
