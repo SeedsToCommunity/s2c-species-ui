@@ -1818,9 +1818,10 @@ def admin_column_usage():
     try:
         # Use cached column usage data for fast page load
         cached = get_cached_column_usage()
+        app.logger.debug(f"Column usage cache status: {cached is not None}, plant data cache: {_cached_plant_data is not None}")
         
         if cached is not None:
-            # Use cached data - much faster
+            app.logger.debug(f"Using cached column usage data with {len(cached['data'])} columns")
             return render_template('admin_column_usage.html', 
                                  column_usage=cached['data'],
                                  total_columns=cached['total_columns'],
@@ -1829,6 +1830,7 @@ def admin_column_usage():
         
         # If column usage cache is empty but plant data is cached, rebuild quickly
         if _cached_plant_data is not None and not _cached_plant_data.empty:
+            app.logger.debug("Rebuilding column usage from cached plant data")
             compute_column_usage(_cached_plant_data)
             cached = get_cached_column_usage()
             if cached:
@@ -1839,13 +1841,17 @@ def admin_column_usage():
                                      is_development=True)
         
         # Ultimate fallback - load data fresh (slow, but shouldn't happen often)
+        app.logger.debug("Loading plant data fresh for column usage")
         df = load_plant_data()
         if df.empty:
             flash('No plant data available to analyze columns', 'error')
             return render_template('admin_column_usage.html', column_usage={})
         
+        # Ensure column usage is computed
+        compute_column_usage(df)
         cached = get_cached_column_usage()
         if cached:
+            app.logger.debug(f"Fresh load successful with {len(cached['data'])} columns")
             return render_template('admin_column_usage.html', 
                                  column_usage=cached['data'],
                                  total_columns=cached['total_columns'],
