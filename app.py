@@ -94,6 +94,88 @@ def check_google_drive_file_modified(file_id):
         app.logger.error(f"Error checking Google Drive file: {str(e)}")
         return None, f"Error: {str(e)}"
 
+# Global to track the current file being used
+_current_file_id = None
+_current_file_name = None
+
+def find_latest_file_in_folder(folder_id, file_prefix):
+    """Find the most recently modified file in a Google Drive folder that matches the prefix"""
+    global _current_file_id, _current_file_name
+    
+    service = get_google_drive_service()
+    if not service:
+        return None, None, "Google Drive API not configured"
+    
+    try:
+        # Search for files in the folder that match the prefix
+        query = f"'{folder_id}' in parents and name contains '{file_prefix}' and mimeType='text/csv' and trashed=false"
+        
+        results = service.files().list(
+            q=query,
+            fields='files(id, name, modifiedTime)',
+            orderBy='modifiedTime desc',
+            pageSize=10
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        if not files:
+            # Try without mimeType restriction (Google Sheets exported as CSV)
+            query = f"'{folder_id}' in parents and name contains '{file_prefix}' and trashed=false"
+            results = service.files().list(
+                q=query,
+                fields='files(id, name, modifiedTime)',
+                orderBy='modifiedTime desc',
+                pageSize=10
+            ).execute()
+            files = results.get('files', [])
+        
+        if not files:
+            app.logger.warning(f"No files found in folder {folder_id} with prefix '{file_prefix}'")
+            return None, None, f"No files found with prefix '{file_prefix}'"
+        
+        # Get the most recently modified file
+        latest_file = files[0]
+        file_id = latest_file['id']
+        file_name = latest_file['name']
+        modified_time = latest_file.get('modifiedTime', 'Unknown')
+        
+        # Check if this is a different file than what we're currently using
+        if _current_file_id != file_id:
+            old_file = _current_file_name or "None"
+            _current_file_id = file_id
+            _current_file_name = file_name
+            app.logger.info(f"Found new file: '{file_name}' (modified: {modified_time}), was using: {old_file}")
+            return file_id, file_name, f"New file found: '{file_name}' (modified: {modified_time})"
+        else:
+            return file_id, file_name, f"Same file: '{file_name}' (modified: {modified_time})"
+            
+    except Exception as e:
+        app.logger.error(f"Error searching Google Drive folder: {str(e)}")
+        return None, None, f"Error: {str(e)}"
+
+def check_for_new_data_file():
+    """Check if there's a new data file in the Google Drive folder"""
+    global _current_file_id, _current_file_name
+    
+    settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    file_prefix = settings.get('data_source', {}).get('file_prefix', '')
+    
+    if not folder_id or not file_prefix:
+        # Fall back to legacy single-file URL if folder not configured
+        return None, "Folder-based checking not configured"
+    
+    file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
+    
+    if file_id is None:
+        return None, message
+    
+    # Check if this is a new file
+    was_different_file = (_current_file_id != file_id) if _current_file_id else True
+    
+    return was_different_file, message
+
 def load_display_config():
     """Load display configuration from JSON file"""
     try:
@@ -134,51 +216,90 @@ def load_app_settings():
         app.logger.error(f"Error loading app settings: {str(e)}")
         return {"data_source": {"google_drive_csv_url": "", "fallback_files": ["origdata.tabsv", "plants.csv"]}}
 
-def load_plant_data(force_reload=False):
+def load_plant_data(force_reload=False, file_id_override=None):
     """Load and process plant data from Google Drive CSV or fallback to local files"""
-    global _cached_plant_data, _data_cache_timestamp
+    global _cached_plant_data, _data_cache_timestamp, _current_file_id
     
     # Return cached data if available and not forcing reload
     if not force_reload and _cached_plant_data is not None:
         return _cached_plant_data
     
-    # Load settings and get Google Drive URL
+    # Load settings
     settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    file_prefix = settings.get('data_source', {}).get('file_prefix', '')
     google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
     
+    # First try folder-based approach if configured
+    try:
+        if folder_id and file_prefix:
+            # Use override file_id if provided, otherwise find the latest
+            if file_id_override:
+                file_id = file_id_override
+                app.logger.info(f"Using provided file ID: {file_id}")
+            else:
+                file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
+                if file_id:
+                    app.logger.info(f"Found latest file: {file_name} ({file_id})")
+                else:
+                    app.logger.warning(f"Could not find file in folder: {message}")
+                    file_id = None
+            
+            if file_id:
+                # Download using the file ID
+                download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
+                app.logger.info(f"Loading data from Google Drive file ID: {file_id}")
+                
+                response = requests.get(download_url, timeout=30)
+                response.raise_for_status()
+                
+                # Read CSV from the response text
+                csv_data = StringIO(response.text)
+                df = pd.read_csv(csv_data)
+                
+                # Check if first row contains the actual headers (Google Sheets issue)
+                if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
+                    app.logger.info("Detected header row in data, fixing column names")
+                    new_columns = df.iloc[0].tolist()
+                    df.columns = new_columns
+                    df = df.iloc[1:].reset_index(drop=True)
+                
+                # Clean up column names
+                df.columns = df.columns.str.replace(' ', '_').str.lower()
+                df = df.fillna('')
+                
+                app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (folder-based)")
+                
+                _cached_plant_data = df
+                _data_cache_timestamp = pd.Timestamp.now()
+                return df
+                
+    except Exception as e:
+        app.logger.error(f"Error with folder-based loading: {str(e)}")
+    
+    # Fall back to legacy single-URL approach
     try:
         if google_drive_url:
-            app.logger.info(f"Loading data from Google Drive: {google_drive_url}")
+            app.logger.info(f"Loading data from Google Drive URL: {google_drive_url}")
             
-            # Convert share URL to direct download URL if needed
             download_url = convert_google_drive_url(google_drive_url)
-            
-            # Download the CSV data
             response = requests.get(download_url, timeout=30)
             response.raise_for_status()
             
-            # Read CSV from the response text
             csv_data = StringIO(response.text)
             df = pd.read_csv(csv_data)
             
-            # Check if first row contains the actual headers (Google Sheets issue)
             if len(df) > 0 and 'Unnamed: 0' in df.columns and df.iloc[0, 0] == 'Botanical Name':
                 app.logger.info("Detected header row in data, fixing column names")
-                # Use first row as column names
                 new_columns = df.iloc[0].tolist()
                 df.columns = new_columns
-                # Remove the header row from data
                 df = df.iloc[1:].reset_index(drop=True)
             
-            # Clean up column names - replace spaces with underscores and make lowercase
             df.columns = df.columns.str.replace(' ', '_').str.lower()
-            
-            # Clean up the data - fill NaN values with empty strings
             df = df.fillna('')
             
-            app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive")
+            app.logger.info(f"Successfully loaded {len(df)} rows from Google Drive (URL-based)")
             
-            # Cache the data
             _cached_plant_data = df
             _data_cache_timestamp = pd.Timestamp.now()
             return df
@@ -528,22 +649,64 @@ def refresh_data():
         return redirect(url_for('index'))
 
 @app.route('/api/check-updates')
-def check_for_updates():
-    """API endpoint to check if Google Drive data has been updated and reload if needed"""
-    global _cached_plant_data
+def check_for_updates_endpoint():
+    """API endpoint to check if a new data file exists in Google Drive folder and reload if needed"""
+    global _cached_plant_data, _current_file_id, _current_file_name
     
-    # Get the Google Drive URL from settings
     settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    file_prefix = settings.get('data_source', {}).get('file_prefix', '')
+    
+    # Try folder-based approach first
+    if folder_id and file_prefix:
+        # Store the current file ID before checking
+        previous_file_id = _current_file_id
+        
+        # Find the latest file in the folder
+        file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
+        
+        if file_id is None:
+            return jsonify({
+                'status': 'error',
+                'message': f'Could not find files: {message}',
+                'reloaded': False
+            })
+        
+        # Check if this is a different file than before
+        is_new_file = (previous_file_id != file_id)
+        
+        if is_new_file:
+            # New file found - reload the data
+            _cached_plant_data = None
+            df = load_plant_data(force_reload=True, file_id_override=file_id)
+            return jsonify({
+                'status': 'updated',
+                'message': f"New file loaded: '{file_name}'. Loaded {len(df)} species.",
+                'reloaded': True,
+                'species_count': len(df),
+                'file_name': file_name
+            })
+        else:
+            # Same file - no reload needed
+            df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
+            return jsonify({
+                'status': 'unchanged',
+                'message': f"Already using latest file: '{file_name}'. {len(df)} species loaded.",
+                'reloaded': False,
+                'species_count': len(df) if df is not None else 0,
+                'file_name': file_name
+            })
+    
+    # Fall back to legacy single-file checking
     google_drive_url = settings.get('data_source', {}).get('google_drive_csv_url', '')
     
     if not google_drive_url:
         return jsonify({
             'status': 'error',
-            'message': 'No Google Drive URL configured',
+            'message': 'No Google Drive folder or URL configured',
             'reloaded': False
         })
     
-    # Extract file ID from URL
     file_id = get_file_id_from_url(google_drive_url)
     if not file_id:
         return jsonify({
@@ -552,11 +715,9 @@ def check_for_updates():
             'reloaded': False
         })
     
-    # Check if file has been modified
     was_modified, message = check_google_drive_file_modified(file_id)
     
     if was_modified is None:
-        # Error occurred or API not configured - fall back to simple reload
         _cached_plant_data = None
         df = load_plant_data(force_reload=True)
         return jsonify({
@@ -567,7 +728,6 @@ def check_for_updates():
         })
     
     if was_modified:
-        # File was modified - reload the data
         _cached_plant_data = None
         df = load_plant_data(force_reload=True)
         return jsonify({
@@ -577,7 +737,6 @@ def check_for_updates():
             'species_count': len(df)
         })
     else:
-        # File not modified - no reload needed
         df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
         return jsonify({
             'status': 'unchanged',
