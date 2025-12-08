@@ -119,6 +119,17 @@ def parse_json_urls_filter(value):
         return {'type': 'text', 'data': value}
     except (json.JSONDecodeError, TypeError):
         return {'type': 'text', 'data': value}
+
+@app.template_filter('interpret_c_value')
+def interpret_c_value_filter(value):
+    """Template filter to interpret Coefficient of Conservatism value"""
+    return interpret_conservatism(value)
+
+@app.template_filter('interpret_w_value')
+def interpret_w_value_filter(value):
+    """Template filter to interpret Wetland Indicator value"""
+    return interpret_wetland(value)
+
 _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
 _data_load_lock = threading.Lock()  # Prevent concurrent data loads
@@ -181,6 +192,87 @@ def get_column_label(field_name):
         return labels[field_name]
     # Fallback to generated label
     return field_name.replace('_', ' ').title()
+
+def interpret_conservatism(c_value):
+    """Interpret Coefficient of Conservatism value for display"""
+    try:
+        c = float(c_value)
+    except (ValueError, TypeError):
+        return None
+    
+    if c >= 0 and c <= 1:
+        return {
+            "value": c,
+            "short": "Found almost anywhere",
+            "description": "This plant grows in all kinds of places, including roadsides and disturbed areas. It's a survivor that isn't picky about conditions."
+        }
+    elif c >= 2 and c <= 3:
+        return {
+            "value": c,
+            "short": "Adaptable",
+            "description": "This plant can grow in many different settings, including areas that have been somewhat changed by human activity."
+        }
+    elif c >= 4 and c <= 6:
+        return {
+            "value": c,
+            "short": "Prefers natural areas",
+            "description": "This plant does best in natural areas but can handle some changes to its environment. Finding it suggests the habitat is in decent shape."
+        }
+    elif c >= 7 and c <= 8:
+        return {
+            "value": c,
+            "short": "Needs quality habitat",
+            "description": "This plant is choosy about where it lives. It strongly prefers natural areas that haven't been heavily disturbed."
+        }
+    elif c >= 9 and c <= 10:
+        return {
+            "value": c,
+            "short": "Rare habitat specialist",
+            "description": "This plant only thrives in high-quality natural areas. Finding it is a sign you're in a special place worth protecting."
+        }
+    return None
+
+def interpret_wetland(w_value):
+    """Interpret Wetland Indicator value for display"""
+    try:
+        w = int(float(w_value))
+    except (ValueError, TypeError):
+        return None
+    
+    interpretations = {
+        5: {
+            "code": "OBL",
+            "short": "Wetland plant",
+            "description": "This plant almost always grows in wetlands. It loves having its feet wet and is rarely found in dry areas."
+        },
+        4: {
+            "code": "FACW",
+            "short": "Usually in wetlands",
+            "description": "This plant is usually found in wetlands but can sometimes grow in drier spots. It prefers moist conditions."
+        },
+        3: {
+            "code": "FAC",
+            "short": "Flexible about moisture",
+            "description": "This plant is equally happy in wet or dry spots. It's adaptable and doesn't have a strong preference."
+        },
+        2: {
+            "code": "FACU",
+            "short": "Usually in dry areas",
+            "description": "This plant usually grows in drier, upland areas but can occasionally be found in wetlands."
+        },
+        1: {
+            "code": "UPL",
+            "short": "Dry land plant",
+            "description": "This plant almost never grows in wetlands. It prefers well-drained, dry conditions."
+        },
+        0: {
+            "code": "N/A",
+            "short": "Not rated",
+            "description": "This plant hasn't been assigned a wetland rating."
+        }
+    }
+    
+    return interpretations.get(w, None)
 
 def _ensure_cache_dir():
     """Ensure cache directory exists"""
@@ -1387,6 +1479,16 @@ def api_data_columns():
     except Exception as e:
         app.logger.error(f"Error in API column data: {str(e)}")
         return {"error": str(e)}, 500
+
+@app.route('/explain/wetland-indicator')
+def explain_wetland():
+    """Explanation page for Wetland Indicator values"""
+    return render_template('explain_wetland.html')
+
+@app.route('/explain/coefficient-of-conservatism')
+def explain_conservatism():
+    """Explanation page for Coefficient of Conservatism values"""
+    return render_template('explain_conservatism.html')
 
 @app.route('/report-issue/<path:botanical_name>', methods=['GET', 'POST'])
 def report_issue(botanical_name):

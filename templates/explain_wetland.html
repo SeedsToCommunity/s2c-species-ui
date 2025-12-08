@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Wetland Indicator Status</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .rating-card {
+            transition: transform 0.2s;
+        }
+        .rating-card:hover {
+            transform: translateY(-2px);
+        }
+        .rating-obl { border-left: 4px solid #0dcaf0; }
+        .rating-facw { border-left: 4px solid #198754; }
+        .rating-fac { border-left: 4px solid #ffc107; }
+        .rating-facu { border-left: 4px solid #fd7e14; }
+        .rating-upl { border-left: 4px solid #dc3545; }
+        .ecosystem-img {
+            max-width: 100%;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+        .callout {
+            background: rgba(13, 110, 253, 0.1);
+            border-left: 4px solid var(--bs-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1.5rem 0;
+        }
+        .section-heading {
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--bs-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary mb-3">
+            <i data-feather="arrow-left" class="me-1"></i> Back
+        </a>
+
+        <div class="hero-section">
+            <h1 class="display-5 mb-3">Understanding Wetland Indicator Status</h1>
+            <p class="lead mb-0">A practical guide to one of the most useful tools for choosing the right plant for your site.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <h2 class="section-heading">Why This Matters</h2>
+                <p>We preach "right plant, right place" because matching a plant to where you're putting it makes it more likely to thrive. It uses fewer resources than constantly babying a plant to keep it happy. And, holy cow, it can make gardening much less frustrating.</p>
+                
+                <p>Plant tags list moisture requirements, but that doesn't give the complete picture. <strong>Wetland indicator status</strong> tells you more about how a plant interacts with water and soil. Many popular species used in home gardens can be considered wetland plants, even though they may grow nowhere near a wetland. No matter where you garden in SE Michigan, this information helps you make better choices.</p>
+
+                <div class="callout">
+                    <strong>The bottom line:</strong> This rating tells you how much a plant likes to have "wet feet." Some plants thrive standing in water. Others will rot if the soil stays soggy. This number helps you match plants to your actual conditions.
+                </div>
+
+                <h2 class="section-heading">What is a Wetland, Anyway?</h2>
+                <p>There are many definitions of a wetland—it's surprisingly difficult to nail it down technically—but the basics have to do with water, soils, and plants.</p>
+                
+                <p>In wetlands, water is present either at the surface or within the root zone of plants. Water may come from streams, rivers, rain, seasonal floods, or even underground seeps. The amount of water and how it moves around determines what kinds of plants can live there.</p>
+
+                <img src="{{ url_for('static', filename='images/wetland_upland_ecosystems.png') }}" alt="Diagram comparing upland and wetland ecosystems" class="ecosystem-img">
+                <p class="text-muted small">Wetlands form where water stays near the soil surface. Uplands have water farther below. This difference shapes everything about what grows there.</p>
+
+                <p>The soils in wetlands are quite different from drier areas. In wetland soils, water fills the spaces between soil particles, and there's very little oxygen available. This affects which plants can survive—they need special adaptations to handle these "waterlogged" conditions.</p>
+
+                <h2 class="section-heading">The Rating System</h2>
+                <p>Scientists have rated thousands of plants based on how often they naturally occur in wetlands versus drier upland areas. Here's what each rating means:</p>
+
+                <div class="card rating-card rating-obl mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-1">OBL — Obligate Wetland <span class="badge bg-info">Rating: 5</span></h5>
+                                <p class="mb-0"><strong>Almost always in wetlands</strong></p>
+                            </div>
+                        </div>
+                        <p class="mt-2 mb-0">These plants love water. They almost always grow in standing water or soils that stay wet. They're typically intolerant of drought. In SE Michigan, think of plants like <em>Caltha palustris</em> (marsh marigold) or <em>Asclepias incarnata</em> (swamp milkweed).</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Pond edges, drainage ditches, rain gardens that hold water, low spots where water pools</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-facw mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">FACW — Facultative Wetland <span class="badge bg-success">Rating: 4</span></h5>
+                        <p class="mb-0"><strong>Usually in wetlands, but flexible</strong></p>
+                        <p class="mt-2 mb-0">These plants prefer wet conditions but can sometimes grow in drier spots. They're adaptable but still lean toward moisture. <em>Lobelia cardinalis</em> (cardinal flower) is a great example—stunning in a wet garden but can adapt to regular moisture.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Stream banks, bioswales, low rain gardens, areas with consistent moisture</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-fac mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">FAC — Facultative <span class="badge bg-warning text-dark">Rating: 3</span></h5>
+                        <p class="mb-0"><strong>Equally happy wet or dry</strong></p>
+                        <p class="mt-2 mb-0">These are the flexible generalists. They occur in wetlands and non-wetlands about equally. They can handle a range of moisture conditions, which makes them versatile for many garden situations.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Most garden situations, areas with variable moisture, rain gardens that drain</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-facu mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">FACU — Facultative Upland <span class="badge bg-orange" style="background-color: #fd7e14;">Rating: 2</span></h5>
+                        <p class="mb-0"><strong>Usually in dry areas</strong></p>
+                        <p class="mt-2 mb-0">These plants prefer well-drained soils but can occasionally tolerate wet conditions. If your site tends toward dry, these are good candidates.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Well-drained gardens, slopes, sandy soils, areas that dry out between rains</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-upl mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">UPL — Obligate Upland <span class="badge bg-danger">Rating: 1</span></h5>
+                        <p class="mb-0"><strong>Almost never in wetlands</strong></p>
+                        <p class="mt-2 mb-0">These plants need good drainage and will struggle or die in soggy soils. Don't plant these where water pools or soil stays wet.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Best for:</strong> Dry slopes, sandy or rocky areas, well-drained raised beds</p>
+                    </div>
+                </div>
+
+                <h2 class="section-heading">Practical Tips for SE Michigan</h2>
+                
+                <h4>Reading Your Site</h4>
+                <p>Before choosing plants, spend some time observing your site:</p>
+                <ul>
+                    <li>Where does water pool after a rain? Those spots can handle OBL or FACW plants.</li>
+                    <li>Where does the soil dry out quickly? Stick to FAC, FACU, or UPL plants there.</li>
+                    <li>Is there a slope? The bottom will be wetter than the top—use different plants accordingly.</li>
+                </ul>
+
+                <h4>The Shade Factor</h4>
+                <p>Here's a useful trick: a plant that typically needs lots of water can often get by with less if it's in shade. Less sun means less evaporation. A FACW plant in full sun needs consistently moist soil, but the same plant in part shade might tolerate drier conditions.</p>
+
+                <h4>SE Michigan Considerations</h4>
+                <p>Our region has clay soils in many areas, which can hold water longer than sandy soils. A spot that looks dry on the surface might stay wet underground. This can work for or against you—clay can sustain moisture-loving plants through dry spells, but it can also rot the roots of plants that need good drainage.</p>
+
+                <div class="callout">
+                    <strong>A note about regional differences:</strong> Wetland ratings can vary by region. The ratings in our database are specific to the Northcentral & Northeast region, which includes SE Michigan. A plant might have a different rating in other parts of the country.
+                </div>
+
+                <h2 class="section-heading">Learn More</h2>
+                <p>The official wetland plant list is maintained by the U.S. Army Corps of Engineers. You can look up any plant at <a href="https://wetland-plants.sec.usace.army.mil/" target="_blank" rel="noopener">the National Wetland Plant List</a>.</p>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 1rem;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Reference</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Rating</th>
+                                    <th>Meaning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-info">OBL</span></td>
+                                    <td>5</td>
+                                    <td>Wetland plant</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-success">FACW</span></td>
+                                    <td>4</td>
+                                    <td>Usually wet</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">FAC</span></td>
+                                    <td>3</td>
+                                    <td>Flexible</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background-color: #fd7e14;">FACU</span></td>
+                                    <td>2</td>
+                                    <td>Usually dry</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger">UPL</span></td>
+                                    <td>1</td>
+                                    <td>Dry land</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>feather.replace();</script>
+</body>
+</html>

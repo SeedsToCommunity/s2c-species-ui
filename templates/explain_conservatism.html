@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding the Coefficient of Conservatism</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(25, 135, 84, 0.1) 0%, rgba(25, 135, 84, 0.05) 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .rating-card {
+            transition: transform 0.2s;
+        }
+        .rating-card:hover {
+            transform: translateY(-2px);
+        }
+        .rating-low { border-left: 4px solid #6c757d; }
+        .rating-medium-low { border-left: 4px solid #ffc107; }
+        .rating-medium { border-left: 4px solid #fd7e14; }
+        .rating-high { border-left: 4px solid #198754; }
+        .rating-very-high { border-left: 4px solid #0dcaf0; }
+        .callout {
+            background: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid var(--bs-success);
+            padding: 1rem 1.5rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1.5rem 0;
+        }
+        .section-heading {
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--bs-success);
+        }
+        .story-box {
+            background: rgba(108, 117, 125, 0.1);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary mb-3">
+            <i data-feather="arrow-left" class="me-1"></i> Back
+        </a>
+
+        <div class="hero-section">
+            <h1 class="display-5 mb-3">The Coefficient of Conservatism</h1>
+            <p class="lead mb-0">How botanists learned to "read" the quality of a natural area just by looking at which plants grow there.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <h2 class="section-heading">The Story Behind the Number</h2>
+                <p>Imagine you're walking through two different wooded areas in SE Michigan. Both have trees, wildflowers, and birds. How would you know if one is more ecologically valuable than the other?</p>
+                
+                <p>In the 1970s, botanists Floyd Swink and Gerould Wilhelm had an insight: <strong>plants are honest witnesses</strong>. Some plants will grow almost anywhere—along highways, in abandoned lots, on construction sites. Others are pickier. They only thrive in places that haven't been heavily disturbed by humans.</p>
+
+                <p>By cataloging which plants are picky and which aren't, they created a powerful tool. Walk into any natural area, identify the plants, and you can estimate how "pristine" that habitat is—without needing expensive equipment or years of study.</p>
+
+                <div class="callout">
+                    <strong>The key insight:</strong> If you find a lot of picky plants, you're probably in a special place. If you mostly find adaptable survivors, the area has likely been disturbed or degraded.
+                </div>
+
+                <h2 class="section-heading">How It Works</h2>
+                <p>Every native plant in Michigan has been assigned a "C-value" (Coefficient of Conservatism) from 0 to 10. This number reflects how tied the plant is to high-quality, undisturbed natural areas.</p>
+
+                <div class="story-box">
+                    <h5>Think of it like this:</h5>
+                    <p class="mb-0">A C-value of <strong>0</strong> means "this plant is a survivor—it'll grow in a parking lot crack." A C-value of <strong>10</strong> means "this plant is a specialist—it only thrives in pristine, undisturbed natural areas that are increasingly rare."</p>
+                </div>
+
+                <p>The values were assigned by botanists with deep knowledge of Michigan's flora. They considered questions like:</p>
+                <ul>
+                    <li>Does this plant show up on roadsides and disturbed ground?</li>
+                    <li>Is it found mainly in remnant natural areas?</li>
+                    <li>How does it respond when a habitat is degraded?</li>
+                </ul>
+
+                <h2 class="section-heading">The Rating Scale</h2>
+
+                <div class="card rating-card rating-low mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">C-Value: 0-1 <span class="badge bg-secondary">Found Almost Anywhere</span></h5>
+                        <p class="mt-2 mb-0">These plants are tough survivors. They grow in disturbed areas—roadsides, old agricultural fields, construction sites, urban lots. Finding them tells you very little about habitat quality because they're happy almost everywhere.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>Examples:</strong> Box elder, common ragweed, many non-native invasive species</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-medium-low mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">C-Value: 2-3 <span class="badge bg-warning text-dark">Adaptable</span></h5>
+                        <p class="mt-2 mb-0">These plants tolerate a range of conditions. They can handle some disturbance but also grow in more natural settings. They're generalists—not picky, but not quite as tough as the 0-1 group.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>What it means:</strong> The area may have been disturbed in the past but could still have some natural character</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-medium mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">C-Value: 4-6 <span class="badge" style="background-color: #fd7e14;">Prefers Natural Areas</span></h5>
+                        <p class="mt-2 mb-0">These plants do best in natural areas but can tolerate some changes to their environment. Finding a good number of these plants suggests the habitat is in decent shape. They're starting to tell you something meaningful about the site.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>What it means:</strong> The habitat has retained much of its natural character despite some human influence</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-high mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">C-Value: 7-8 <span class="badge bg-success">Needs Quality Habitat</span></h5>
+                        <p class="mt-2 mb-0">These plants are choosy. They strongly prefer natural areas that haven't been heavily disturbed. When you find these, pay attention—you're likely in a place worth protecting.</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>What it means:</strong> This is likely a high-quality natural area with significant ecological value</p>
+                    </div>
+                </div>
+
+                <div class="card rating-card rating-very-high mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-1">C-Value: 9-10 <span class="badge bg-info">Rare Habitat Specialist</span></h5>
+                        <p class="mt-2 mb-0">These are the most conservative plants—they only thrive in high-quality natural areas. Finding them is like finding a message in a bottle from ancient Michigan. These plants are telling you: "This place is special. What you're standing in is increasingly rare."</p>
+                        <p class="mt-2 mb-0 text-muted small"><strong>What it means:</strong> This is a remnant of what SE Michigan looked like before widespread development—protect it</p>
+                    </div>
+                </div>
+
+                <h2 class="section-heading">What This Means for You</h2>
+                
+                <h4>If You're a Gardener</h4>
+                <p>C-values help you understand what conditions a plant needs to thrive. Low C-value plants (0-3) are usually easier to grow—they're adaptable and forgiving. High C-value plants (7-10) often need more specific conditions and may struggle if your garden doesn't match their preferences.</p>
+
+                <h4>If You're Exploring Natural Areas</h4>
+                <p>As you learn to identify plants, you'll start to "read" the landscape. A woodland full of low C-value plants has been heavily disturbed—maybe logged, grazed, or developed in the past. A site with many high C-value plants is a treasure that has somehow persisted through decades of development.</p>
+
+                <h4>If You're Involved in Conservation</h4>
+                <p>Ecologists use C-values to calculate a "Floristic Quality Index" for natural areas. This helps prioritize which sites to protect and monitor restoration progress over time. Areas with higher FQI scores are priorities for conservation.</p>
+
+                <div class="callout">
+                    <strong>Important:</strong> C-values reflect how tied a plant is to undisturbed habitat—not whether it's rare or endangered. A common plant found only in high-quality prairies would have a high C-value. A rare plant that only grows on roadsides would have a low C-value.
+                </div>
+
+                <h2 class="section-heading">The Michigan Connection</h2>
+                <p>The C-values in our database come from the Michigan Floristic Quality Assessment, developed by Anton Reznicek, Michael Penskar, and William Brodovich at the University of Michigan. They evaluated nearly 2,000 native plant species based on decades of field experience in Michigan.</p>
+
+                <p>These values are specific to Michigan. The same species might have different C-values in other states because plant communities and disturbance histories differ by region.</p>
+
+                <h2 class="section-heading">Learn More</h2>
+                <p>For the complete methodology and plant list, see the <a href="https://www.michigandnr.com/publications/pdfs/huntingwildlifehabitat/fqa.pdf" target="_blank" rel="noopener">Michigan DNR Floristic Quality Assessment publication</a>.</p>
+                
+                <p>You can also explore C-values for any Michigan plant using the <a href="https://universalfqa.org/" target="_blank" rel="noopener">Universal FQA Calculator</a>.</p>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 1rem;">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Quick Reference</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm mb-3">
+                            <thead>
+                                <tr>
+                                    <th>C-Value</th>
+                                    <th>What It Means</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-secondary">0-1</span></td>
+                                    <td>Grows anywhere</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">2-3</span></td>
+                                    <td>Adaptable</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background-color: #fd7e14;">4-6</span></td>
+                                    <td>Prefers natural areas</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-success">7-8</span></td>
+                                    <td>Needs quality habitat</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-info">9-10</span></td>
+                                    <td>Specialist</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr>
+                        <h6>Reading a Site</h6>
+                        <p class="small mb-0">Average C-value of all native plants at a site tells you about its quality:</p>
+                        <ul class="small mb-0">
+                            <li><strong>0-2:</strong> Heavily disturbed</li>
+                            <li><strong>3-4:</strong> Moderate quality</li>
+                            <li><strong>5+:</strong> High quality natural area</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>feather.replace();</script>
+</body>
+</html>

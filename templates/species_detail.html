@@ -212,6 +212,34 @@
                                             View Pictures
                                         </a>
                                     </div>
+                                {% elif column.field == 'coefficient_of_conservatism_(c)' %}
+                                    {% set c_interp = field_value|interpret_c_value %}
+                                    <div>
+                                        <small class="text-muted">
+                                            <a href="{{ url_for('explain_conservatism') }}" class="text-decoration-none text-muted">
+                                                {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
+                                            </a>:
+                                        </small>
+                                        <span class="text-body-secondary ms-1">{{ field_value }}</span>
+                                        {% if c_interp %}
+                                            <span class="text-info ms-1">— {{ c_interp.short }}</span>
+                                            <small class="d-block text-muted mt-1">{{ c_interp.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% elif column.field == 'wetland_indicator_(w)' %}
+                                    {% set w_interp = field_value|interpret_w_value %}
+                                    <div>
+                                        <small class="text-muted">
+                                            <a href="{{ url_for('explain_wetland') }}" class="text-decoration-none text-muted">
+                                                {{ column.label }} <i data-feather="help-circle" style="width:12px;height:12px;"></i>
+                                            </a>:
+                                        </small>
+                                        <span class="text-body-secondary ms-1">{{ field_value }}{% if w_interp %} ({{ w_interp.code }}){% endif %}</span>
+                                        {% if w_interp %}
+                                            <span class="text-info ms-1">— {{ w_interp.short }}</span>
+                                            <small class="d-block text-muted mt-1">{{ w_interp.description }}</small>
+                                        {% endif %}
+                                    </div>
                                 {% else %}
                                     <div>
                                         <small class="text-muted">{{ column.label }}:</small>
