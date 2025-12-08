@@ -1814,6 +1814,7 @@ def report_issue(botanical_name):
 @app.route('/admin/column-usage')
 def admin_column_usage():
     """Admin page showing column usage across all pages in a grid format"""
+    global _cached_plant_data, _cached_column_usage
     try:
         # Use cached column usage data for fast page load
         cached = get_cached_column_usage()
@@ -1826,13 +1827,23 @@ def admin_column_usage():
                                  total_species=cached['total_species'],
                                  is_development=True)
         
-        # Fallback: load data if cache not available (triggers cache rebuild)
+        # If column usage cache is empty but plant data is cached, rebuild quickly
+        if _cached_plant_data is not None and not _cached_plant_data.empty:
+            compute_column_usage(_cached_plant_data)
+            cached = get_cached_column_usage()
+            if cached:
+                return render_template('admin_column_usage.html', 
+                                     column_usage=cached['data'],
+                                     total_columns=cached['total_columns'],
+                                     total_species=cached['total_species'],
+                                     is_development=True)
+        
+        # Ultimate fallback - load data fresh (slow, but shouldn't happen often)
         df = load_plant_data()
         if df.empty:
             flash('No plant data available to analyze columns', 'error')
             return render_template('admin_column_usage.html', column_usage={})
         
-        # Cache should now be populated, try again
         cached = get_cached_column_usage()
         if cached:
             return render_template('admin_column_usage.html', 
@@ -1841,7 +1852,6 @@ def admin_column_usage():
                                  total_species=cached['total_species'],
                                  is_development=True)
         
-        # Ultimate fallback - shouldn't happen but handle gracefully
         flash('Column usage data not available', 'error')
         return render_template('admin_column_usage.html', column_usage={}, is_development=True)
         
@@ -1927,13 +1937,12 @@ def toggle_column():
             invalidate_screen_config_cache(screen_name)
         
         # Invalidate column usage cache so changes appear immediately
-        global _cached_column_usage
+        global _cached_column_usage, _cached_plant_data
         _cached_column_usage = None
         
-        # Rebuild cache with updated configuration
-        df = load_plant_data()
-        if not df.empty:
-            compute_column_usage(df)
+        # Rebuild cache using already-cached plant data (fast)
+        if _cached_plant_data is not None and not _cached_plant_data.empty:
+            compute_column_usage(_cached_plant_data)
         
         return {"success": True, "message": "Column configuration updated"}
         
@@ -2001,13 +2010,12 @@ def save_column_order():
         
         # Invalidate caches
         invalidate_screen_config_cache(screen)
-        global _cached_column_usage
+        global _cached_column_usage, _cached_plant_data
         _cached_column_usage = None
         
-        # Rebuild cache with updated configuration
-        df = load_plant_data()
-        if not df.empty:
-            compute_column_usage(df)
+        # Rebuild cache using already-cached plant data (fast)
+        if _cached_plant_data is not None and not _cached_plant_data.empty:
+            compute_column_usage(_cached_plant_data)
         
         app.logger.info(f"Column order saved for screen: {screen}")
         return {"success": True}
