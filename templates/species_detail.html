@@ -284,17 +284,26 @@
         
         // Function to initialize all charts on the page
         function initializeCharts() {
-            document.querySelectorAll('.chart-canvas').forEach(canvas => {
+            const canvases = document.querySelectorAll('.chart-canvas');
+            console.log('Found chart canvases:', canvases.length);
+            
+            canvases.forEach(canvas => {
                 const chartId = canvas.id;
+                console.log('Initializing chart:', chartId);
+                console.log('Data-labels attr:', canvas.dataset.labels);
+                console.log('Data-values attr:', canvas.dataset.values);
                 
                 // Destroy existing chart if any
                 if (activeCharts[chartId]) {
                     activeCharts[chartId].destroy();
                 }
                 
-                const labels = JSON.parse(canvas.dataset.labels || '[]');
-                const values = JSON.parse(canvas.dataset.values || '[]');
-                const label = canvas.dataset.label || 'Data';
+                try {
+                    const labels = JSON.parse(canvas.dataset.labels || '[]');
+                    const values = JSON.parse(canvas.dataset.values || '[]');
+                    const label = canvas.dataset.label || 'Data';
+                    console.log('Parsed labels:', labels);
+                    console.log('Parsed values:', values);
                 
                 if (labels.length > 0 && values.length > 0) {
                     activeCharts[chartId] = new Chart(canvas, {
@@ -335,6 +344,10 @@
                             }
                         }
                     });
+                    console.log('Chart created successfully');
+                }
+                } catch (e) {
+                    console.error('Chart error:', e);
                 }
             });
         }
