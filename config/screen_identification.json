@@ -96,11 +96,6 @@
       "field": "se_mi_native",
       "label": "SE MI Native",
       "width": "auto"
-    },
-    {
-      "field": "link_to_pictures",
-      "label": "Link to Pictures",
-      "type": "link"
     }
   ]
 }
