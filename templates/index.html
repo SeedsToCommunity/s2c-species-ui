@@ -174,6 +174,14 @@
                                 </div>
                             </div>
                             <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="community_data" name="community_data" value="true"
+                                           {% if current_filters and current_filters.community_data %}checked{% endif %}>
+                                    <label class="form-check-label" for="community_data">
+                                        <i data-feather="users" class="me-1"></i>
+                                        Community Data Only
+                                    </label>
+                                </div>
                                 <a href="/" class="btn btn-outline-secondary">
                                     <i data-feather="x-circle" class="me-1"></i>
                                     Clear All Filters
@@ -217,7 +225,7 @@
                             Plant Species
                         </h3>
                         <span class="badge bg-info fs-6">
-                            {% if current_filters and (current_filters.name or current_filters.start_seed_watch or current_filters.germination_code or current_filters.light or current_filters.moisture) %}
+                            {% if current_filters and (current_filters.name or current_filters.start_seed_watch or current_filters.germination_code or current_filters.light or current_filters.moisture or current_filters.community_data) %}
                                 {{ plants|length }} of {{ filter_options.total_count }} species found
                             {% else %}
                                 {{ plants|length }} species
@@ -242,7 +250,7 @@
                                                     {% elif column.type == 'subtitle' %}
                                                         <h6 class="card-subtitle mb-2 text-muted fst-italic">
                                                             {% if column.field == 'botanical_name' %}
-                                                                <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **current_filters) }}" 
+                                                                <a href="{{ url_for('species_detail', botanical_name=field_value|urlencode, **(url_filters or {})) }}" 
                                                                    class="species-link text-info">
                                                                     {{ field_value }}
                                                                     <i data-feather="arrow-right" class="ms-1 small"></i>
@@ -477,12 +485,13 @@
                 nameInput.addEventListener('input', updateResults);
             }
             
-            // Dropdown selects - immediate AJAX update
+            // Dropdown selects and checkboxes - immediate AJAX update
             const selectInputs = [
                 'start_seed_watch',
                 'germination_code', 
                 'light',
-                'moisture'
+                'moisture',
+                'community_data'
             ];
             
             selectInputs.forEach(id => {

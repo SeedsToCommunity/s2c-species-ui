@@ -884,6 +884,9 @@ def merge_supplemental_data(main_df, supplemental_df):
         
         if not new_cols:
             app.logger.info("No new columns in supplemental data to merge")
+            # Still add the community data flag based on key matches
+            supp_keys = set(supplemental_df['_merge_key'].unique())
+            main_df['has_community_data'] = main_df['_merge_key'].isin(supp_keys)
             main_df = main_df.drop('_merge_key', axis=1)
             return main_df
         
@@ -894,17 +897,22 @@ def merge_supplemental_data(main_df, supplemental_df):
         supp_subset = supp_subset.drop_duplicates(subset=['_merge_key'], keep='first')
         
         # Merge
-        merged_df = main_df.merge(supp_subset, on='_merge_key', how='left')
+        merged_df = main_df.merge(supp_subset, on='_merge_key', how='left', indicator=True)
         
-        # Clean up merge key
-        merged_df = merged_df.drop('_merge_key', axis=1)
+        # Add has_community_data flag based on whether merge found a match
+        merged_df['has_community_data'] = merged_df['_merge'].apply(lambda x: x == 'both')
+        
+        # Clean up merge key and indicator
+        merged_df = merged_df.drop(['_merge_key', '_merge'], axis=1)
         
         # Fill NaN in new columns with empty string
         for col in new_cols:
             if col in merged_df.columns:
                 merged_df[col] = merged_df[col].fillna('')
         
+        community_count = merged_df['has_community_data'].sum()
         app.logger.info(f"Successfully merged {len(new_cols)} supplemental columns: {list(new_cols)}")
+        app.logger.info(f"Species with community data: {community_count} of {len(merged_df)}")
         
         return merged_df
         
@@ -1313,6 +1321,11 @@ def filter_plants(df, filters):
         mask = filtered_df['moisture'].str.contains(moisture_filter, na=False, regex=False)
         filtered_df = filtered_df[mask]
     
+    # Community data filter - only show species with supplemental data
+    if filters.get('community_data'):
+        if 'has_community_data' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['has_community_data'] == True]
+    
     return filtered_df
 
 @app.route('/')
@@ -1330,12 +1343,23 @@ def index():
         config = load_display_config()
         
         # Get filter parameters from request
+        community_data_raw = request.args.get('community_data', '')
         filters = {
             'name': request.args.get('name', '').strip(),
             'start_seed_watch': request.args.get('start_seed_watch', ''),
             'germination_code': request.args.get('germination_code', ''),
             'light': request.args.get('light', ''),
-            'moisture': request.args.get('moisture', '')
+            'moisture': request.args.get('moisture', ''),
+            'community_data': community_data_raw == 'true'  # Boolean for filter logic
+        }
+        # Keep string version for URL generation
+        url_filters = {
+            'name': filters['name'],
+            'start_seed_watch': filters['start_seed_watch'],
+            'germination_code': filters['germination_code'],
+            'light': filters['light'],
+            'moisture': filters['moisture'],
+            'community_data': 'true' if filters['community_data'] else ''  # String for URLs
         }
         
         # Apply filters
@@ -1360,7 +1384,8 @@ def index():
         
         app.logger.info(f"Successfully loaded {len(plants)} plant species (filtered from {len(df)} total)")
         return render_template('index.html', plants=plants, config=config, 
-                             filter_options=filter_options, current_filters=filters)
+                             filter_options=filter_options, current_filters=filters,
+                             url_filters=url_filters)
         
     except Exception as e:
         app.logger.error(f"Error processing plant data: {str(e)}")

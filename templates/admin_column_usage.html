@@ -359,7 +359,8 @@
                         <td class="sample-data">
                             {% if usage.sample_data %}
                                 {% for sample in usage.sample_data %}
-                                    <div>{{ sample[:50] }}{% if sample|length > 50 %}...{% endif %}</div>
+                                    {% set sample_str = sample|string %}
+                                    <div>{{ sample_str[:50] }}{% if sample_str|length > 50 %}...{% endif %}</div>
                                 {% endfor %}
                             {% else %}
                                 <span class="text-muted">No data</span>
