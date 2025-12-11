@@ -550,6 +550,12 @@
             try {
                 const parsed = JSON.parse(trimmed);
                 if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    // Check for topic-based structured content (similar_species)
+                    if (parsed.topic === 'similar_species' && parsed.similar_species) {
+                        console.log('Detected similar_species JSON');
+                        return { type: 'similar_species', data: parsed };
+                    }
+                    
                     const values = Object.values(parsed);
                     const imageCount = values.filter(v => isImageUrl(v)).length;
                     const urlCount = values.filter(v => typeof v === 'string' && v.startsWith('http')).length;
