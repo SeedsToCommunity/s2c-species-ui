@@ -18,11 +18,6 @@
       "width": "auto"
     },
     {
-      "field": "external_reference_urls",
-      "label": "External Reference URLs",
-      "width": "auto"
-    },
-    {
       "field": "height",
       "label": "Height",
       "type": "text"
@@ -55,6 +50,11 @@
     {
       "field": "duration",
       "label": "Duration",
+      "width": "auto"
+    },
+    {
+      "field": "external_reference_urls",
+      "label": "External Reference URLs",
       "width": "auto"
     },
     {
