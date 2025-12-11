@@ -92,6 +92,10 @@ def parse_json_urls_filter(value):
         
         # Check if it's a dict with URL values
         if isinstance(parsed, dict):
+            # Check for topic-based structured content (e.g., similar_species)
+            if parsed.get('topic') == 'similar_species' and 'similar_species' in parsed:
+                return {'type': 'similar_species', 'data': parsed}
+            
             # Check if values are image URLs
             image_count = sum(1 for v in parsed.values() if is_image_url(v))
             url_count = sum(1 for v in parsed.values() if isinstance(v, str) and v.startswith('http'))

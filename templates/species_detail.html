@@ -218,6 +218,32 @@
                                                     data-label="{{ column.label }}"></canvas>
                                         </div>
                                     </div>
+                                {% elif parsed.type == 'similar_species' %}
+                                    <!-- Similar Species structured content -->
+                                    <div>
+                                        <h6 class="field-label mb-2">
+                                            <i data-feather="git-branch" class="me-1" style="width:16px;height:16px;"></i>
+                                            Similar Species
+                                        </h6>
+                                        {% for similar in parsed.data.similar_species %}
+                                            <div class="border rounded p-2 mb-2 bg-light">
+                                                <div class="fw-semibold text-dark">
+                                                    {{ similar.name }}
+                                                    {% if similar.common_name %}
+                                                        <span class="text-muted fw-normal">— {{ similar.common_name }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if similar.tier1_source_backed and similar.tier1_source_backed.distinguishing_features %}
+                                                    <div class="mt-1">
+                                                        <small class="text-secondary">
+                                                            <strong>Distinguishing Characteristics:</strong>
+                                                            {{ similar.tier1_source_backed.distinguishing_features.value }}
+                                                        </small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
                                         <small class="field-label me-2">{{ column.label }}:</small>
@@ -674,6 +700,46 @@
                                                         data-values='${values}'
                                                         data-label="${column.label}"></canvas>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'similar_species') {
+                        // Similar Species structured content
+                        let similarHtml = '';
+                        for (const similar of parsed.data.similar_species || []) {
+                            const commonName = similar.common_name ? `<span class="text-muted fw-normal">— ${similar.common_name}</span>` : '';
+                            let distinguishing = '';
+                            if (similar.tier1_source_backed && similar.tier1_source_backed.distinguishing_features) {
+                                distinguishing = `
+                                    <div class="mt-1">
+                                        <small class="text-secondary">
+                                            <strong>Distinguishing Characteristics:</strong>
+                                            ${similar.tier1_source_backed.distinguishing_features.value}
+                                        </small>
+                                    </div>
+                                `;
+                            }
+                            similarHtml += `
+                                <div class="border rounded p-2 mb-2 bg-light">
+                                    <div class="fw-semibold text-dark">
+                                        ${similar.name} ${commonName}
+                                    </div>
+                                    ${distinguishing}
+                                </div>
+                            `;
+                        }
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <h6 class="field-label mb-2">
+                                                <i data-feather="git-branch" class="me-1" style="width:16px;height:16px;"></i>
+                                                Similar Species
+                                            </h6>
+                                            ${similarHtml}
                                         </div>
                                     </div>
                                 </div>
