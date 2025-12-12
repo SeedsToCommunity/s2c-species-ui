@@ -196,9 +196,10 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
     group_tags = image_group.get('tags', [])
     
     # If image group has specific tags, filter by them (quote tag values)
+    # Uses AND logic - image must have ALL specified tags
     if group_tags:
-        tag_conditions = ' OR '.join([f'tags="{tag}"' for tag in group_tags])
-        # Return images that match species/genus AND have at least one group tag
+        tag_conditions = ' AND '.join([f'tags="{tag}"' for tag in group_tags])
+        # Return images that match species/genus AND have ALL group tags
         return f"{primary_expr} AND ({tag_conditions})"
     else:
         # No group-specific tags, return all species/genus images
