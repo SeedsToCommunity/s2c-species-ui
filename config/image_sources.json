@@ -5,8 +5,9 @@
       "description": "All Cloudinary photos for this species",
       "icon": "image",
       "tags": ["Lake County"],
-      "filename_patterns": ["{species}"],
-      "default_screens": ["collection"]
+      "filename_patterns": ["{species}", "png"],
+      "default_screens": ["collection"],
+      "display_style": "gallery"
     },
     "field_identification": {
       "label": "Field Identification Photos",
