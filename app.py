@@ -17,6 +17,13 @@ try:
 except ImportError:
     GOOGLE_API_AVAILABLE = False
 
+# Cloudinary service imports
+try:
+    import cloudinary_service
+    CLOUDINARY_AVAILABLE = True
+except ImportError:
+    CLOUDINARY_AVAILABLE = False
+
 # Configure logging for debugging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -1459,7 +1466,7 @@ def index():
         app.logger.info(f"Successfully loaded {len(plants)} plant species (filtered from {len(df)} total)")
         return render_template('index.html', plants=plants, config=config, 
                              filter_options=filter_options, current_filters=filters,
-                             url_filters=url_filters)
+                             url_filters=url_filters, cloudinary_available=CLOUDINARY_AVAILABLE)
         
     except Exception as e:
         app.logger.error(f"Error processing plant data: {str(e)}")
@@ -1491,6 +1498,17 @@ def species_detail(botanical_name, screen_type='identification'):
         # Load screen configuration
         screen_config = load_screen_config(screen_type)
         
+        # Get Cloudinary images for this species and screen
+        cloudinary_images = {}
+        if CLOUDINARY_AVAILABLE:
+            try:
+                genus = species.get('genus', '')
+                species_name = species.get('species', '')
+                if genus and species_name:
+                    cloudinary_images = cloudinary_service.get_species_images(genus, species_name, screen_type)
+            except Exception as e:
+                app.logger.error(f"Error fetching Cloudinary images: {e}")
+        
         # Get filter parameters to preserve state
         current_filters = {
             'name': request.args.get('name', ''),
@@ -1507,6 +1525,7 @@ def species_detail(botanical_name, screen_type='identification'):
                              valid_screens=valid_screens,
                              current_filters=current_filters,
                              botanical_name=unquote(botanical_name),
+                             cloudinary_images=cloudinary_images,
                              is_development=True)
         
     except Exception as e:
@@ -1536,16 +1555,109 @@ def api_species_screen(botanical_name, screen_type):
         # Load screen configuration
         screen_config = load_screen_config(screen_type)
         
+        # Get Cloudinary images for this species and screen
+        cloudinary_images = {}
+        if CLOUDINARY_AVAILABLE:
+            try:
+                genus = species.get('genus', '')
+                species_name = species.get('species', '')
+                if genus and species_name:
+                    cloudinary_images = cloudinary_service.get_species_images(genus, species_name, screen_type)
+            except Exception as e:
+                app.logger.error(f"Error fetching Cloudinary images: {e}")
+        
         # Return JSON data
         return {
             "species": species,
             "screen_config": screen_config,
-            "current_screen": screen_type
+            "current_screen": screen_type,
+            "cloudinary_images": cloudinary_images
         }
         
     except Exception as e:
         app.logger.error(f"Error in API endpoint: {str(e)}")
         return {"error": str(e)}, 500
+
+@app.route('/api/cloudinary/test')
+def api_cloudinary_test():
+    """Test Cloudinary connection"""
+    if not CLOUDINARY_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Cloudinary service not available'})
+    
+    result = cloudinary_service.test_cloudinary_connection()
+    return jsonify(result)
+
+@app.route('/api/cloudinary/images/<path:botanical_name>')
+def api_cloudinary_images(botanical_name):
+    """Get all Cloudinary images for a species"""
+    if not CLOUDINARY_AVAILABLE:
+        return jsonify({'error': 'Cloudinary service not available'}), 500
+    
+    try:
+        # Parse botanical name to genus and species
+        parts = unquote(botanical_name).split(' ', 1)
+        genus = parts[0] if parts else ''
+        species_name = parts[1] if len(parts) > 1 else ''
+        
+        if not genus:
+            return jsonify({'error': 'Could not parse species name'}), 400
+        
+        # Get all images
+        screen_id = request.args.get('screen')
+        force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+        
+        if screen_id:
+            images = cloudinary_service.get_species_images(genus, species_name, screen_id, force_refresh)
+        else:
+            images = cloudinary_service.get_species_images(genus, species_name, force_refresh=force_refresh)
+        
+        return jsonify({
+            'genus': genus,
+            'species': species_name,
+            'images': images
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching Cloudinary images: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/image-groups')
+def api_image_groups():
+    """Get all configured image groups for admin UI"""
+    if not CLOUDINARY_AVAILABLE:
+        return jsonify({'error': 'Cloudinary service not available', 'groups': []})
+    
+    try:
+        groups = cloudinary_service.get_all_image_groups()
+        return jsonify({'groups': groups})
+    except Exception as e:
+        app.logger.error(f"Error getting image groups: {e}")
+        return jsonify({'error': str(e), 'groups': []})
+
+@app.route('/api/refresh-images')
+def refresh_images_endpoint():
+    """API endpoint to refresh Cloudinary image cache"""
+    if not CLOUDINARY_AVAILABLE:
+        return jsonify({
+            'status': 'unavailable',
+            'message': 'Cloudinary service not configured',
+            'refreshed': False
+        })
+    
+    try:
+        cloudinary_service.clear_image_cache()
+        return jsonify({
+            'status': 'refreshed',
+            'message': 'Image cache cleared. Fresh images will be loaded on next species view.',
+            'refreshed': True
+        })
+    except Exception as e:
+        app.logger.error(f"Error refreshing image cache: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error clearing image cache: {str(e)}',
+            'refreshed': False
+        })
 
 @app.route('/admin')
 def admin_dashboard():

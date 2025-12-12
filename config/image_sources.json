@@ -54,7 +54,7 @@
     "genus_tag_format": "genus:{genus}"
   },
   "cache_settings": {
-    "ttl_hours": 24,
+    "ttl_hours": 1,
     "cache_directory": "/tmp/cloudinary_cache"
   }
 }

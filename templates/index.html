@@ -190,6 +190,12 @@
                                     <i data-feather="refresh-cw" class="me-1"></i>
                                     Check for Updates
                                 </button>
+                                {% if cloudinary_available %}
+                                <button type="button" class="btn btn-outline-secondary" id="refreshImagesBtn" onclick="refreshImages()">
+                                    <i data-feather="camera" class="me-1"></i>
+                                    Refresh Images
+                                </button>
+                                {% endif %}
                                 <span class="text-muted ms-2 small">
                                     <i data-feather="zap" class="me-1"></i>
                                     Filters update automatically
@@ -559,6 +565,45 @@
         });
         
         // Check for updates function
+        function refreshImages() {
+            const btn = document.getElementById('refreshImagesBtn');
+            const statusSpan = document.getElementById('updateStatus');
+            
+            if (!btn) return;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refreshing...';
+            statusSpan.innerHTML = '';
+            statusSpan.className = 'ms-2 small';
+            
+            fetch('/api/refresh-images')
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    feather.replace();
+                    
+                    if (data.refreshed) {
+                        statusSpan.className = 'ms-2 small text-success';
+                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message;
+                    } else {
+                        statusSpan.className = 'ms-2 small text-warning';
+                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
+                    }
+                    feather.replace();
+                    setTimeout(() => { statusSpan.innerHTML = ''; }, 5000);
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    feather.replace();
+                    statusSpan.className = 'ms-2 small text-danger';
+                    statusSpan.innerHTML = '<i data-feather="x-circle" class="me-1"></i>Error refreshing images';
+                    feather.replace();
+                    console.error('Refresh images failed:', error);
+                });
+        }
+        
         function checkForUpdates() {
             const btn = document.getElementById('checkUpdatesBtn');
             const statusSpan = document.getElementById('updateStatus');

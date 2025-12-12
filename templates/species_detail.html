@@ -294,6 +294,36 @@
                 {% endif %}
             {% endfor %}
             
+            <!-- Cloudinary Image Gallery -->
+            {% if cloudinary_images %}
+                {% for group_id, group_data in cloudinary_images.items() %}
+                    {% if group_data.images %}
+                        <div class="col-12 mb-2">
+                            <div class="card">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i data-feather="{{ group_data.icon or 'image' }}" class="me-2 text-primary" style="width:18px;height:18px;"></i>
+                                        <h6 class="mb-0 text-primary">{{ group_data.label }}</h6>
+                                        <span class="badge bg-secondary ms-2">{{ group_data.images|length }} images</span>
+                                    </div>
+                                    <div class="cloudinary-gallery d-flex flex-wrap gap-2">
+                                        {% for img in group_data.images %}
+                                            <a href="{{ img.url }}" target="_blank" class="cloudinary-thumb" title="{{ img.filename }}">
+                                                <img src="{{ img.thumbnail_url }}" 
+                                                     alt="{{ img.filename }}"
+                                                     class="rounded" 
+                                                     style="width: 120px; height: 120px; object-fit: cover;"
+                                                     loading="lazy">
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
             <!-- Show message if no data available for this screen -->
             {% set data_fields = [] %}
             {% for column in screen_config.columns %}
@@ -303,7 +333,9 @@
                 {% endif %}
             {% endfor %}
             
-            {% if data_fields|length == 0 %}
+            {% set has_cloudinary_images = cloudinary_images and cloudinary_images|length > 0 %}
+            
+            {% if data_fields|length == 0 and not has_cloudinary_images %}
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body text-center py-5">
@@ -460,7 +492,7 @@
                 updateAnnouncement(data.screen_config);
                 
                 // Update content
-                updateScreenContent(data.species, data.screen_config);
+                updateScreenContent(data.species, data.screen_config, data.cloudinary_images);
                 
                 // Re-initialize Feather icons for new content
                 feather.replace();
@@ -590,9 +622,10 @@
         }
         
         // Function to update screen content
-        function updateScreenContent(species, screenConfig) {
+        function updateScreenContent(species, screenConfig, cloudinaryImages) {
             let content = '';
             let hasData = false;
+            cloudinaryImages = cloudinaryImages || {};
             
             screenConfig.columns.forEach(column => {
                 const fieldValue = species[column.field];
@@ -791,6 +824,46 @@
                     }
                 }
             });
+            
+            // Add Cloudinary image galleries
+            const hasCloudinaryImages = cloudinaryImages && Object.keys(cloudinaryImages).length > 0;
+            if (hasCloudinaryImages) {
+                hasData = true;
+                for (const [groupId, groupData] of Object.entries(cloudinaryImages)) {
+                    if (groupData.images && groupData.images.length > 0) {
+                        let imagesHtml = '';
+                        groupData.images.forEach(img => {
+                            imagesHtml += `
+                                <a href="${img.url}" target="_blank" class="cloudinary-thumb" title="${img.filename || ''}">
+                                    <img src="${img.thumbnail_url}" 
+                                         alt="${img.filename || ''}"
+                                         class="rounded" 
+                                         style="width: 120px; height: 120px; object-fit: cover;"
+                                         loading="lazy">
+                                </a>
+                            `;
+                        });
+                        
+                        const iconName = groupData.icon || 'image';
+                        content += `
+                            <div class="col-12 mb-2">
+                                <div class="card">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i data-feather="${iconName}" class="me-2 text-primary" style="width:18px;height:18px;"></i>
+                                            <h6 class="mb-0 text-primary">${groupData.label}</h6>
+                                            <span class="badge bg-secondary ms-2">${groupData.images.length} images</span>
+                                        </div>
+                                        <div class="cloudinary-gallery d-flex flex-wrap gap-2">
+                                            ${imagesHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
             
             if (!hasData) {
                 content = `

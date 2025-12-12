@@ -124,40 +124,78 @@ def clear_image_cache():
     except Exception as e:
         logger.error(f"Error clearing disk cache: {e}")
 
-def build_search_expression(genus, species, image_group):
-    """Build Cloudinary search expression for a species and image group"""
+def build_search_expression(genus, species, image_group, include_genus_fallback=False):
+    """Build Cloudinary search expression for a species and image group.
+    
+    Implements a multi-tier matching strategy:
+    1. Species filename pattern (e.g., asclepias_tuberosa*)
+    2. Species tag (e.g., species:asclepias_tuberosa)
+    3. Genus filename pattern (fallback, e.g., asclepias_*)
+    4. Genus tag (fallback, e.g., genus:asclepias)
+    
+    If image_group has specific tags, those are combined with species matching.
+    """
     config = load_image_sources_config()
     matching = config.get('species_matching', {})
     
-    expressions = []
+    # Normalize species/genus names
+    genus_clean = genus.lower().strip() if genus else ''
+    species_clean = species.lower().strip().replace(' ', '_') if species else ''
+    species_pattern = f"{genus_clean}_{species_clean}"
     
-    # Species-based matching via filename
-    species_pattern = f"{genus}_{species}".lower().replace(' ', '_')
-    expressions.append(f"filename:{species_pattern}*")
+    # Build species-level expressions
+    species_matches = []
     
-    # Tag-based matching for species
+    # 1. Filename matching for species
+    species_matches.append(f"filename:{species_pattern}*")
+    
+    # 2. Tag-based matching for species
     tag_format = matching.get('tag_format', 'species:{genus}_{species}')
-    species_tag = tag_format.format(genus=genus.lower(), species=species.lower().replace(' ', '_'))
+    species_tag = tag_format.format(genus=genus_clean, species=species_clean)
+    species_matches.append(f"tags={species_tag}")
     
-    # Image group specific tags
+    # Species expression: either filename OR species tag
+    species_expr = '(' + ' OR '.join(species_matches) + ')'
+    
+    # Build genus fallback expressions
+    genus_matches = []
+    if include_genus_fallback and matching.get('fallback_to_genus', True):
+        # 3. Filename matching for genus (any species in this genus)
+        genus_matches.append(f"filename:{genus_clean}_*")
+        
+        # 4. Genus tag
+        genus_tag_format = matching.get('genus_tag_format', 'genus:{genus}')
+        genus_tag = genus_tag_format.format(genus=genus_clean)
+        genus_matches.append(f"tags={genus_tag}")
+    
+    # Combine species and genus expressions
+    if genus_matches:
+        genus_expr = '(' + ' OR '.join(genus_matches) + ')'
+        primary_expr = f"({species_expr} OR {genus_expr})"
+    else:
+        primary_expr = species_expr
+    
+    # Get image group specific tags
     group_tags = image_group.get('tags', [])
-    group_patterns = image_group.get('filename_patterns', [])
     
-    # Build the main expression - search for species match
-    main_expression = f"(filename:{species_pattern}* OR tags={species_tag})"
-    
-    # If image group has specific tags, add those as additional filter
+    # If image group has specific tags, filter by them
     if group_tags:
         tag_conditions = ' OR '.join([f"tags={tag}" for tag in group_tags])
-        # We want images that match the species AND have relevant tags
-        # But if no group-specific tags, return all species images
-        # For now, keep it simple: species match is primary
-        pass
-    
-    return main_expression
+        # Return images that match species/genus AND have at least one group tag
+        return f"{primary_expr} AND ({tag_conditions})"
+    else:
+        # No group-specific tags, return all species/genus images
+        return primary_expr
 
-def search_cloudinary_images(genus, species, image_group_id, force_refresh=False):
-    """Search Cloudinary for images matching a species and image group"""
+def search_cloudinary_images(genus, species, image_group_id, force_refresh=False, include_genus_fallback=True):
+    """Search Cloudinary for images matching a species and image group.
+    
+    Uses multi-tier matching strategy:
+    1. Species filename pattern
+    2. Species tag
+    3. Genus filename pattern (if include_genus_fallback=True and no species results)
+    4. Genus tag (if include_genus_fallback=True and no species results)
+    """
     if not configure_cloudinary():
         return []
     
@@ -191,36 +229,37 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
     
     # Search Cloudinary
     try:
-        species_pattern = f"{genus}_{species}".lower().replace(' ', '_')
+        # Build search expression using improved matching logic
+        # First try without genus fallback
+        search_expr = build_search_expression(genus, species, image_group, include_genus_fallback=False)
         
-        # Build search - look for images matching species in filename or tags
+        logger.info(f"Cloudinary search (species-level): {search_expr}")
+        
         search = Search()
-        
-        # Get image group specific tags
-        group_tags = image_group.get('tags', [])
-        group_patterns = image_group.get('filename_patterns', [])
-        
-        # Primary search: filename contains species pattern
-        search_expr = f"filename:{species_pattern}*"
-        
-        # Add tag filter if this group has specific tags (excluding "all" groups)
-        if group_tags and image_group_id != 'all_species_images':
-            # Build OR expression for group tags
-            tag_part = ' OR '.join([f"tags={tag}" for tag in group_tags])
-            # Species match AND group tags
-            search_expr = f"({search_expr}) AND ({tag_part})"
-        
-        logger.info(f"Cloudinary search: {search_expr}")
-        
         search.expression(search_expr)
         search.max_results(50)
         search.with_field('tags')
         search.with_field('context')
         
         result = search.execute()
+        resources = result.get('resources', [])
+        
+        # If no results and fallback enabled, try with genus fallback
+        if not resources and include_genus_fallback:
+            fallback_expr = build_search_expression(genus, species, image_group, include_genus_fallback=True)
+            logger.info(f"No species results, trying genus fallback: {fallback_expr}")
+            
+            search = Search()
+            search.expression(fallback_expr)
+            search.max_results(50)
+            search.with_field('tags')
+            search.with_field('context')
+            
+            result = search.execute()
+            resources = result.get('resources', [])
         
         images = []
-        for resource in result.get('resources', []):
+        for resource in resources:
             img_data = {
                 'public_id': resource.get('public_id'),
                 'url': resource.get('secure_url'),
