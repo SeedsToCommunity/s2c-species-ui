@@ -232,6 +232,8 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
         # Build search expression using improved matching logic
         # First try without genus fallback
         search_expr = build_search_expression(genus, species, image_group, include_genus_fallback=False)
+        # Filter to only images (exclude raw files like JSON, PDF, etc.)
+        search_expr = f"resource_type:image AND ({search_expr})"
         
         logger.info(f"Cloudinary search (species-level): {search_expr}")
         
@@ -247,6 +249,8 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
         # If no results and fallback enabled, try with genus fallback
         if not resources and include_genus_fallback:
             fallback_expr = build_search_expression(genus, species, image_group, include_genus_fallback=True)
+            # Filter to only images
+            fallback_expr = f"resource_type:image AND ({fallback_expr})"
             logger.info(f"No species results, trying genus fallback: {fallback_expr}")
             
             search = Search()
@@ -259,7 +263,16 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
             resources = result.get('resources', [])
         
         images = []
+        # Valid image formats to include
+        valid_image_formats = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'tif', 'heic', 'avif'}
+        
         for resource in resources:
+            # Skip non-image formats (backup filter)
+            file_format = resource.get('format', '').lower()
+            if file_format and file_format not in valid_image_formats:
+                logger.debug(f"Skipping non-image file: {resource.get('public_id')} (format: {file_format})")
+                continue
+                
             img_data = {
                 'public_id': resource.get('public_id'),
                 'url': resource.get('secure_url'),
