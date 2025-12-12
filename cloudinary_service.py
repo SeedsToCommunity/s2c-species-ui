@@ -149,10 +149,10 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
     # 1. Filename matching for species
     species_matches.append(f"filename:{species_pattern}*")
     
-    # 2. Tag-based matching for species
+    # 2. Tag-based matching for species (quote tag values with special chars)
     tag_format = matching.get('tag_format', 'species:{genus}_{species}')
     species_tag = tag_format.format(genus=genus_clean, species=species_clean)
-    species_matches.append(f"tags={species_tag}")
+    species_matches.append(f'tags="{species_tag}"')
     
     # Species expression: either filename OR species tag
     species_expr = '(' + ' OR '.join(species_matches) + ')'
@@ -163,10 +163,10 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
         # 3. Filename matching for genus (any species in this genus)
         genus_matches.append(f"filename:{genus_clean}_*")
         
-        # 4. Genus tag
+        # 4. Genus tag (quote tag values with special chars)
         genus_tag_format = matching.get('genus_tag_format', 'genus:{genus}')
         genus_tag = genus_tag_format.format(genus=genus_clean)
-        genus_matches.append(f"tags={genus_tag}")
+        genus_matches.append(f'tags="{genus_tag}"')
     
     # Combine species and genus expressions
     if genus_matches:
@@ -178,9 +178,9 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
     # Get image group specific tags
     group_tags = image_group.get('tags', [])
     
-    # If image group has specific tags, filter by them
+    # If image group has specific tags, filter by them (quote tag values)
     if group_tags:
-        tag_conditions = ' OR '.join([f"tags={tag}" for tag in group_tags])
+        tag_conditions = ' OR '.join([f'tags="{tag}"' for tag in group_tags])
         # Return images that match species/genus AND have at least one group tag
         return f"{primary_expr} AND ({tag_conditions})"
     else:
