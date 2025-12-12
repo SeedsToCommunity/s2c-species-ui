@@ -1502,10 +1502,14 @@ def species_detail(botanical_name, screen_type='identification'):
         cloudinary_images = {}
         if CLOUDINARY_AVAILABLE:
             try:
-                genus = species.get('genus', '')
-                species_name = species.get('species', '')
+                # Extract genus and species from botanical_name (e.g., "Geranium maculatum")
+                botanical = species.get('botanical_name', '')
+                parts = botanical.split(' ', 1)
+                genus = parts[0] if len(parts) >= 1 else ''
+                species_name = parts[1] if len(parts) >= 2 else ''
                 if genus and species_name:
                     cloudinary_images = cloudinary_service.get_species_images(genus, species_name, screen_type)
+                    app.logger.debug(f"Cloudinary images for {genus} {species_name}: {len(cloudinary_images)} groups")
             except Exception as e:
                 app.logger.error(f"Error fetching Cloudinary images: {e}")
         
@@ -1559,8 +1563,11 @@ def api_species_screen(botanical_name, screen_type):
         cloudinary_images = {}
         if CLOUDINARY_AVAILABLE:
             try:
-                genus = species.get('genus', '')
-                species_name = species.get('species', '')
+                # Extract genus and species from botanical_name (e.g., "Geranium maculatum")
+                botanical = species.get('botanical_name', '')
+                parts = botanical.split(' ', 1)
+                genus = parts[0] if len(parts) >= 1 else ''
+                species_name = parts[1] if len(parts) >= 2 else ''
                 if genus and species_name:
                     cloudinary_images = cloudinary_service.get_species_images(genus, species_name, screen_type)
             except Exception as e:
