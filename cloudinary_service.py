@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 _image_cache = {}
 _cache_timestamps = {}
 
+def is_development_mode():
+    """Check if running in development mode (caching disabled for testing)"""
+    env = os.environ.get('REPLIT_ENVIRONMENT', 'development')
+    return env == 'development'
+
 def configure_cloudinary():
     """Configure Cloudinary with environment credentials"""
     cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
@@ -226,10 +231,14 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
     
     image_group = image_groups[image_group_id]
     
-    # Check cache first
+    # Check cache first (skip in development mode for testing)
     cache_key = create_cache_key(genus, species, image_group_id)
+    dev_mode = is_development_mode()
     
-    if not force_refresh:
+    if dev_mode:
+        logger.debug(f"Development mode: skipping cache for {genus} {species} / {image_group_id}")
+    
+    if not force_refresh and not dev_mode:
         # Check memory cache
         if cache_key in _image_cache:
             cache_time = _cache_timestamps.get(cache_key, datetime.min)
