@@ -327,9 +327,9 @@ def get_all_image_groups():
     config = load_image_sources_config()
     image_groups = config.get('image_groups', {})
     
-    result = []
+    result = {}
     for group_id, group_config in image_groups.items():
-        result.append({
+        result[group_id] = {
             'id': group_id,
             'label': group_config.get('label', group_id),
             'description': group_config.get('description', ''),
@@ -337,7 +337,7 @@ def get_all_image_groups():
             'tags': group_config.get('tags', []),
             'default_screens': group_config.get('default_screens', []),
             'type': 'image_group'
-        })
+        }
     
     return result
 

@@ -1,5 +1,13 @@
 {
   "image_groups": {
+    "species_photos": {
+      "label": "Cloudinary Species Photos",
+      "description": "All Cloudinary photos for this species",
+      "icon": "image",
+      "tags": ["Lake County"],
+      "filename_patterns": ["{species}"],
+      "default_screens": ["collection"]
+    },
     "field_identification": {
       "label": "Field Identification Photos",
       "description": "Photos useful for identifying plants in the field",
@@ -14,7 +22,7 @@
       "description": "Photos showing seeds ready for collection",
       "icon": "package",
       "tags": ["seed", "collection", "seed_head", "fruit"],
-      "filename_patterns": ["_seed", "_fruit", "_seedhead"],
+      "filename_patterns": ["{genus}", "{species}"],
       "default_screens": ["collection"],
       "display_style": "gallery"
     },
