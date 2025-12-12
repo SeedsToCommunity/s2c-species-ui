@@ -375,7 +375,66 @@
             </table>
         </div>
 
-        {% else %}
+        {% endif %}
+        
+        {% if cloudinary_available|default(false) and image_groups|default({}) %}
+        <div class="mt-5">
+            <h4 class="mb-3">
+                <i data-feather="camera" class="me-2 text-primary"></i>
+                Cloudinary Image Groups
+            </h4>
+            <p class="text-muted mb-3">
+                Image groups are configured in <code>config/image_sources.json</code>. 
+                Each group defines which Cloudinary images appear on species detail screens.
+            </p>
+            <div class="row">
+                {% for group_id, group in image_groups.items() %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <i data-feather="{{ group.icon or 'image' }}" class="text-primary me-2"></i>
+                                <h6 class="card-title mb-0">{{ group.label }}</h6>
+                            </div>
+                            <p class="card-text small text-muted mb-2">{{ group.description or 'No description' }}</p>
+                            <div class="mb-2">
+                                <strong class="small">Tags:</strong>
+                                {% if group.tags %}
+                                    {% for tag in group.tags[:5] %}
+                                        <span class="badge bg-secondary me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                    {% if group.tags|length > 5 %}
+                                        <span class="badge bg-info">+{{ group.tags|length - 5 }} more</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">All tags</span>
+                                {% endif %}
+                            </div>
+                            <div class="mb-2">
+                                <strong class="small">Screens:</strong>
+                                {% if group.default_screens %}
+                                    {% for screen in group.default_screens %}
+                                        <span class="badge bg-success me-1">{{ screen|title }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted small">Not assigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif cloudinary_available|default(false) %}
+        <div class="mt-5 alert alert-info">
+            <i data-feather="camera" class="me-2"></i>
+            Cloudinary is configured but no image groups are defined. 
+            Edit <code>config/image_sources.json</code> to add image groups.
+        </div>
+        {% endif %}
+        
+        {% if not column_usage %}
         <div class="alert alert-info text-center">
             <i data-feather="info" class="me-2"></i>
             No column usage data available. Please check your plant data source.

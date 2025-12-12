@@ -229,6 +229,37 @@
                 {% endif %}
             </div>
         </div>
+        
+        {% if cloudinary_available|default(false) and screen_image_groups|default([]) %}
+        <div class="column-list p-3 mt-3" style="background: #f0f9f0;">
+            <h5 class="mb-3">
+                <i data-feather="camera" class="me-2 text-primary"></i>
+                Image Groups on This Screen
+                <small class="text-muted">({{ screen_image_groups|length }} groups)</small>
+            </h5>
+            <p class="text-muted small mb-3">
+                Image groups are configured in <code>config/image_sources.json</code> and automatically appear on their assigned screens.
+            </p>
+            <div class="row">
+                {% for group in screen_image_groups %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <div class="d-flex align-items-center p-2 bg-white rounded border">
+                        <i data-feather="{{ group.icon }}" class="text-primary me-2" style="width:20px;height:20px;"></i>
+                        <div>
+                            <div class="fw-semibold">{{ group.label }}</div>
+                            <div class="text-muted small">{{ group.description|truncate(50) if group.description else 'Cloudinary images' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif cloudinary_available|default(false) %}
+        <div class="alert alert-secondary mt-3 small">
+            <i data-feather="camera" class="me-1"></i>
+            No Cloudinary image groups are assigned to this screen.
+        </div>
+        {% endif %}
 
         <div class="mt-3 text-muted small">
             <i data-feather="info" style="width:14px;height:14px;"></i>

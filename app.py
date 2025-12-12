@@ -2076,6 +2076,15 @@ def admin_column_usage():
     """Admin page showing column usage across all pages in a grid format"""
     global _cached_plant_data, _cached_column_usage
     try:
+        # Load image groups for display
+        image_groups = []
+        if CLOUDINARY_AVAILABLE:
+            try:
+                all_groups = cloudinary_service.get_all_image_groups()
+                image_groups = all_groups
+            except Exception as e:
+                app.logger.error(f"Error loading image groups: {e}")
+        
         # Use cached column usage data for fast page load
         cached = get_cached_column_usage()
         app.logger.debug(f"Column usage cache status: {cached is not None}, plant data cache: {_cached_plant_data is not None}")
@@ -2086,7 +2095,9 @@ def admin_column_usage():
                                  column_usage=cached['data'],
                                  total_columns=cached['total_columns'],
                                  total_species=cached['total_species'],
-                                 is_development=True)
+                                 is_development=True,
+                                 image_groups=image_groups,
+                                 cloudinary_available=CLOUDINARY_AVAILABLE)
         
         # If column usage cache is empty but plant data is cached, rebuild quickly
         if _cached_plant_data is not None and not _cached_plant_data.empty:
@@ -2098,14 +2109,23 @@ def admin_column_usage():
                                      column_usage=cached['data'],
                                      total_columns=cached['total_columns'],
                                      total_species=cached['total_species'],
-                                     is_development=True)
+                                     is_development=True,
+                                     image_groups=image_groups,
+                                     cloudinary_available=CLOUDINARY_AVAILABLE)
+        else:
+            return render_template('admin_column_usage.html', 
+                                     column_usage={},
+                                     is_development=True,
+                                     image_groups=image_groups,
+                                     cloudinary_available=CLOUDINARY_AVAILABLE)
         
         # Ultimate fallback - load data fresh (slow, but shouldn't happen often)
         app.logger.debug("Loading plant data fresh for column usage")
         df = load_plant_data()
         if df.empty:
             flash('No plant data available to analyze columns', 'error')
-            return render_template('admin_column_usage.html', column_usage={})
+            return render_template('admin_column_usage.html', column_usage={}, 
+                                 image_groups=image_groups, cloudinary_available=CLOUDINARY_AVAILABLE)
         
         # Ensure column usage is computed
         compute_column_usage(df)
@@ -2116,17 +2136,22 @@ def admin_column_usage():
                                  column_usage=cached['data'],
                                  total_columns=cached['total_columns'],
                                  total_species=cached['total_species'],
-                                 is_development=True)
+                                 is_development=True,
+                                 image_groups=image_groups,
+                                 cloudinary_available=CLOUDINARY_AVAILABLE)
         
         flash('Column usage data not available', 'error')
-        return render_template('admin_column_usage.html', column_usage={}, is_development=True)
+        return render_template('admin_column_usage.html', column_usage={}, is_development=True,
+                             image_groups=image_groups, cloudinary_available=CLOUDINARY_AVAILABLE)
         
     except Exception as e:
         app.logger.error(f"Error analyzing column usage: {str(e)}")
         flash(f'Error analyzing column usage: {str(e)}', 'error')
         return render_template('admin_column_usage.html', 
                              column_usage={}, 
-                             is_development=True)
+                             is_development=True,
+                             image_groups=[],
+                             cloudinary_available=CLOUDINARY_AVAILABLE)
 
 @app.route('/admin/toggle-column', methods=['POST'])
 def toggle_column():
@@ -2219,30 +2244,55 @@ def toggle_column():
 @app.route('/admin/column-reorder')
 def admin_column_reorder():
     """Admin page for reordering columns on species screens"""
-    screen = request.args.get('screen', 'identification')
-    valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+    # Initialize defaults for image group display
+    screen_image_groups = []
     
-    if screen not in valid_screens:
-        screen = 'identification'
-    
-    screens = [
-        {'id': 'identification', 'name': 'Identification', 'icon': 'search'},
-        {'id': 'collection', 'name': 'Collection', 'icon': 'package'},
-        {'id': 'processing', 'name': 'Processing', 'icon': 'settings'},
-        {'id': 'storage', 'name': 'Storage', 'icon': 'archive'},
-        {'id': 'stratification', 'name': 'Stratification', 'icon': 'thermometer'},
-        {'id': 'planting', 'name': 'Planting', 'icon': 'sun'}
-    ]
-    
-    screen_config = load_screen_config(screen)
-    columns = screen_config.get('columns', [])
-    active_screen_name = screen_config.get('screen_name', screen.title())
-    
-    return render_template('admin_column_reorder.html',
-                         screens=screens,
-                         active_screen=screen,
-                         active_screen_name=active_screen_name,
-                         columns=columns)
+    try:
+        screen = request.args.get('screen', 'identification')
+        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+        
+        if screen not in valid_screens:
+            screen = 'identification'
+        
+        screens = [
+            {'id': 'identification', 'name': 'Identification', 'icon': 'search'},
+            {'id': 'collection', 'name': 'Collection', 'icon': 'package'},
+            {'id': 'processing', 'name': 'Processing', 'icon': 'settings'},
+            {'id': 'storage', 'name': 'Storage', 'icon': 'archive'},
+            {'id': 'stratification', 'name': 'Stratification', 'icon': 'thermometer'},
+            {'id': 'planting', 'name': 'Planting', 'icon': 'sun'}
+        ]
+        
+        screen_config = load_screen_config(screen)
+        columns = screen_config.get('columns', [])
+        active_screen_name = screen_config.get('screen_name', screen.title())
+        
+        # Get image groups that will appear on this screen
+        if CLOUDINARY_AVAILABLE:
+            try:
+                all_groups = cloudinary_service.get_all_image_groups()
+                for group_id, group_data in all_groups.items():
+                    if screen in group_data.get('default_screens', []):
+                        screen_image_groups.append({
+                            'id': group_id,
+                            'label': group_data.get('label', group_id),
+                            'icon': group_data.get('icon', 'image'),
+                            'description': group_data.get('description', '')
+                        })
+            except Exception as e:
+                app.logger.error(f"Error loading image groups for reorder page: {e}")
+        
+        return render_template('admin_column_reorder.html',
+                             screens=screens,
+                             active_screen=screen,
+                             active_screen_name=active_screen_name,
+                             columns=columns,
+                             screen_image_groups=screen_image_groups,
+                             cloudinary_available=CLOUDINARY_AVAILABLE)
+    except Exception as e:
+        app.logger.error(f"Error loading column reorder page: {e}")
+        flash(f'Error loading reorder page: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/save-column-order', methods=['POST'])
 def save_column_order():
