@@ -6,8 +6,8 @@
       "icon": "image",
       "tags": ["Lake County"],
       "filename_patterns": ["{species}"],
-      "default_screens": ["collection"],
-    }
+      "default_screens": ["collection"]
+    },
     "field_identification": {
       "label": "Field Identification Photos",
       "description": "Photos useful for identifying plants in the field",
