@@ -712,6 +712,72 @@ def check_for_new_data_file():
     
     return was_different_file, message
 
+def check_for_new_supplemental_file():
+    """Check if there's a new supplemental data file (PlantData Google Sheet)"""
+    global _supplemental_file_id, _supplemental_file_name
+    
+    settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    supplemental_prefix = settings.get('data_source', {}).get('supplemental_file_prefix', 'PlantData')
+    
+    if not folder_id or not supplemental_prefix:
+        return False, None, None, "Supplemental data not configured"
+    
+    # Store the current ID before checking
+    previous_file_id = _supplemental_file_id
+    
+    service = get_google_drive_service()
+    if not service:
+        return False, None, None, "Google Drive API not configured"
+    
+    try:
+        # Search for Google Sheets in the folder that match the prefix
+        query = f"'{folder_id}' in parents and name contains '{supplemental_prefix}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
+        
+        results = service.files().list(
+            q=query,
+            fields='files(id, name, modifiedTime)',
+            orderBy='modifiedTime desc',
+            pageSize=10
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        if not files:
+            return False, None, None, f"No Google Sheets found with prefix '{supplemental_prefix}'"
+        
+        # Get the most recently modified file
+        latest_file = files[0]
+        file_id = latest_file['id']
+        file_name = latest_file['name']
+        modified_time = latest_file.get('modifiedTime', 'Unknown')
+        
+        # Check if this is a different file than before
+        is_new_file = (previous_file_id != file_id) if previous_file_id else True
+        
+        if is_new_file:
+            app.logger.info(f"Found new supplemental file: '{file_name}' (modified: {modified_time}), was: {_supplemental_file_name or 'None'}")
+        
+        return is_new_file, file_id, file_name, f"Supplemental: '{file_name}' (modified: {modified_time})"
+        
+    except Exception as e:
+        app.logger.error(f"Error checking for new supplemental file: {str(e)}")
+        return False, None, None, f"Error: {str(e)}"
+
+def reload_supplemental_and_merge():
+    """Reload just the supplemental data and re-merge with cached main data"""
+    global _cached_plant_data, _cached_supplemental_data, _supplemental_file_id, _supplemental_file_name
+    
+    # We need the base (unmerged) main data - reload it fresh
+    # Clear supplemental cache so it gets reloaded
+    _cached_supplemental_data = None
+    
+    # Force a full reload to get fresh supplemental data merged
+    _cached_plant_data = None
+    _clear_disk_cache()
+    
+    return load_plant_data(force_reload=True)
+
 def find_google_sheet_in_folder(folder_id, file_prefix):
     """Find a Google Sheet in a folder that matches the prefix"""
     global _supplemental_file_id, _supplemental_file_name
@@ -1543,7 +1609,11 @@ def refresh_data():
 
 @app.route('/api/check-updates')
 def check_for_updates_endpoint():
-    """API endpoint to check if a new data file exists in Google Drive folder and reload if needed"""
+    """API endpoint to check if new data files exist in Google Drive folder and reload if needed.
+    
+    Checks BOTH main data file AND supplemental PlantData file independently.
+    If either has changed, the appropriate data is reloaded.
+    """
     global _cached_plant_data, _cached_supplemental_data, _current_file_id, _current_file_name
     
     settings = load_app_settings()
@@ -1555,42 +1625,72 @@ def check_for_updates_endpoint():
         # Store the current file ID before checking
         previous_file_id = _current_file_id
         
-        # Find the latest file in the folder
-        file_id, file_name, message = find_latest_file_in_folder(folder_id, file_prefix)
+        # Check MAIN file
+        file_id, file_name, main_message = find_latest_file_in_folder(folder_id, file_prefix)
         
         if file_id is None:
             return jsonify({
                 'status': 'error',
-                'message': f'Could not find files: {message}',
+                'message': f'Could not find main files: {main_message}',
                 'reloaded': False,
                 'supplemental': _get_supplemental_file_info()
             })
         
-        # Check if this is a different file than before
-        is_new_file = (previous_file_id != file_id)
+        # Check if main file is different
+        is_new_main_file = (previous_file_id != file_id)
         
-        if is_new_file:
-            # New file found - reload the data
+        # Check SUPPLEMENTAL file independently
+        is_new_supp_file, supp_file_id, supp_file_name, supp_message = check_for_new_supplemental_file()
+        
+        # Determine what needs reloading
+        if is_new_main_file:
+            # New main file - reload everything
             _cached_plant_data = None
             _cached_supplemental_data = None
             df = load_plant_data(force_reload=True, file_id_override=file_id)
             supp_info = _get_supplemental_file_info()
+            
+            msg_parts = [f"New main file loaded: '{file_name}'."]
+            if is_new_supp_file and supp_file_name:
+                msg_parts.append(f"New supplemental file: '{supp_file_name}'.")
+            msg_parts.append(f"Loaded {len(df)} species.")
+            
             return jsonify({
                 'status': 'updated',
-                'message': f"New file loaded: '{file_name}'. Loaded {len(df)} species.",
+                'message': ' '.join(msg_parts),
                 'reloaded': True,
+                'main_updated': True,
+                'supplemental_updated': is_new_supp_file,
+                'species_count': len(df),
+                'file_name': file_name,
+                'supplemental': supp_info
+            })
+        elif is_new_supp_file:
+            # Only supplemental file changed - reload supplemental and re-merge
+            app.logger.info(f"New supplemental file detected: '{supp_file_name}' - reloading")
+            df = reload_supplemental_and_merge()
+            supp_info = _get_supplemental_file_info()
+            
+            return jsonify({
+                'status': 'updated',
+                'message': f"New supplemental data loaded: '{supp_file_name}'. Main file unchanged: '{file_name}'. {len(df)} species loaded.",
+                'reloaded': True,
+                'main_updated': False,
+                'supplemental_updated': True,
                 'species_count': len(df),
                 'file_name': file_name,
                 'supplemental': supp_info
             })
         else:
-            # Same file - no reload needed
+            # Neither file changed
             df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
             supp_info = _get_supplemental_file_info()
             return jsonify({
                 'status': 'unchanged',
-                'message': f"Already using latest file: '{file_name}'. {len(df)} species loaded.",
+                'message': f"Already using latest files. Main: '{file_name}'. {len(df) if df is not None else 0} species loaded.",
                 'reloaded': False,
+                'main_updated': False,
+                'supplemental_updated': False,
                 'species_count': len(df) if df is not None else 0,
                 'file_name': file_name,
                 'supplemental': supp_info
@@ -1618,6 +1718,9 @@ def check_for_updates_endpoint():
     
     was_modified, message = check_google_drive_file_modified(file_id)
     
+    # Also check supplemental in legacy mode
+    is_new_supp_file, supp_file_id, supp_file_name, supp_message = check_for_new_supplemental_file()
+    
     if was_modified is None:
         _cached_plant_data = None
         _cached_supplemental_data = None
@@ -1631,15 +1734,25 @@ def check_for_updates_endpoint():
             'supplemental': supp_info
         })
     
-    if was_modified:
+    if was_modified or is_new_supp_file:
         _cached_plant_data = None
         _cached_supplemental_data = None
         df = load_plant_data(force_reload=True)
         supp_info = _get_supplemental_file_info()
+        
+        msg_parts = []
+        if was_modified:
+            msg_parts.append(f'Main data updated! {message}')
+        if is_new_supp_file and supp_file_name:
+            msg_parts.append(f"Supplemental updated: '{supp_file_name}'")
+        msg_parts.append(f'Loaded {len(df)} species.')
+        
         return jsonify({
             'status': 'updated',
-            'message': f'Data updated! Loaded {len(df)} species. {message}',
+            'message': ' '.join(msg_parts),
             'reloaded': True,
+            'main_updated': was_modified,
+            'supplemental_updated': is_new_supp_file,
             'species_count': len(df),
             'supplemental': supp_info
         })
@@ -1650,6 +1763,8 @@ def check_for_updates_endpoint():
             'status': 'unchanged',
             'message': f'Data is up to date. {message}',
             'reloaded': False,
+            'main_updated': False,
+            'supplemental_updated': False,
             'species_count': len(df) if df is not None else 0,
             'supplemental': supp_info
         })
