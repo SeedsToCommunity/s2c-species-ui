@@ -4,7 +4,7 @@
       "label": "Cloudinary Species Photos",
       "description": "All Cloudinary photos for this species",
       "icon": "image",
-      "tags": ["Lake County"],
+      "tags": ["Lake County", "seeds"],
       "filename_patterns": ["{species}", "png"],
       "default_screens": ["collection"],
       "display_style": "gallery"

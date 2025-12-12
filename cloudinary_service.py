@@ -65,9 +65,26 @@ def get_cache_ttl_hours():
     config = load_image_sources_config()
     return config.get('cache_settings', {}).get('ttl_hours', 24)
 
+def get_config_version():
+    """Get a version hash of the config file based on modification time and content"""
+    config_path = Path('config/image_sources.json')
+    if not config_path.exists():
+        return "no_config"
+    try:
+        # Use file modification time + size as version
+        stat = config_path.stat()
+        version_str = f"{stat.st_mtime}_{stat.st_size}"
+        return hashlib.md5(version_str.encode()).hexdigest()[:8]
+    except Exception:
+        return "unknown"
+
 def create_cache_key(genus, species, image_group_id):
-    """Create a unique cache key for a species/image group combination"""
-    key_str = f"{genus}_{species}_{image_group_id}".lower()
+    """Create a unique cache key for a species/image group combination.
+    
+    Includes config version so cache is invalidated when config changes.
+    """
+    config_version = get_config_version()
+    key_str = f"{genus}_{species}_{image_group_id}_{config_version}".lower()
     return hashlib.md5(key_str.encode()).hexdigest()
 
 def load_cache_from_disk(cache_key):
