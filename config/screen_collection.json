@@ -17,11 +17,6 @@
       "field": "similar_species_json",
       "label": "Similar Species JSON",
       "width": "auto"
-    },
-    {
-      "field": "lake_county_images",
-      "label": "Lake County Images",
-      "width": "auto"
     }
   ]
 }
