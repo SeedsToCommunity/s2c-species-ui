@@ -1,0 +1,60 @@
+{
+  "image_groups": {
+    "field_identification": {
+      "label": "Field Identification Photos",
+      "description": "Photos useful for identifying plants in the field",
+      "icon": "camera",
+      "tags": ["field_id", "identification", "habit", "leaf", "flower"],
+      "filename_patterns": ["_habit", "_leaf", "_flower", "_plant"],
+      "default_screens": ["identification"],
+      "display_style": "gallery"
+    },
+    "seed_collection": {
+      "label": "Seed Collection Photos",
+      "description": "Photos showing seeds ready for collection",
+      "icon": "package",
+      "tags": ["seed", "collection", "seed_head", "fruit"],
+      "filename_patterns": ["_seed", "_fruit", "_seedhead"],
+      "default_screens": ["collection"],
+      "display_style": "gallery"
+    },
+    "seed_processing": {
+      "label": "Seed Processing Photos",
+      "description": "Photos showing seed processing stages",
+      "icon": "settings",
+      "tags": ["processing", "cleaned_seed", "chaff"],
+      "filename_patterns": ["_processed", "_cleaned"],
+      "default_screens": ["processing"],
+      "display_style": "gallery"
+    },
+    "habitat": {
+      "label": "Habitat Photos",
+      "description": "Photos showing the plant in its natural habitat",
+      "icon": "map",
+      "tags": ["habitat", "landscape", "environment"],
+      "filename_patterns": ["_habitat", "_landscape"],
+      "default_screens": ["identification"],
+      "display_style": "gallery"
+    },
+    "all_species_images": {
+      "label": "All Species Images",
+      "description": "All available images for this species",
+      "icon": "image",
+      "tags": [],
+      "filename_patterns": [],
+      "default_screens": [],
+      "display_style": "gallery"
+    }
+  },
+  "species_matching": {
+    "primary_method": "filename",
+    "filename_format": "{genus}_{species}",
+    "tag_format": "species:{genus}_{species}",
+    "fallback_to_genus": true,
+    "genus_tag_format": "genus:{genus}"
+  },
+  "cache_settings": {
+    "ttl_hours": 24,
+    "cache_directory": "/tmp/cloudinary_cache"
+  }
+}
