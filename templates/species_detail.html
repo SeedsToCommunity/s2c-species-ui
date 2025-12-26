@@ -110,24 +110,16 @@
 <body>
     {# Macro to render attribution info icon with popover #}
     {% macro attr_icon(field_name) %}
-        {% set attr = attribution_data.get(field_name.lower().replace(' ', '_'), {}) %}
-        {% if attr %}
-            {% set popover_content %}
-                {% for key, value in attr.items() %}
-                    {% if value %}
-                    <div class="attr-row"><span class="attr-label">{{ key }}</span><span class="attr-value">{{ value }}</span></div>
-                    {% endif %}
-                {% endfor %}
-            {% endset %}
-            <span class="attr-info-icon ms-1"
-               style="cursor:pointer;font-size:11px;"
-               data-bs-toggle="popover" 
-               data-bs-trigger="hover focus"
-               data-bs-html="true"
-               data-bs-placement="top"
-               data-bs-title="Data Source"
-               data-bs-content="{{ popover_content|e }}">ⓘ</span>
-        {% endif %}
+        {%- set attr = attribution_data.get(field_name.lower().replace(' ', '_'), {}) -%}
+        {%- if attr -%}
+            {%- set ns = namespace(content='') -%}
+            {%- for key, value in attr.items() -%}
+                {%- if value -%}
+                    {%- set ns.content = ns.content ~ '<div class="attr-row"><span class="attr-label">' ~ key ~ '</span><span class="attr-value">' ~ value ~ '</span></div>' -%}
+                {%- endif -%}
+            {%- endfor -%}
+            <span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="{{ ns.content|e }}">ⓘ</span>
+        {%- endif -%}
     {% endmacro %}
     
     <div class="container mt-3">
