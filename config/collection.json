@@ -1,6 +1,6 @@
 {
   "screen_name": "Seed Collection",
-  "description": "Data relevant to collecting seeds from the plant",
+  "description": "Data relevant to collecting seeds from a plant",
   "columns": [
     {
       "field": "start_seed_watch",
