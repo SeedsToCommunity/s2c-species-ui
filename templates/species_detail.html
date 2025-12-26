@@ -46,16 +46,17 @@
         }
         /* Attribution info icon styling */
         .attr-info-icon {
-            color: #6c757d;
+            color: #6cb4ee;
             cursor: pointer;
             vertical-align: middle;
-            margin-left: 4px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            opacity: 0.85;
+            transition: all 0.2s;
+            font-style: normal;
         }
         .attr-info-icon:hover {
             opacity: 1;
             color: #17a2b8;
+            transform: scale(1.15);
         }
         /* Attribution tooltip styling - dark theme to look like proper tooltip */
         .popover.bs-popover-top, .popover.bs-popover-bottom,
@@ -118,15 +119,14 @@
                     {% endif %}
                 {% endfor %}
             {% endset %}
-            <i data-feather="info" 
-               class="attr-info-icon ms-1" 
-               style="width:12px;height:12px;cursor:pointer;"
+            <span class="attr-info-icon ms-1"
+               style="cursor:pointer;font-size:11px;"
                data-bs-toggle="popover" 
                data-bs-trigger="hover focus"
                data-bs-html="true"
                data-bs-placement="top"
                data-bs-title="Data Source"
-               data-bs-content="{{ popover_content|e }}"></i>
+               data-bs-content="{{ popover_content|e }}">ⓘ</span>
         {% endif %}
     {% endmacro %}
     
@@ -742,7 +742,7 @@
                 }
             }
             
-            return `<i data-feather="info" class="attr-info-icon ms-1" style="width:12px;height:12px;cursor:pointer;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="${escapeHtml(popoverContent)}"></i>`;
+            return `<span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="${escapeHtml(popoverContent)}">ⓘ</span>`;
         }
         
         // Helper function to escape HTML for popover content
