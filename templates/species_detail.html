@@ -57,18 +57,51 @@
             opacity: 1;
             color: #17a2b8;
         }
-        .popover {
-            max-width: 350px;
+        /* Attribution tooltip styling - dark theme to look like proper tooltip */
+        .popover.bs-popover-top, .popover.bs-popover-bottom,
+        .popover.bs-popover-start, .popover.bs-popover-end {
+            --bs-popover-bg: #1a1a2e;
+            --bs-popover-border-color: #4a4a6a;
+            --bs-popover-header-bg: #16213e;
+            --bs-popover-body-color: #e8e8e8;
+            max-width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .popover-header {
+            background: #16213e !important;
+            color: #5cb377 !important;
+            font-weight: 600;
+            border-bottom: 1px solid #4a4a6a;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
         }
         .popover-body {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            color: #e8e8e8 !important;
         }
-        .popover-body dt {
-            color: #5cb377;
-            font-weight: 600;
+        .popover-body .attr-row {
+            margin-bottom: 0.35rem;
+            line-height: 1.3;
         }
-        .popover-body dd {
-            margin-bottom: 0.5rem;
+        .popover-body .attr-row:last-child {
+            margin-bottom: 0;
+        }
+        .popover-body .attr-label {
+            color: #7fba93;
+            font-weight: 500;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            display: block;
+        }
+        .popover-body .attr-value {
+            color: #e8e8e8;
+        }
+        .popover .popover-arrow::after {
+            border-top-color: #1a1a2e !important;
+        }
+        .bs-popover-bottom .popover-arrow::after {
+            border-bottom-color: #1a1a2e !important;
         }
 
     </style>
@@ -79,21 +112,20 @@
         {% set attr = attribution_data.get(field_name.lower().replace(' ', '_'), {}) %}
         {% if attr %}
             {% set popover_content %}
-                <dl class="mb-0">
                 {% for key, value in attr.items() %}
-                    <dt>{{ key }}</dt>
-                    <dd>{{ value }}</dd>
+                    {% if value %}
+                    <div class="attr-row"><span class="attr-label">{{ key }}</span><span class="attr-value">{{ value }}</span></div>
+                    {% endif %}
                 {% endfor %}
-                </dl>
             {% endset %}
             <i data-feather="info" 
-               class="attr-info-icon" 
-               style="width:14px;height:14px;"
+               class="attr-info-icon ms-1" 
+               style="width:12px;height:12px;cursor:pointer;"
                data-bs-toggle="popover" 
                data-bs-trigger="hover focus"
                data-bs-html="true"
                data-bs-placement="top"
-               title="Data Source"
+               data-bs-title="Data Source"
                data-bs-content="{{ popover_content|e }}"></i>
         {% endif %}
     {% endmacro %}
@@ -702,14 +734,15 @@
             const attr = attributionData[key];
             if (!attr) return '';
             
-            // Build popover content from attribution data
-            let popoverContent = '<dl class="mb-0">';
+            // Build popover content from attribution data with cleaner styling
+            let popoverContent = '';
             for (const [k, v] of Object.entries(attr)) {
-                popoverContent += `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`;
+                if (v) {
+                    popoverContent += `<div class="attr-row"><span class="attr-label">${escapeHtml(k)}</span><span class="attr-value">${escapeHtml(String(v))}</span></div>`;
+                }
             }
-            popoverContent += '</dl>';
             
-            return `<i data-feather="info" class="attr-info-icon" style="width:14px;height:14px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" title="Data Source" data-bs-content="${escapeHtml(popoverContent)}"></i>`;
+            return `<i data-feather="info" class="attr-info-icon ms-1" style="width:12px;height:12px;cursor:pointer;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="${escapeHtml(popoverContent)}"></i>`;
         }
         
         // Helper function to escape HTML for popover content
