@@ -44,10 +44,60 @@
             color: #7ec994;
             text-decoration: underline;
         }
+        /* Attribution info icon styling */
+        .attr-info-icon {
+            color: #6c757d;
+            cursor: pointer;
+            vertical-align: middle;
+            margin-left: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .attr-info-icon:hover {
+            opacity: 1;
+            color: #17a2b8;
+        }
+        .popover {
+            max-width: 350px;
+        }
+        .popover-body {
+            font-size: 0.85rem;
+        }
+        .popover-body dt {
+            color: #5cb377;
+            font-weight: 600;
+        }
+        .popover-body dd {
+            margin-bottom: 0.5rem;
+        }
 
     </style>
 </head>
 <body>
+    {# Macro to render attribution info icon with popover #}
+    {% macro attr_icon(field_name) %}
+        {% set attr = attribution_data.get(field_name.lower().replace(' ', '_'), {}) %}
+        {% if attr %}
+            {% set popover_content %}
+                <dl class="mb-0">
+                {% for key, value in attr.items() %}
+                    <dt>{{ key }}</dt>
+                    <dd>{{ value }}</dd>
+                {% endfor %}
+                </dl>
+            {% endset %}
+            <i data-feather="info" 
+               class="attr-info-icon" 
+               style="width:14px;height:14px;"
+               data-bs-toggle="popover" 
+               data-bs-trigger="hover focus"
+               data-bs-html="true"
+               data-bs-placement="top"
+               title="Data Source"
+               data-bs-content="{{ popover_content|e }}"></i>
+        {% endif %}
+    {% endmacro %}
+    
     <div class="container mt-3">
         <!-- Header with Species Name -->
         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -160,7 +210,7 @@
                                 {% if parsed.type == 'image' %}
                                     <!-- Single image URL -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <a href="{{ parsed.data }}" target="_blank">
                                             <img src="{{ parsed.data }}" alt="{{ column.label }}" class="img-fluid rounded" style="max-height: 200px;">
                                         </a>
@@ -168,7 +218,7 @@
                                 {% elif parsed.type == 'image_dict' %}
                                     <!-- JSON dictionary of labeled image URLs -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <div class="d-flex flex-wrap gap-2">
                                             {% for name, url in parsed.data.items() %}
                                                 <a href="{{ url }}" target="_blank" title="{{ name }}">
@@ -180,7 +230,7 @@
                                 {% elif parsed.type == 'url_dict' %}
                                     <!-- JSON dictionary of labeled URLs -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for name, url in parsed.data.items() %}
                                                 <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
@@ -192,7 +242,7 @@
                                 {% elif parsed.type == 'url_list' %}
                                     <!-- JSON array of URLs -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <div class="d-flex flex-wrap gap-1">
                                             {% for url in parsed.data %}
                                                 <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
@@ -204,13 +254,13 @@
                                 {% elif parsed.type == 'html' %}
                                     <!-- HTML-formatted content -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <div class="text-body-secondary">{{ parsed.data|safe }}</div>
                                     </div>
                                 {% elif parsed.type == 'chart' %}
                                     <!-- Chart data -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <div style="max-height: 200px;">
                                             <canvas id="chart-{{ column.field }}" class="chart-canvas" 
                                                     data-labels='{{ parsed.data.keys()|list|tojson|e }}'
@@ -246,7 +296,7 @@
                                     </div>
                                 {% elif column.type == 'link' and field_value %}
                                     <div class="d-flex align-items-center">
-                                        <small class="field-label me-2">{{ column.label }}:</small>
+                                        <small class="field-label me-2">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <a href="{{ field_value }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                             <i data-feather="external-link" class="me-1"></i>
                                             View Pictures
@@ -255,7 +305,7 @@
                                 {% elif column.field == 'coefficient_of_conservatism_(c)' %}
                                     {% set c_interp = field_value|interpret_c_value %}
                                     <div>
-                                        <small class="field-label">{{ column.label }}:</small>
+                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if c_interp %}
                                             <span class="text-body-secondary ms-1">— {{ c_interp.short }}</span>
@@ -270,7 +320,7 @@
                                 {% elif column.field == 'coefficient_of_wetness_(cw)' %}
                                     {% set w_interp = field_value|interpret_w_value %}
                                     <div>
-                                        <small class="field-label">{{ column.label }}:</small>
+                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                         {% if w_interp %}
                                             <span class="text-body-secondary ms-1">— {{ w_interp.short }}</span>
@@ -284,7 +334,7 @@
                                     </div>
                                 {% else %}
                                     <div>
-                                        <small class="field-label">{{ column.label }}:</small>
+                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
                                         <span class="text-body-secondary ms-1">{{ field_value }}</span>
                                     </div>
                                 {% endif %}
@@ -360,10 +410,16 @@
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p class="text-muted">
-                        <i data-feather="layers" class="me-1"></i>
-                        {{ current_screen.replace('_', ' ').title() }} Workflow
-                    </p>
+                    <div class="d-flex justify-content-md-end align-items-center gap-3">
+                        <p class="text-muted mb-0">
+                            <i data-feather="layers" class="me-1"></i>
+                            {{ current_screen.replace('_', ' ').title() }} Workflow
+                        </p>
+                        <a href="{{ url_for('attribution_page') }}" class="btn btn-outline-info btn-sm">
+                            <i data-feather="file-text" class="me-1"></i>
+                            Data Sources
+                        </a>
+                    </div>
                 </div>
             </div>
         </footer>
@@ -380,6 +436,15 @@
     <script>
         // Initialize Feather icons
         feather.replace();
+        
+        // Initialize Bootstrap popovers for attribution info icons
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, {
+                container: 'body',
+                html: true
+            });
+        });
         
         // Store active chart instances for cleanup
         const activeCharts = {};
@@ -492,10 +557,19 @@
                 updateAnnouncement(data.screen_config);
                 
                 // Update content
-                updateScreenContent(data.species, data.screen_config, data.cloudinary_images);
+                updateScreenContent(data.species, data.screen_config, data.cloudinary_images, data.attribution_data);
                 
                 // Re-initialize Feather icons for new content
                 feather.replace();
+                
+                // Re-initialize Bootstrap popovers for attribution icons
+                var newPopoverList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                newPopoverList.forEach(function (popoverTriggerEl) {
+                    new bootstrap.Popover(popoverTriggerEl, {
+                        container: 'body',
+                        html: true
+                    });
+                });
                 
             } catch (error) {
                 console.error('Error switching screen:', error);
@@ -621,11 +695,36 @@
             }
         }
         
+        // Helper function to generate attribution icon HTML
+        function getAttrIconHtml(fieldName, attributionData) {
+            if (!attributionData) return '';
+            const key = fieldName.toLowerCase().replace(/ /g, '_');
+            const attr = attributionData[key];
+            if (!attr) return '';
+            
+            // Build popover content from attribution data
+            let popoverContent = '<dl class="mb-0">';
+            for (const [k, v] of Object.entries(attr)) {
+                popoverContent += `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`;
+            }
+            popoverContent += '</dl>';
+            
+            return `<i data-feather="info" class="attr-info-icon" style="width:14px;height:14px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" title="Data Source" data-bs-content="${escapeHtml(popoverContent)}"></i>`;
+        }
+        
+        // Helper function to escape HTML for popover content
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        
         // Function to update screen content
-        function updateScreenContent(species, screenConfig, cloudinaryImages) {
+        function updateScreenContent(species, screenConfig, cloudinaryImages, attributionData) {
             let content = '';
             let hasData = false;
             cloudinaryImages = cloudinaryImages || {};
+            attributionData = attributionData || {};
             
             screenConfig.columns.forEach(column => {
                 const fieldValue = species[column.field];
@@ -638,6 +737,9 @@
                     // Parse JSON URLs
                     const parsed = parseJsonUrls(fieldValue);
                     
+                    // Get attribution icon for this field
+                    const attrIcon = getAttrIconHtml(column.field, attributionData);
+                    
                     if (parsed.type === 'image') {
                         // Single image URL
                         content += `
@@ -645,7 +747,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <a href="${parsed.data}" target="_blank">
                                                 <img src="${parsed.data}" alt="${column.label}" class="img-fluid rounded" style="max-height: 200px;">
                                             </a>
@@ -665,7 +767,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <div class="d-flex flex-wrap gap-2">${imagesHtml}</div>
                                         </div>
                                     </div>
@@ -683,7 +785,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
                                         </div>
                                     </div>
@@ -701,7 +803,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <div class="d-flex flex-wrap gap-1">${linksHtml}</div>
                                         </div>
                                     </div>
@@ -715,7 +817,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <div class="text-body-secondary">${parsed.data}</div>
                                         </div>
                                     </div>
@@ -732,7 +834,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${attrIcon}</small>
                                             <div style="max-height: 200px;">
                                                 <canvas id="${chartId}" class="chart-canvas" 
                                                         data-labels='${labels}'
@@ -790,7 +892,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div class="d-flex align-items-center">
-                                            <small class="field-label me-2">${column.label}:</small>
+                                            <small class="field-label me-2">${column.label}:${attrIcon}</small>
                                             <a href="${fieldValue}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
                                                 <i data-feather="external-link" class="me-1"></i>
                                                 View Pictures
@@ -814,7 +916,7 @@
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label">${column.label}:</small>
+                                            <small class="field-label">${column.label}:${attrIcon}</small>
                                             ${displayValue}
                                         </div>
                                     </div>

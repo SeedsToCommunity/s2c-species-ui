@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Sources & Attribution - Plant Species Directory</title>
+    
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <style>
+        .attribution-card {
+            margin-bottom: 1rem;
+        }
+        .attribution-header {
+            font-weight: 600;
+            color: #5cb377;
+        }
+        .attribution-table th {
+            background-color: rgba(92, 179, 119, 0.1);
+            white-space: nowrap;
+        }
+        .attribution-table td {
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="text-primary">
+                    <i data-feather="file-text" class="me-2"></i>
+                    Data Sources & Attribution
+                </h1>
+                <p class="text-muted">
+                    Documentation of data sources, algorithms, and metadata for all fields in the Plant Species Directory.
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Directory
+                </a>
+            </div>
+        </div>
+        
+        {% if attributions %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>
+                        Column Sources ({{ attributions|length }} fields)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0 attribution-table">
+                            <thead>
+                                <tr>
+                                    {% for header in headers %}
+                                        <th>{{ header }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attr in attributions %}
+                                    <tr>
+                                        {% for header in headers %}
+                                            <td>{{ attr.get(header, '') }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i data-feather="info" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                    <h5 class="text-muted">No Attribution Data Available</h5>
+                    <p class="text-muted mb-0">
+                        Attribution data has not been configured. The "Column Sources" tab in the PlantData Google Sheet 
+                        contains source information for each data field.
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+        
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">
+                        <i data-feather="database" class="me-1"></i>
+                        Plant Species Directory
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">
+                        <i data-feather="file-text" class="me-1"></i>
+                        Data Attribution & Sources
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

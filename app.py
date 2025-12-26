@@ -160,6 +160,10 @@ _cached_supplemental_data = None
 _supplemental_file_id = None
 _supplemental_file_name = None
 
+# Global cache for column attribution data (Column Sources tab)
+_cached_attribution_data = None
+ATTRIBUTION_CACHE_FILE = os.path.join(CACHE_DIR, 'attribution_data.pkl')
+
 # Track columns removed during last cleanup (for admin notification)
 _last_removed_columns = []
 
@@ -857,6 +861,167 @@ def export_google_sheet_as_csv(file_id):
         app.logger.error(f"Error exporting Google Sheet as CSV: {str(e)}")
         return None, f"Error: {str(e)}"
 
+def export_google_sheet_tab_as_csv(file_id, gid):
+    """Export a specific tab of a Google Sheet as CSV data using the gid parameter.
+    
+    Args:
+        file_id: The Google Drive file ID of the spreadsheet
+        gid: The sheet tab ID (found in URL as gid=XXXXX)
+    
+    Returns:
+        Tuple of (csv_content, error_message)
+    """
+    import requests
+    
+    try:
+        # Build export URL with gid parameter for specific tab
+        export_url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid={gid}"
+        
+        response = requests.get(export_url, timeout=30)
+        
+        if response.status_code == 200:
+            return response.text, None
+        else:
+            error_msg = f"Failed to export tab (gid={gid}): HTTP {response.status_code}"
+            app.logger.error(error_msg)
+            return None, error_msg
+            
+    except Exception as e:
+        app.logger.error(f"Error exporting Google Sheet tab (gid={gid}): {str(e)}")
+        return None, f"Error: {str(e)}"
+
+def load_attribution_data(force_reload=False):
+    """Load column attribution data from 'Column Sources' tab of PlantData Google Sheet.
+    
+    The attribution tab contains metadata about each column including:
+    - Column name (field)
+    - Source information
+    - Description
+    - Algorithm version
+    - Last updated
+    - Any other attribution metadata
+    
+    Returns a dictionary keyed by normalized column field name.
+    """
+    global _cached_attribution_data, _supplemental_file_id
+    
+    # Return cached data if available and not forcing reload
+    if not force_reload and _cached_attribution_data is not None:
+        return _cached_attribution_data
+    
+    # Try to load from disk cache first
+    if not force_reload and os.path.exists(ATTRIBUTION_CACHE_FILE):
+        try:
+            _cached_attribution_data = pd.read_pickle(ATTRIBUTION_CACHE_FILE)
+            app.logger.info("Loaded attribution data from disk cache")
+            return _cached_attribution_data
+        except Exception as e:
+            app.logger.warning(f"Could not load attribution cache from disk: {e}")
+    
+    settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    supplemental_prefix = settings.get('data_source', {}).get('supplemental_file_prefix', 'PlantData')
+    # Default gid for "Column Sources" tab - can be configured in settings
+    attribution_gid = settings.get('data_source', {}).get('attribution_tab_gid', '1556422806')
+    
+    if not folder_id or not supplemental_prefix:
+        app.logger.info("Attribution data not configured - supplemental file prefix not set")
+        return {}
+    
+    try:
+        # Find the Google Sheet (use existing supplemental file ID if available)
+        file_id = _supplemental_file_id
+        if not file_id:
+            file_id, file_name, message = find_google_sheet_in_folder(folder_id, supplemental_prefix)
+        
+        if not file_id:
+            app.logger.info(f"No supplemental data file found for attribution")
+            return {}
+        
+        # Export the "Column Sources" tab as CSV
+        csv_content, error = export_google_sheet_tab_as_csv(file_id, attribution_gid)
+        if error:
+            app.logger.warning(f"Could not load attribution tab: {error}")
+            return {}
+        
+        # Parse CSV into DataFrame
+        csv_data = StringIO(csv_content)
+        df = pd.read_csv(csv_data)
+        
+        if df.empty:
+            app.logger.info("Attribution tab is empty")
+            return {}
+        
+        # Store the raw dataframe for the attribution page
+        app.logger.info(f"Loaded {len(df)} rows of attribution data")
+        app.logger.info(f"Attribution columns: {list(df.columns)}")
+        
+        # Cache the data
+        _cached_attribution_data = df
+        
+        # Save to disk cache
+        try:
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            df.to_pickle(ATTRIBUTION_CACHE_FILE)
+        except Exception as e:
+            app.logger.warning(f"Could not save attribution cache to disk: {e}")
+        
+        return df
+        
+    except Exception as e:
+        app.logger.error(f"Error loading attribution data: {str(e)}")
+        return {}
+
+def get_attribution_for_field(field_name):
+    """Get attribution info for a specific field/column.
+    
+    Returns a dictionary with all attribution metadata for the field,
+    or None if not found.
+    """
+    attribution_df = load_attribution_data()
+    
+    if attribution_df is None or (isinstance(attribution_df, pd.DataFrame) and attribution_df.empty):
+        return None
+    
+    if isinstance(attribution_df, dict):
+        return None
+    
+    # Try to find matching row - look for field name in first column or a 'field' column
+    df = attribution_df
+    
+    # Normalize the field name for matching
+    field_normalized = field_name.lower().replace('_', ' ').strip()
+    
+    # Try matching against each column that might contain field names
+    for col in df.columns:
+        col_values = df[col].astype(str).str.lower().str.replace('_', ' ').str.strip()
+        matches = df[col_values == field_normalized]
+        if not matches.empty:
+            # Return first matching row as dictionary
+            row = matches.iloc[0]
+            return {k: v for k, v in row.items() if pd.notna(v) and str(v).strip()}
+    
+    return None
+
+def get_all_attributions():
+    """Get all attribution data as a list of dictionaries for the attribution page."""
+    attribution_df = load_attribution_data()
+    
+    if attribution_df is None or (isinstance(attribution_df, pd.DataFrame) and attribution_df.empty):
+        return []
+    
+    if isinstance(attribution_df, dict):
+        return []
+    
+    # Convert each row to a dictionary, filtering out NaN values
+    attributions = []
+    for _, row in attribution_df.iterrows():
+        attr = {k: v for k, v in row.items() if pd.notna(v) and str(v).strip()}
+        if attr:
+            attributions.append(attr)
+    
+    return attributions
+
 def load_supplemental_data(force_reload=False):
     """Load supplemental data from PlantData Google Sheet"""
     global _cached_supplemental_data, _supplemental_file_id, _supplemental_file_name
@@ -1522,6 +1687,21 @@ def species_detail(botanical_name, screen_type='identification'):
             'moisture': request.args.get('moisture', '')
         }
         
+        # Load attribution data for field tooltips
+        attribution_data = {}
+        try:
+            all_attributions = get_all_attributions()
+            # Build lookup by field name (first column value in each row)
+            for attr in all_attributions:
+                if attr:
+                    # Get first non-empty value as the key (column/field name)
+                    first_key = list(attr.keys())[0] if attr else None
+                    if first_key:
+                        field_name = str(attr.get(first_key, '')).lower().replace(' ', '_')
+                        attribution_data[field_name] = attr
+        except Exception as e:
+            app.logger.warning(f"Could not load attribution data: {e}")
+        
         return render_template('species_detail.html', 
                              species=species, 
                              screen_config=screen_config,
@@ -1530,6 +1710,7 @@ def species_detail(botanical_name, screen_type='identification'):
                              current_filters=current_filters,
                              botanical_name=unquote(botanical_name),
                              cloudinary_images=cloudinary_images,
+                             attribution_data=attribution_data,
                              is_development=True)
         
     except Exception as e:
@@ -1573,12 +1754,26 @@ def api_species_screen(botanical_name, screen_type):
             except Exception as e:
                 app.logger.error(f"Error fetching Cloudinary images: {e}")
         
+        # Get attribution data
+        attribution_data = {}
+        try:
+            all_attributions = load_attribution_data()
+            for attr in all_attributions:
+                if attr:
+                    first_key = list(attr.keys())[0] if attr else None
+                    if first_key:
+                        field_name = str(attr.get(first_key, '')).lower().replace(' ', '_')
+                        attribution_data[field_name] = attr
+        except Exception as e:
+            app.logger.warning(f"Could not load attribution data for API: {e}")
+        
         # Return JSON data
         return {
             "species": species,
             "screen_config": screen_config,
             "current_screen": screen_type,
-            "cloudinary_images": cloudinary_images
+            "cloudinary_images": cloudinary_images,
+            "attribution_data": attribution_data
         }
         
     except Exception as e:
@@ -1665,6 +1860,29 @@ def refresh_images_endpoint():
             'message': f'Error clearing image cache: {str(e)}',
             'refreshed': False
         })
+
+@app.route('/attribution')
+def attribution_page():
+    """Full attribution page showing data sources for all columns"""
+    try:
+        attributions = get_all_attributions()
+        
+        # Get the column headers from attribution data for display
+        headers = []
+        if attributions:
+            # Get keys from first attribution (all rows should have same structure)
+            headers = list(attributions[0].keys()) if attributions else []
+        
+        settings = load_app_settings()
+        
+        return render_template('attribution.html',
+                             attributions=attributions,
+                             headers=headers,
+                             settings=settings)
+    except Exception as e:
+        app.logger.error(f"Error loading attribution page: {str(e)}")
+        flash(f'Error loading attribution data: {str(e)}', 'error')
+        return render_template('attribution.html', attributions=[], headers=[])
 
 @app.route('/admin')
 def admin_dashboard():
