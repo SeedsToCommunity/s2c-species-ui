@@ -575,26 +575,39 @@ def _get_supplemental_file_info():
         'rows': 0
     }
 
-def get_google_drive_service():
-    """Get an authenticated Google Drive API service"""
+def get_google_credentials():
+    """Get Google API credentials for service account access"""
     if not GOOGLE_API_AVAILABLE:
         app.logger.warning("Google API libraries not available")
         return None
     
-    # Check for service account credentials JSON
     service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
     if not service_account_json:
         app.logger.info("GOOGLE_SERVICE_ACCOUNT_JSON not configured")
         return None
     
     try:
-        # Parse the JSON credentials
         credentials_info = json.loads(service_account_json)
         credentials = service_account.Credentials.from_service_account_info(
             credentials_info,
-            scopes=['https://www.googleapis.com/auth/drive.readonly']
+            scopes=[
+                'https://www.googleapis.com/auth/drive.readonly',
+                'https://www.googleapis.com/auth/spreadsheets.readonly'
+            ]
         )
-        service = build('drive', 'v3', credentials=credentials)
+        return credentials
+    except Exception as e:
+        app.logger.error(f"Error getting Google credentials: {str(e)}")
+        return None
+
+def get_google_drive_service():
+    """Get an authenticated Google Drive API service"""
+    credentials = get_google_credentials()
+    if not credentials:
+        return None
+    
+    try:
+        service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
         return service
     except Exception as e:
         app.logger.error(f"Error creating Google Drive service: {str(e)}")
@@ -862,7 +875,7 @@ def export_google_sheet_as_csv(file_id):
         return None, f"Error: {str(e)}"
 
 def export_google_sheet_tab_as_csv(file_id, gid):
-    """Export a specific tab of a Google Sheet as CSV data using the gid parameter.
+    """Export a specific tab of a Google Sheet as CSV data using the Google Sheets API.
     
     Args:
         file_id: The Google Drive file ID of the spreadsheet
@@ -871,21 +884,55 @@ def export_google_sheet_tab_as_csv(file_id, gid):
     Returns:
         Tuple of (csv_content, error_message)
     """
-    import requests
-    
     try:
-        # Build export URL with gid parameter for specific tab
-        export_url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid={gid}"
+        from googleapiclient.discovery import build
         
-        response = requests.get(export_url, timeout=30)
+        # Get Google credentials from service account
+        credentials = get_google_credentials()
+        if not credentials:
+            return None, "Google credentials not available"
         
-        if response.status_code == 200:
-            return response.text, None
-        else:
-            error_msg = f"Failed to export tab (gid={gid}): HTTP {response.status_code}"
-            app.logger.error(error_msg)
-            return None, error_msg
-            
+        # Build Sheets API service
+        sheets_service = build('sheets', 'v4', credentials=credentials, cache_discovery=False)
+        
+        # First, get sheet metadata to find the sheet name from gid
+        spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=file_id).execute()
+        
+        target_sheet_name = None
+        for sheet in spreadsheet.get('sheets', []):
+            if str(sheet['properties']['sheetId']) == str(gid):
+                target_sheet_name = sheet['properties']['title']
+                break
+        
+        if not target_sheet_name:
+            return None, f"Sheet with gid={gid} not found in spreadsheet"
+        
+        app.logger.info(f"Found sheet '{target_sheet_name}' for gid={gid}")
+        
+        # Get all values from the sheet
+        result = sheets_service.spreadsheets().values().get(
+            spreadsheetId=file_id,
+            range=f"'{target_sheet_name}'"
+        ).execute()
+        
+        values = result.get('values', [])
+        
+        if not values:
+            return None, f"Sheet '{target_sheet_name}' is empty"
+        
+        # Convert to CSV format
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        for row in values:
+            writer.writerow(row)
+        
+        csv_content = output.getvalue()
+        app.logger.info(f"Exported {len(values)} rows from sheet '{target_sheet_name}'")
+        return csv_content, None
+        
     except Exception as e:
         app.logger.error(f"Error exporting Google Sheet tab (gid={gid}): {str(e)}")
         return None, f"Error: {str(e)}"

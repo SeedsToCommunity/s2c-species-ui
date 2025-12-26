@@ -4,7 +4,8 @@
     "file_prefix": "S2C_Species_Data_Main",
     "supplemental_file_prefix": "PlantData",
     "google_drive_csv_url": "https://drive.google.com/file/d/1X78-BA3QGtegriBpPPBWSZVG1FfeSbN9/view?usp=drive_link",
-    "fallback_files": ["origdata.tabsv", "plants.csv"]
+    "fallback_files": ["origdata.tabsv", "plants.csv"],
+    "attribution_tab_gid": "983884178"
   },
   "ui_settings": {
     "app_title": "Southeast Michigan Native Plant Species Directory",
