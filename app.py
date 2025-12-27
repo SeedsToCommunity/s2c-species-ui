@@ -162,6 +162,7 @@ _supplemental_file_name = None
 
 # Global cache for column attribution data (Column Sources tab)
 _cached_attribution_data = None
+_attribution_load_failed_no_creds = False  # Track if loading failed due to missing credentials (for retry)
 ATTRIBUTION_CACHE_FILE = os.path.join(CACHE_DIR, 'attribution_data.pkl')
 
 # Track columns removed during last cleanup (for admin notification)
@@ -950,7 +951,16 @@ def load_attribution_data(force_reload=False):
     
     Returns a dictionary keyed by normalized column field name.
     """
-    global _cached_attribution_data, _supplemental_file_id
+    global _cached_attribution_data, _supplemental_file_id, _attribution_load_failed_no_creds
+    
+    # Check if we should retry - if previous attempt failed due to missing credentials
+    # and credentials are now available, retry loading
+    if _attribution_load_failed_no_creds and not force_reload:
+        service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if service_account_json:
+            app.logger.info("Credentials now available, retrying attribution data load...")
+            force_reload = True
+            _attribution_load_failed_no_creds = False
     
     # Return cached data if available and not forcing reload
     if not force_reload and _cached_attribution_data is not None:
@@ -976,6 +986,13 @@ def load_attribution_data(force_reload=False):
         return {}
     
     try:
+        # Check if credentials are available before trying to load
+        service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if not service_account_json:
+            app.logger.warning("Attribution load skipped - GOOGLE_SERVICE_ACCOUNT_JSON not available yet (will retry on next request)")
+            _attribution_load_failed_no_creds = True
+            return {}
+        
         # Find the Google Sheet (use existing supplemental file ID if available)
         file_id = _supplemental_file_id
         if not file_id:
@@ -983,6 +1000,7 @@ def load_attribution_data(force_reload=False):
         
         if not file_id:
             app.logger.warning(f"No supplemental data file found for attribution - check Google Drive folder access")
+            # Don't set retry flag here - this is a configuration issue, not a credential timing issue
             return {}
         
         # Export the "Column Sources" tab as CSV
@@ -1003,8 +1021,9 @@ def load_attribution_data(force_reload=False):
         app.logger.info(f"Loaded {len(df)} rows of attribution data")
         app.logger.info(f"Attribution columns: {list(df.columns)}")
         
-        # Cache the data
+        # Cache the data and clear retry flag on success
         _cached_attribution_data = df
+        _attribution_load_failed_no_creds = False  # Clear flag on successful load
         
         # Save to disk cache
         try:
