@@ -8,11 +8,6 @@
       "width": "auto"
     },
     {
-      "field": "native_check_notes",
-      "label": "Native Check Notes",
-      "width": "auto"
-    },
-    {
       "field": "common_names",
       "label": "Common Names",
       "width": "auto"
@@ -90,11 +85,6 @@
     {
       "field": "family",
       "label": "Family",
-      "width": "auto"
-    },
-    {
-      "field": "se_mi_native",
-      "label": "SE MI Native",
       "width": "auto"
     }
   ]
