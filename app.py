@@ -954,24 +954,41 @@ def load_attribution_data(force_reload=False):
     global _cached_attribution_data, _supplemental_file_id, _attribution_load_failed_no_creds
     
     # Check if we should retry - if previous attempt failed due to missing credentials
-    # and credentials are now available, retry loading
+    # and credentials are now available, retry loading (takes priority over disk cache)
     if _attribution_load_failed_no_creds and not force_reload:
         service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
         if service_account_json:
             app.logger.info("Credentials now available, retrying attribution data load...")
             force_reload = True
             _attribution_load_failed_no_creds = False
+            # Clear any stale disk cache from previous failed attempts
+            if os.path.exists(ATTRIBUTION_CACHE_FILE):
+                try:
+                    os.remove(ATTRIBUTION_CACHE_FILE)
+                    app.logger.info("Removed stale attribution disk cache for retry")
+                except Exception as e:
+                    app.logger.warning(f"Could not remove stale attribution cache: {e}")
     
     # Return cached data if available and not forcing reload
     if not force_reload and _cached_attribution_data is not None:
-        return _cached_attribution_data
+        # Validate that cached data is not empty
+        if isinstance(_cached_attribution_data, pd.DataFrame) and not _cached_attribution_data.empty:
+            return _cached_attribution_data
+        # If cached data is empty, clear it and continue to reload
+        app.logger.info("Memory cached attribution data is empty, reloading...")
+        _cached_attribution_data = None
     
-    # Try to load from disk cache first
+    # Try to load from disk cache first (only if not forcing reload)
     if not force_reload and os.path.exists(ATTRIBUTION_CACHE_FILE):
         try:
-            _cached_attribution_data = pd.read_pickle(ATTRIBUTION_CACHE_FILE)
-            app.logger.info("Loaded attribution data from disk cache")
-            return _cached_attribution_data
+            disk_cache = pd.read_pickle(ATTRIBUTION_CACHE_FILE)
+            # Validate disk cache is not empty before using
+            if isinstance(disk_cache, pd.DataFrame) and not disk_cache.empty:
+                _cached_attribution_data = disk_cache
+                app.logger.info(f"Loaded attribution data from disk cache ({len(disk_cache)} rows)")
+                return _cached_attribution_data
+            else:
+                app.logger.info("Disk cache attribution data is empty, will reload from source")
         except Exception as e:
             app.logger.warning(f"Could not load attribution cache from disk: {e}")
     
