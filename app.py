@@ -938,6 +938,78 @@ def export_google_sheet_tab_as_csv(file_id, gid):
         app.logger.error(f"Error exporting Google Sheet tab (gid={gid}): {str(e)}")
         return None, f"Error: {str(e)}"
 
+def export_google_sheet_tab_by_name(file_id, tab_name):
+    """Export a specific tab of a Google Sheet as CSV data by tab NAME.
+    
+    This is more robust than using gid because tab names stay consistent
+    even when new files are created (gids are unique per file).
+    
+    Args:
+        file_id: The Google Drive file ID of the spreadsheet
+        tab_name: The name of the sheet tab to export
+    
+    Returns:
+        Tuple of (csv_content, error_message)
+    """
+    try:
+        from googleapiclient.discovery import build
+        
+        # Get Google credentials from service account
+        credentials = get_google_credentials()
+        if not credentials:
+            return None, "Google credentials not available"
+        
+        # Build Sheets API service
+        sheets_service = build('sheets', 'v4', credentials=credentials, cache_discovery=False)
+        
+        # Get spreadsheet metadata to find the sheet by name
+        spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=file_id).execute()
+        
+        # List available sheet names for debugging
+        available_sheets = [sheet['properties']['title'] for sheet in spreadsheet.get('sheets', [])]
+        app.logger.info(f"Available sheets in spreadsheet: {available_sheets}")
+        
+        # Find the sheet by name (case-insensitive match)
+        target_sheet_name = None
+        for sheet in spreadsheet.get('sheets', []):
+            sheet_title = sheet['properties']['title']
+            if sheet_title.lower() == tab_name.lower():
+                target_sheet_name = sheet_title  # Use actual case from sheet
+                break
+        
+        if not target_sheet_name:
+            return None, f"Sheet named '{tab_name}' not found in spreadsheet. Available sheets: {available_sheets}"
+        
+        app.logger.info(f"Found sheet '{target_sheet_name}' matching requested name '{tab_name}'")
+        
+        # Get all values from the sheet
+        result = sheets_service.spreadsheets().values().get(
+            spreadsheetId=file_id,
+            range=f"'{target_sheet_name}'"
+        ).execute()
+        
+        values = result.get('values', [])
+        
+        if not values:
+            return None, f"Sheet '{target_sheet_name}' is empty"
+        
+        # Convert to CSV format
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        for row in values:
+            writer.writerow(row)
+        
+        csv_content = output.getvalue()
+        app.logger.info(f"Exported {len(values)} rows from sheet '{target_sheet_name}'")
+        return csv_content, None
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting Google Sheet tab by name '{tab_name}': {str(e)}")
+        return None, f"Error: {str(e)}"
+
 def load_attribution_data(force_reload=False):
     """Load column attribution data from 'Column Sources' tab of PlantData Google Sheet.
     
@@ -995,8 +1067,8 @@ def load_attribution_data(force_reload=False):
     settings = load_app_settings()
     folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
     supplemental_prefix = settings.get('data_source', {}).get('supplemental_file_prefix', 'PlantData')
-    # Default gid for "Column Sources" tab - can be configured in settings
-    attribution_gid = settings.get('data_source', {}).get('attribution_tab_gid', '1556422806')
+    # Tab name for attribution data - more robust than gid since it works across different files
+    attribution_tab_name = settings.get('data_source', {}).get('attribution_tab_name', 'Column Sources')
     
     if not folder_id or not supplemental_prefix:
         app.logger.warning("Attribution data not configured - folder_id or supplemental_file_prefix not set in app_settings.json")
@@ -1020,10 +1092,10 @@ def load_attribution_data(force_reload=False):
             # Don't set retry flag here - this is a configuration issue, not a credential timing issue
             return {}
         
-        # Export the "Column Sources" tab as CSV
-        csv_content, error = export_google_sheet_tab_as_csv(file_id, attribution_gid)
+        # Export the attribution tab by name (more robust than gid)
+        csv_content, error = export_google_sheet_tab_by_name(file_id, attribution_tab_name)
         if error:
-            app.logger.warning(f"Could not load attribution tab: {error}")
+            app.logger.warning(f"Could not load attribution tab '{attribution_tab_name}': {error}")
             return {}
         
         # Parse CSV into DataFrame
