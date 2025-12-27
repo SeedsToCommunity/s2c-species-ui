@@ -583,7 +583,7 @@ def get_google_credentials():
     
     service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
     if not service_account_json:
-        app.logger.info("GOOGLE_SERVICE_ACCOUNT_JSON not configured")
+        app.logger.warning("GOOGLE_SERVICE_ACCOUNT_JSON secret is not set - Google API features will not work")
         return None
     
     try:
@@ -972,7 +972,7 @@ def load_attribution_data(force_reload=False):
     attribution_gid = settings.get('data_source', {}).get('attribution_tab_gid', '1556422806')
     
     if not folder_id or not supplemental_prefix:
-        app.logger.info("Attribution data not configured - supplemental file prefix not set")
+        app.logger.warning("Attribution data not configured - folder_id or supplemental_file_prefix not set in app_settings.json")
         return {}
     
     try:
@@ -982,7 +982,7 @@ def load_attribution_data(force_reload=False):
             file_id, file_name, message = find_google_sheet_in_folder(folder_id, supplemental_prefix)
         
         if not file_id:
-            app.logger.info(f"No supplemental data file found for attribution")
+            app.logger.warning(f"No supplemental data file found for attribution - check Google Drive folder access")
             return {}
         
         # Export the "Column Sources" tab as CSV
