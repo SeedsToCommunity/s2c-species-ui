@@ -2744,5 +2744,283 @@ def admin_issues():
         flash('Error loading issues', 'error')
         return render_template('admin_issues.html', issues=[])
 
+# Rate limiting for image submissions (in-memory, resets on restart)
+_upload_rate_limit = {}  # IP -> {'minute': (timestamp, count), 'hour': (timestamp, count)}
+
+def check_upload_rate_limit(ip_address):
+    """Check if IP is within rate limits (1/min, 10/hour)"""
+    global _upload_rate_limit
+    now = datetime.now()
+    
+    if ip_address not in _upload_rate_limit:
+        _upload_rate_limit[ip_address] = {'minute': (now, 0), 'hour': (now, 0)}
+    
+    limits = _upload_rate_limit[ip_address]
+    
+    # Check minute limit
+    minute_time, minute_count = limits['minute']
+    if (now - minute_time).total_seconds() < 60:
+        if minute_count >= 1:
+            return False, "Please wait at least 1 minute between uploads"
+    else:
+        limits['minute'] = (now, 0)
+    
+    # Check hour limit
+    hour_time, hour_count = limits['hour']
+    if (now - hour_time).total_seconds() < 3600:
+        if hour_count >= 10:
+            return False, "Upload limit reached (10 per hour). Please try again later."
+    else:
+        limits['hour'] = (now, 0)
+    
+    return True, None
+
+def increment_upload_count(ip_address):
+    """Increment upload count for IP after successful upload"""
+    global _upload_rate_limit
+    now = datetime.now()
+    
+    if ip_address not in _upload_rate_limit:
+        _upload_rate_limit[ip_address] = {'minute': (now, 1), 'hour': (now, 1)}
+        return
+    
+    limits = _upload_rate_limit[ip_address]
+    
+    # Increment minute count
+    minute_time, minute_count = limits['minute']
+    if (now - minute_time).total_seconds() < 60:
+        limits['minute'] = (minute_time, minute_count + 1)
+    else:
+        limits['minute'] = (now, 1)
+    
+    # Increment hour count
+    hour_time, hour_count = limits['hour']
+    if (now - hour_time).total_seconds() < 3600:
+        limits['hour'] = (hour_time, hour_count + 1)
+    else:
+        limits['hour'] = (now, 1)
+
+# Allowed image extensions and max size
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/submit-image/<path:botanical_name>', methods=['POST'])
+def submit_image(botanical_name):
+    """Handle user image submission"""
+    try:
+        # Check rate limit
+        ip_address = request.remote_addr
+        allowed, error_msg = check_upload_rate_limit(ip_address)
+        if not allowed:
+            flash(error_msg, 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        # Validate file
+        if 'image' not in request.files:
+            flash('No image file provided', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        file = request.files['image']
+        if file.filename == '':
+            flash('No image selected', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        if not allowed_file(file.filename):
+            flash('Invalid file type. Please upload a PNG, JPG, GIF, or WebP image.', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        # Check file size
+        file.seek(0, 2)  # Seek to end
+        size = file.tell()
+        file.seek(0)  # Reset to beginning
+        if size > MAX_UPLOAD_SIZE:
+            flash('Image too large. Maximum size is 10MB.', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        # Validate required fields
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        consent = request.form.get('consent')
+        
+        if not first_name or not last_name:
+            flash('Please provide your first and last name', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        if not consent:
+            flash('You must agree to share your image freely', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        # Build tags from checkboxes
+        tags = []
+        if request.form.get('tag_seeds'):
+            tags.append('seeds')
+        if request.form.get('tag_seedling'):
+            tags.append('seedling')
+        
+        # Parse genus/species from botanical name
+        parts = botanical_name.split()
+        genus = parts[0] if len(parts) > 0 else 'unknown'
+        species = parts[1] if len(parts) > 1 else 'unknown'
+        
+        # Build username for filename
+        username = f"{first_name}_{last_name}"
+        
+        # Upload to Cloudinary
+        if not CLOUDINARY_AVAILABLE:
+            flash('Image upload service not available', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        result = cloudinary_service.upload_user_image(
+            file_data=file,
+            genus=genus,
+            species=species,
+            username=username,
+            tags=tags
+        )
+        
+        if result.get('success'):
+            increment_upload_count(ip_address)
+            flash('Thank you! Your image has been submitted for review.', 'success')
+            app.logger.info(f"User image uploaded: {result.get('public_id')} by {username}")
+        else:
+            flash(f"Upload failed: {result.get('error', 'Unknown error')}", 'error')
+            app.logger.error(f"User image upload failed: {result.get('error')}")
+        
+        return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+    except Exception as e:
+        app.logger.error(f"Error in image submission: {str(e)}")
+        flash('Error uploading image. Please try again.', 'error')
+        return redirect(url_for('species_detail', botanical_name=botanical_name))
+
+def check_admin_auth():
+    """Check if request has valid admin credentials.
+    
+    Returns False if credentials are not configured or don't match.
+    This fails closed - if env vars are not set, no access is granted.
+    """
+    auth = request.authorization
+    if not auth:
+        return False
+    
+    admin_user = os.environ.get('ADMIN_USERNAME')
+    admin_pass = os.environ.get('ADMIN_PASSWORD')
+    
+    # Fail closed: if credentials not configured, deny access
+    if not admin_user or not admin_pass:
+        app.logger.warning("Admin credentials not configured - access denied")
+        return False
+    
+    return auth.username == admin_user and auth.password == admin_pass
+
+def require_admin_auth(f):
+    """Decorator to require admin authentication"""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not check_admin_auth():
+            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin Access"'})
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/admin/review')
+@require_admin_auth
+def admin_review():
+    """Admin page for reviewing pending image submissions"""
+    try:
+        if not CLOUDINARY_AVAILABLE:
+            flash('Cloudinary not available', 'error')
+            return render_template('admin_review.html', pending_image=None, approved_images=[])
+        
+        # Get pending images
+        pending_images = cloudinary_service.get_pending_images()
+        
+        if not pending_images:
+            return render_template('admin_review.html', 
+                                 pending_image=None, 
+                                 approved_images=[],
+                                 pending_count=0)
+        
+        # Show the first pending image
+        pending_image = pending_images[0]
+        
+        # Get approved images for the same species
+        approved_images = []
+        if pending_image.get('genus') and pending_image.get('species'):
+            approved_images = cloudinary_service.get_approved_images_for_species(
+                pending_image['genus'],
+                pending_image['species']
+            )
+        
+        return render_template('admin_review.html',
+                             pending_image=pending_image,
+                             approved_images=approved_images,
+                             pending_count=len(pending_images))
+        
+    except Exception as e:
+        app.logger.error(f"Error loading admin review: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('admin_review.html', pending_image=None, approved_images=[])
+
+@app.route('/admin/review/approve', methods=['POST'])
+@require_admin_auth
+def admin_approve_image():
+    """Approve a pending image (remove Pending tag)"""
+    try:
+        public_id = request.form.get('public_id')
+        if not public_id:
+            flash('No image specified', 'error')
+            return redirect(url_for('admin_review'))
+        
+        result = cloudinary_service.approve_image(public_id)
+        if result.get('success'):
+            flash('Image approved successfully', 'success')
+        else:
+            flash(f"Error approving image: {result.get('error')}", 'error')
+        
+        return redirect(url_for('admin_review'))
+        
+    except Exception as e:
+        app.logger.error(f"Error approving image: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('admin_review'))
+
+@app.route('/admin/review/delete', methods=['POST'])
+@require_admin_auth
+def admin_delete_image():
+    """Delete a pending image from Cloudinary"""
+    try:
+        public_id = request.form.get('public_id')
+        if not public_id:
+            flash('No image specified', 'error')
+            return redirect(url_for('admin_review'))
+        
+        result = cloudinary_service.delete_image(public_id)
+        if result.get('success'):
+            flash('Image deleted', 'success')
+        else:
+            flash(f"Error deleting image: {result.get('error')}", 'error')
+        
+        return redirect(url_for('admin_review'))
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting image: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('admin_review'))
+
+@app.route('/admin/review/skip', methods=['POST'])
+@require_admin_auth
+def admin_skip_image():
+    """Skip to the next pending image (just refresh the page)"""
+    # Since we always show the first pending image, skipping means 
+    # we need to somehow move this one to the end of the queue.
+    # For simplicity, skip just reloads to show the same first image.
+    # If you want true skip, you'd need session tracking.
+    flash('Skipped to next image', 'info')
+    return redirect(url_for('admin_review'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -35,3 +35,9 @@ externalPort = 80
 
 [agent]
 integrations = ["python_sendgrid:1.0.0", "styling_replit:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "seedy"

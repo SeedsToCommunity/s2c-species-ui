@@ -146,7 +146,7 @@ def clear_image_cache():
     except Exception as e:
         logger.error(f"Error clearing disk cache: {e}")
 
-def build_search_expression(genus, species, image_group, include_genus_fallback=False):
+def build_search_expression(genus, species, image_group, include_genus_fallback=False, exclude_pending=True):
     """Build Cloudinary search expression for a species and image group.
     
     Implements a multi-tier matching strategy:
@@ -156,6 +156,7 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
     4. Genus tag (fallback, e.g., genus:asclepias)
     
     If image_group has specific tags, those are combined with species matching.
+    If exclude_pending is True, images with 'Pending' tag are excluded.
     """
     config = load_image_sources_config()
     matching = config.get('species_matching', {})
@@ -200,15 +201,18 @@ def build_search_expression(genus, species, image_group, include_genus_fallback=
     # Get image group specific tags
     group_tags = image_group.get('tags', [])
     
-    # If image group has specific tags, filter by them (quote tag values)
-    # Uses AND logic - image must have ALL specified tags
+    # Build the base expression
     if group_tags:
         tag_conditions = ' AND '.join([f'tags="{tag}"' for tag in group_tags])
-        # Return images that match species/genus AND have ALL group tags
-        return f"{primary_expr} AND ({tag_conditions})"
+        base_expr = f"{primary_expr} AND ({tag_conditions})"
     else:
-        # No group-specific tags, return all species/genus images
-        return primary_expr
+        base_expr = primary_expr
+    
+    # Exclude pending images if requested
+    if exclude_pending:
+        return f"({base_expr}) AND -tags=\"Pending\""
+    else:
+        return base_expr
 
 def search_cloudinary_images(genus, species, image_group_id, force_refresh=False, include_genus_fallback=True):
     """Search Cloudinary for images matching a species and image group.
@@ -396,3 +400,205 @@ def test_cloudinary_connection():
         return {'success': True, 'status': result.get('status', 'ok')}
     except Exception as e:
         return {'success': False, 'error': str(e)}
+
+def upload_user_image(file_data, genus, species, username, tags=None):
+    """Upload a user-submitted image to Cloudinary.
+    
+    Args:
+        file_data: File object or bytes
+        genus: Plant genus
+        species: Plant species  
+        username: Submitter's name (sanitized)
+        tags: List of additional tags (e.g., ['seeds', 'seedling'])
+    
+    Returns:
+        dict with 'success', 'url', 'public_id', or 'error'
+    """
+    if not configure_cloudinary():
+        return {'success': False, 'error': 'Cloudinary not configured'}
+    
+    try:
+        import cloudinary.uploader
+        
+        # Sanitize inputs for filename
+        genus_clean = genus.lower().strip().replace(' ', '_')
+        species_clean = species.lower().strip().replace(' ', '_')
+        username_clean = ''.join(c for c in username.lower() if c.isalnum() or c == '_').strip('_')
+        if not username_clean:
+            username_clean = 'anonymous'
+        
+        # Create timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Build public_id (path in Cloudinary)
+        public_id = f"UserSubmitted/{genus_clean}_{species_clean}_{username_clean}_{timestamp}"
+        
+        # Build tags list
+        upload_tags = ['UserSubmitted', 'Pending']
+        if tags:
+            upload_tags.extend(tags)
+        
+        # Add species tag for matching
+        species_tag = f"species:{genus_clean}_{species_clean}"
+        upload_tags.append(species_tag)
+        
+        logger.info(f"Uploading image to Cloudinary: {public_id}")
+        logger.info(f"Tags: {upload_tags}")
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            file_data,
+            public_id=public_id,
+            folder="",  # folder is in public_id
+            tags=upload_tags,
+            context={
+                'submitter': username,
+                'genus': genus,
+                'species': species,
+                'submitted_at': datetime.now().isoformat()
+            },
+            resource_type='image'
+        )
+        
+        logger.info(f"Upload successful: {result.get('secure_url')}")
+        
+        return {
+            'success': True,
+            'url': result.get('secure_url'),
+            'public_id': result.get('public_id'),
+            'tags': upload_tags
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading to Cloudinary: {e}")
+        return {'success': False, 'error': str(e)}
+
+def get_pending_images(limit=50):
+    """Get all images with 'Pending' tag, sorted by newest first.
+    
+    Returns list of image dicts with metadata.
+    """
+    if not configure_cloudinary():
+        return []
+    
+    try:
+        search = Search()
+        search.expression('tags="Pending" AND tags="UserSubmitted"')
+        search.sort_by('created_at', 'desc')
+        search.max_results(limit)
+        search.with_field('tags')
+        search.with_field('context')
+        
+        result = search.execute()
+        resources = result.get('resources', [])
+        
+        images = []
+        for resource in resources:
+            # Parse genus/species from public_id or context
+            context = resource.get('context', {})
+            custom = context.get('custom', {})
+            
+            img_data = {
+                'public_id': resource.get('public_id'),
+                'url': resource.get('secure_url'),
+                'thumbnail_url': cloudinary.CloudinaryImage(resource.get('public_id')).build_url(
+                    height=200, crop='limit', quality='auto'
+                ),
+                'format': resource.get('format'),
+                'width': resource.get('width'),
+                'height': resource.get('height'),
+                'tags': resource.get('tags', []),
+                'created_at': resource.get('created_at'),
+                'submitter': custom.get('submitter', 'Unknown'),
+                'genus': custom.get('genus', ''),
+                'species': custom.get('species', '')
+            }
+            images.append(img_data)
+        
+        logger.info(f"Found {len(images)} pending images")
+        return images
+        
+    except Exception as e:
+        logger.error(f"Error fetching pending images: {e}")
+        return []
+
+def approve_image(public_id):
+    """Remove 'Pending' tag from an image to approve it.
+    
+    Returns dict with 'success' or 'error'.
+    """
+    if not configure_cloudinary():
+        return {'success': False, 'error': 'Cloudinary not configured'}
+    
+    try:
+        result = cloudinary.uploader.remove_tag('Pending', [public_id])
+        logger.info(f"Approved image: {public_id}")
+        return {'success': True, 'result': result}
+    except Exception as e:
+        logger.error(f"Error approving image: {e}")
+        return {'success': False, 'error': str(e)}
+
+def delete_image(public_id):
+    """Delete an image from Cloudinary.
+    
+    Returns dict with 'success' or 'error'.
+    """
+    if not configure_cloudinary():
+        return {'success': False, 'error': 'Cloudinary not configured'}
+    
+    try:
+        result = cloudinary.uploader.destroy(public_id)
+        logger.info(f"Deleted image: {public_id}")
+        return {'success': True, 'result': result}
+    except Exception as e:
+        logger.error(f"Error deleting image: {e}")
+        return {'success': False, 'error': str(e)}
+
+def get_approved_images_for_species(genus, species, limit=50):
+    """Get approved (non-pending) images for a specific species.
+    
+    Returns list of image dicts.
+    """
+    if not configure_cloudinary():
+        return []
+    
+    try:
+        genus_clean = genus.lower().strip()
+        species_clean = species.lower().strip().replace(' ', '_')
+        species_tag = f"species:{genus_clean}_{species_clean}"
+        
+        search = Search()
+        # Images that have the species tag but NOT the Pending tag
+        search.expression(f'tags="{species_tag}" AND -tags="Pending"')
+        search.sort_by('created_at', 'desc')
+        search.max_results(limit)
+        search.with_field('tags')
+        search.with_field('context')
+        
+        result = search.execute()
+        resources = result.get('resources', [])
+        
+        images = []
+        for resource in resources:
+            context = resource.get('context', {})
+            custom = context.get('custom', {})
+            
+            img_data = {
+                'public_id': resource.get('public_id'),
+                'url': resource.get('secure_url'),
+                'thumbnail_url': cloudinary.CloudinaryImage(resource.get('public_id')).build_url(
+                    height=200, crop='limit', quality='auto'
+                ),
+                'format': resource.get('format'),
+                'tags': resource.get('tags', []),
+                'created_at': resource.get('created_at'),
+                'submitter': custom.get('submitter', '')
+            }
+            images.append(img_data)
+        
+        logger.info(f"Found {len(images)} approved images for {genus} {species}")
+        return images
+        
+    except Exception as e:
+        logger.error(f"Error fetching approved images: {e}")
+        return []
