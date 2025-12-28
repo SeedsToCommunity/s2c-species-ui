@@ -312,9 +312,9 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
                 'context': resource.get('context', {})
             }
             
-            # Generate thumbnail URL - uniform height, variable width (no cropping)
+            # Generate thumbnail URL - uniform height, no cropping, no upscaling
             img_data['thumbnail_url'] = cloudinary.CloudinaryImage(resource.get('public_id')).build_url(
-                height=200, crop='scale', quality='auto'
+                height=200, crop='limit', quality='auto'
             )
             
             # Generate medium size URL

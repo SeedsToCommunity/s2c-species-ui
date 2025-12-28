@@ -104,6 +104,15 @@
         .bs-popover-bottom .popover-arrow::after {
             border-bottom-color: #1a1a2e !important;
         }
+        /* Cloudinary thumbnail gallery - responsive, no cropping, no upscaling */
+        .cloudinary-thumb img {
+            display: block;
+            max-height: 200px;
+            height: auto;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+        }
 
     </style>
 </head>
@@ -385,8 +394,7 @@
                                             <a href="{{ img.url }}" target="_blank" class="cloudinary-thumb" title="{{ img.filename }}">
                                                 <img src="{{ img.thumbnail_url }}" 
                                                      alt="{{ img.filename }}"
-                                                     class="rounded" 
-                                                     style="height: 200px; width: auto;"
+                                                     class="rounded"
                                                      loading="lazy">
                                             </a>
                                         {% endfor %}
@@ -964,8 +972,7 @@
                                 <a href="${img.url}" target="_blank" class="cloudinary-thumb" title="${img.filename || ''}">
                                     <img src="${img.thumbnail_url}" 
                                          alt="${img.filename || ''}"
-                                         class="rounded" 
-                                         style="height: 200px; width: auto;"
+                                         class="rounded"
                                          loading="lazy">
                                 </a>
                             `;
