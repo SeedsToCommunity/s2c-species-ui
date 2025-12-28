@@ -575,9 +575,9 @@ def delete_image(public_id):
         return {'success': False, 'error': str(e)}
 
 def get_approved_images_for_species(genus, species, limit=50):
-    """Get approved (non-pending) images for a specific species.
+    """Get ALL non-pending images for a specific species.
     
-    Returns list of image dicts.
+    Returns list of image dicts. Used by admin review to show existing images.
     """
     if not configure_cloudinary():
         return []
@@ -585,11 +585,11 @@ def get_approved_images_for_species(genus, species, limit=50):
     try:
         genus_clean = genus.lower().strip()
         species_clean = species.lower().strip().replace(' ', '_')
-        filename_pattern = f"{genus_clean}_{species_clean}_*"
+        species_tag = f"species:{genus_clean}_{species_clean}"
         
         search = Search()
-        # Images with matching filename pattern, UserSubmitted tag, NOT pending
-        search.expression(f'filename:{genus_clean}_{species_clean}* AND tags="UserSubmitted" AND -tags="Pending"')
+        # ALL images for this species (by tag or filename), excluding pending
+        search.expression(f'resource_type:image AND ((filename:{genus_clean}_{species_clean}* OR tags="{species_tag}")) AND -tags="Pending"')
         search.sort_by('created_at', 'desc')
         search.max_results(limit)
         search.with_field('tags')
