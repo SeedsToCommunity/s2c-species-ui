@@ -256,11 +256,15 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
     
     # Search Cloudinary
     try:
+        # Get resource type from config (defaults to 'image')
+        matching = config.get('species_matching', {})
+        resource_type = matching.get('resource_type', 'image')
+        
         # Build search expression using improved matching logic
         # First try without genus fallback
         search_expr = build_search_expression(genus, species, image_group, include_genus_fallback=False)
-        # Filter to only images (exclude raw files like JSON, PDF, etc.)
-        search_expr = f"resource_type:image AND ({search_expr})"
+        # Filter by resource type from config
+        search_expr = f"resource_type:{resource_type} AND ({search_expr})"
         
         logger.info(f"Cloudinary search (species-level): {search_expr}")
         
@@ -276,8 +280,8 @@ def search_cloudinary_images(genus, species, image_group_id, force_refresh=False
         # If no results and fallback enabled, try with genus fallback
         if not resources and include_genus_fallback:
             fallback_expr = build_search_expression(genus, species, image_group, include_genus_fallback=True)
-            # Filter to only images
-            fallback_expr = f"resource_type:image AND ({fallback_expr})"
+            # Filter by resource type from config
+            fallback_expr = f"resource_type:{resource_type} AND ({fallback_expr})"
             logger.info(f"No species results, trying genus fallback: {fallback_expr}")
             
             search = Search()
