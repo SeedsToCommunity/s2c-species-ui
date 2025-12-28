@@ -488,13 +488,14 @@
                         </p>
                         
                         <div class="mb-3">
-                            <label for="imageFile" class="form-label">Select Image <span class="text-danger">*</span></label>
-                            <input type="file" class="form-control" id="imageFile" name="image" accept="image/png,image/jpeg,image/gif,image/webp" required onchange="previewImage(this)">
-                            <div class="form-text">PNG, JPG, GIF, or WebP. Maximum 10MB.</div>
+                            <label for="imageFile" class="form-label">Select Images <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="imageFile" name="images" accept="image/png,image/jpeg,image/gif,image/webp" required multiple onchange="previewImages(this)">
+                            <div class="form-text">PNG, JPG, GIF, or WebP. Maximum 10MB each. You can select multiple images.</div>
                         </div>
                         
-                        <div id="imagePreviewContainer" class="mb-3 text-center d-none">
-                            <img id="imagePreview" src="" alt="Preview" class="img-fluid rounded" style="max-height: 250px;">
+                        <div id="imagePreviewContainer" class="mb-3 d-none">
+                            <div id="imagePreviews" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+                            <div class="text-center mt-2 text-muted small"><span id="imageCount">0</span> image(s) selected</div>
                         </div>
                         
                         <div class="row">
@@ -534,7 +535,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i data-feather="upload" class="me-1"></i>
-                            Submit Photo
+                            Submit Photos
                         </button>
                     </div>
                 </form>
@@ -543,19 +544,31 @@
     </div>
     
     <script>
-        function previewImage(input) {
+        function previewImages(input) {
             const container = document.getElementById('imagePreviewContainer');
-            const preview = document.getElementById('imagePreview');
+            const previewsDiv = document.getElementById('imagePreviews');
+            const countSpan = document.getElementById('imageCount');
             
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
+            previewsDiv.innerHTML = '';
+            
+            if (input.files && input.files.length > 0) {
+                countSpan.textContent = input.files.length;
+                container.classList.remove('d-none');
                 
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    container.classList.remove('d-none');
-                };
-                
-                reader.readAsDataURL(input.files[0]);
+                Array.from(input.files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Preview ' + (index + 1);
+                        img.className = 'rounded';
+                        img.style.maxHeight = '120px';
+                        img.style.maxWidth = '150px';
+                        img.style.objectFit = 'contain';
+                        previewsDiv.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
             } else {
                 container.classList.add('d-none');
             }

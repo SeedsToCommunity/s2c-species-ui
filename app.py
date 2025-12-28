@@ -2809,38 +2809,22 @@ def allowed_file(filename):
 
 @app.route('/submit-image/<path:botanical_name>', methods=['POST'])
 def submit_image(botanical_name):
-    """Handle user image submission"""
+    """Handle user image submission (supports multiple files)"""
     try:
-        # Check rate limit
-        ip_address = request.remote_addr
-        allowed, error_msg = check_upload_rate_limit(ip_address)
-        if not allowed:
-            flash(error_msg, 'error')
+        # Rate limiting disabled for now
+        # ip_address = request.remote_addr
+        # allowed, error_msg = check_upload_rate_limit(ip_address)
+        # if not allowed:
+        #     flash(error_msg, 'error')
+        #     return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        # Get all uploaded files
+        files = request.files.getlist('images')
+        if not files or all(f.filename == '' for f in files):
+            flash('No images selected', 'error')
             return redirect(url_for('species_detail', botanical_name=botanical_name))
         
-        # Validate file
-        if 'image' not in request.files:
-            flash('No image file provided', 'error')
-            return redirect(url_for('species_detail', botanical_name=botanical_name))
-        
-        file = request.files['image']
-        if file.filename == '':
-            flash('No image selected', 'error')
-            return redirect(url_for('species_detail', botanical_name=botanical_name))
-        
-        if not allowed_file(file.filename):
-            flash('Invalid file type. Please upload a PNG, JPG, GIF, or WebP image.', 'error')
-            return redirect(url_for('species_detail', botanical_name=botanical_name))
-        
-        # Check file size
-        file.seek(0, 2)  # Seek to end
-        size = file.tell()
-        file.seek(0)  # Reset to beginning
-        if size > MAX_UPLOAD_SIZE:
-            flash('Image too large. Maximum size is 10MB.', 'error')
-            return redirect(url_for('species_detail', botanical_name=botanical_name))
-        
-        # Validate required fields
+        # Validate required fields first
         first_name = request.form.get('first_name', '').strip()
         last_name = request.form.get('last_name', '').strip()
         consent = request.form.get('consent')
@@ -2853,7 +2837,7 @@ def submit_image(botanical_name):
             flash('You must agree to share your image freely', 'error')
             return redirect(url_for('species_detail', botanical_name=botanical_name))
         
-        # Build tags from checkboxes
+        # Build tags from checkboxes (same for all images)
         tags = []
         if request.form.get('tag_seeds'):
             tags.append('seeds')
@@ -2873,21 +2857,49 @@ def submit_image(botanical_name):
             flash('Image upload service not available', 'error')
             return redirect(url_for('species_detail', botanical_name=botanical_name))
         
-        result = cloudinary_service.upload_user_image(
-            file_data=file,
-            genus=genus,
-            species=species,
-            username=username,
-            tags=tags
-        )
+        success_count = 0
+        error_count = 0
         
-        if result.get('success'):
-            increment_upload_count(ip_address)
-            flash('Thank you! Your image has been submitted for review.', 'success')
-            app.logger.info(f"User image uploaded: {result.get('public_id')} by {username}")
+        for file in files:
+            if file.filename == '':
+                continue
+                
+            if not allowed_file(file.filename):
+                error_count += 1
+                app.logger.warning(f"Skipped invalid file type: {file.filename}")
+                continue
+            
+            # Check file size
+            file.seek(0, 2)
+            size = file.tell()
+            file.seek(0)
+            if size > MAX_UPLOAD_SIZE:
+                error_count += 1
+                app.logger.warning(f"Skipped oversized file: {file.filename}")
+                continue
+            
+            result = cloudinary_service.upload_user_image(
+                file_data=file,
+                genus=genus,
+                species=species,
+                username=username,
+                tags=tags
+            )
+            
+            if result.get('success'):
+                success_count += 1
+                app.logger.info(f"User image uploaded: {result.get('public_id')} by {username}")
+            else:
+                error_count += 1
+                app.logger.error(f"User image upload failed: {result.get('error')}")
+        
+        # Flash appropriate message
+        if success_count > 0 and error_count == 0:
+            flash(f'Thank you! {success_count} image(s) submitted for review.', 'success')
+        elif success_count > 0 and error_count > 0:
+            flash(f'{success_count} image(s) submitted, {error_count} failed (invalid type or too large).', 'warning')
         else:
-            flash(f"Upload failed: {result.get('error', 'Unknown error')}", 'error')
-            app.logger.error(f"User image upload failed: {result.get('error')}")
+            flash('All uploads failed. Please check file types and sizes.', 'error')
         
         return redirect(url_for('species_detail', botanical_name=botanical_name))
         
