@@ -2935,17 +2935,31 @@ def admin_review():
             flash('Cloudinary not available', 'error')
             return render_template('admin_review.html', pending_image=None, approved_images=[])
         
+        # Get list of recently processed images to exclude (session-based)
+        # This handles the delay in Cloudinary's search index updates
+        processed_ids = session.get('processed_image_ids', [])
+        
         # Get pending images
         pending_images = cloudinary_service.get_pending_images()
         
+        # Filter out recently processed images
+        pending_images = [img for img in pending_images if img['public_id'] not in processed_ids]
+        
         if not pending_images:
+            # Clear the processed list when queue is empty
+            session.pop('processed_image_ids', None)
             return render_template('admin_review.html', 
                                  pending_image=None, 
                                  approved_images=[],
                                  pending_count=0)
         
-        # Show the first pending image
-        pending_image = pending_images[0]
+        # Show the first pending image (excluding skipped ones)
+        skip_index = session.get('skip_index', 0)
+        if skip_index >= len(pending_images):
+            skip_index = 0
+            session['skip_index'] = 0
+        
+        pending_image = pending_images[skip_index]
         
         # Get approved images for the same species
         approved_images = []
@@ -2977,6 +2991,13 @@ def admin_approve_image():
         
         result = cloudinary_service.approve_image(public_id)
         if result.get('success'):
+            # Add to processed list so it doesn't show again while index updates
+            processed_ids = session.get('processed_image_ids', [])
+            if public_id not in processed_ids:
+                processed_ids.append(public_id)
+                session['processed_image_ids'] = processed_ids
+            # Reset skip index since we removed an image
+            session['skip_index'] = 0
             flash('Image approved successfully', 'success')
         else:
             flash(f"Error approving image: {result.get('error')}", 'error')
@@ -3000,6 +3021,13 @@ def admin_delete_image():
         
         result = cloudinary_service.delete_image(public_id)
         if result.get('success'):
+            # Add to processed list so it doesn't show again while index updates
+            processed_ids = session.get('processed_image_ids', [])
+            if public_id not in processed_ids:
+                processed_ids.append(public_id)
+                session['processed_image_ids'] = processed_ids
+            # Reset skip index since we removed an image
+            session['skip_index'] = 0
             flash('Image deleted', 'success')
         else:
             flash(f"Error deleting image: {result.get('error')}", 'error')
@@ -3014,11 +3042,10 @@ def admin_delete_image():
 @app.route('/admin/review/skip', methods=['POST'])
 @require_admin_auth
 def admin_skip_image():
-    """Skip to the next pending image (just refresh the page)"""
-    # Since we always show the first pending image, skipping means 
-    # we need to somehow move this one to the end of the queue.
-    # For simplicity, skip just reloads to show the same first image.
-    # If you want true skip, you'd need session tracking.
+    """Skip to the next pending image"""
+    # Increment skip index to show the next image in the queue
+    skip_index = session.get('skip_index', 0)
+    session['skip_index'] = skip_index + 1
     flash('Skipped to next image', 'info')
     return redirect(url_for('admin_review'))
 
