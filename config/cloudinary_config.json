@@ -1,27 +1,35 @@
 {
   "image_groups": {
     "identification_lake_county_photos": {
-      "label": "Lake County - Cloudinary - Identification",
-      "description": "Cloudinary photos for this species",
+      "label": "Cloudinary Images - Identification",
+      "description": "Cloudinary Images - Identification",
       "icon": "image",
-      "tags": ["Lake County"],
+      "tags": [],
       "default_screens": ["identification"],
       "display_style": "gallery"
     },
-    "collection_lake_county_photos": {
-      "label": "Cloudinary Lake County Species Photos",
-      "description": "Cloudinary photos for this species",
+    "species_photos": {
+      "label": "Cloudinary Seed Images - Collection",
+      "description": "Cloudinary Seed Images - Collection",
       "icon": "image",
-      "tags": ["Lake County"],
+      "tags": ["seeds"],
       "default_screens": ["collection"],
       "display_style": "gallery"
     },
     "species_photos": {
-      "label": "Cloudinary Lake County Seed Species Photos",
-      "description": "Cloudinary photos for this species",
+      "label": "Cloudinary Seed Images - Planting",
+      "description": "Cloudinary Seed Images - Planting",
       "icon": "image",
-      "tags": ["Lake County", "seeds"],
-      "default_screens": ["collection"],
+      "tags": ["seeds"],
+      "default_screens": ["planting"],
+      "display_style": "gallery"
+    },
+    "species_photos": {
+      "label": "Cloudinary Seedling Images - Planting",
+      "description": "Cloudinary Seedling Images - Planting",
+      "icon": "image",
+      "tags": ["seedling"],
+      "default_screens": ["planting"],
       "display_style": "gallery"
     }
   },
