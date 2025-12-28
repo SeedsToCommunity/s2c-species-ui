@@ -431,21 +431,21 @@ def upload_user_image(file_data, genus, species, username, tags=None):
         # Create timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
-        # Build public_id (path in Cloudinary)
-        public_id = f"UserSubmitted/{genus_clean}_{species_clean}_{username_clean}_{timestamp}"
+        # Build filename (public_id without folder)
+        filename = f"{genus_clean}_{species_clean}_{username_clean}_{timestamp}"
         
         # Build tags list - species info is in filename only, not as a tag
         upload_tags = ['UserSubmitted', 'Pending']
         if tags:
             upload_tags.extend(tags)
         
-        logger.info(f"Uploading image to Cloudinary: {public_id}")
+        logger.info(f"Uploading image to Cloudinary folder 'UserSubmitted': {filename}")
         logger.info(f"Tags: {upload_tags}")
         
         # Upload to Cloudinary with folder specified explicitly
         result = cloudinary.uploader.upload(
             file_data,
-            public_id=f"{genus_clean}_{species_clean}_{username_clean}_{timestamp}",
+            public_id=filename,
             folder="UserSubmitted",
             tags=upload_tags,
             context={
