@@ -442,11 +442,11 @@ def upload_user_image(file_data, genus, species, username, tags=None):
         logger.info(f"Uploading image to Cloudinary folder 'UserSubmitted': {filename}")
         logger.info(f"Tags: {upload_tags}")
         
-        # Upload to Cloudinary with folder specified explicitly
+        # Upload to Cloudinary with asset_folder (keeps public_id clean without folder prefix)
         result = cloudinary.uploader.upload(
             file_data,
             public_id=filename,
-            folder="UserSubmitted",
+            asset_folder="UserSubmitted",
             tags=upload_tags,
             context={
                 'submitter': username,
@@ -588,8 +588,8 @@ def get_approved_images_for_species(genus, species, limit=50):
         filename_pattern = f"{genus_clean}_{species_clean}_*"
         
         search = Search()
-        # Images in UserSubmitted folder with matching filename, NOT pending
-        search.expression(f'folder:UserSubmitted AND filename:{genus_clean}_{species_clean}* AND tags="UserSubmitted" AND -tags="Pending"')
+        # Images with matching filename pattern, UserSubmitted tag, NOT pending
+        search.expression(f'filename:{genus_clean}_{species_clean}* AND tags="UserSubmitted" AND -tags="Pending"')
         search.sort_by('created_at', 'desc')
         search.max_results(limit)
         search.with_field('tags')
