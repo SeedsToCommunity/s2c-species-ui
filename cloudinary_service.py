@@ -46,7 +46,7 @@ def configure_cloudinary():
 
 def load_image_sources_config():
     """Load image sources configuration"""
-    config_path = Path('config/image_sources.json')
+    config_path = Path('config/cloudinary_config.json')
     if not config_path.exists():
         logger.warning("Image sources config not found")
         return {}
@@ -72,7 +72,7 @@ def get_cache_ttl_hours():
 
 def get_config_version():
     """Get a version hash of the config file based on modification time and content"""
-    config_path = Path('config/image_sources.json')
+    config_path = Path('config/cloudinary_config.json')
     if not config_path.exists():
         return "no_config"
     try:

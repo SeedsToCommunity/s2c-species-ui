@@ -1,7 +1,7 @@
 {
   "image_groups": {
     "identification_lake_county_photos": {
-      "label": "Cloudinary Lake County Species Photos",
+      "label": "Cloudinary 1 - deprecated",
       "description": "Cloudinary photos for this species",
       "icon": "image",
       "tags": ["Lake County"],
@@ -23,7 +23,7 @@
       "description": "Cloudinary photos for this species",
       "icon": "image",
       "tags": ["Lake County", "seeds"],
-      "filename_patterns": ["{species}", "png"],
+      "filename_patterns": ["{botanical_name}", "png"],
       "default_screens": ["collection"],
       "display_style": "gallery"
     }
@@ -32,7 +32,7 @@
     "primary_method": "filename",
     "filename_format": "{genus}_{species}",
     "tag_format": "species:{genus}_{species}",
-    "fallback_to_genus": true,
+    "fallback_to_genus": false,
     "genus_tag_format": "genus:{genus}"
   },
   "cache_settings": {
