@@ -1,7 +1,7 @@
 {
   "image_groups": {
     "identification_lake_county_photos": {
-      "label": "Cloudinary 1 - deprecated",
+      "label": "Lake County - Cloudinary - Identification",
       "description": "Cloudinary photos for this species",
       "icon": "image",
       "tags": ["Lake County"],
