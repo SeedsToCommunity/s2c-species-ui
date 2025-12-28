@@ -491,14 +491,37 @@ def get_pending_images(limit=50):
         
         images = []
         for resource in resources:
-            # Parse genus/species from public_id or context
-            context = resource.get('context', {})
-            custom = context.get('custom', {})
+            # Parse genus/species from public_id filename
+            # Format: UserSubmitted/genus_species_username_timestamp
+            public_id = resource.get('public_id', '')
+            genus = ''
+            species = ''
+            submitter = 'Unknown'
+            
+            # Extract filename from public_id (remove folder prefix)
+            filename = public_id.split('/')[-1] if '/' in public_id else public_id
+            parts = filename.split('_')
+            if len(parts) >= 4:
+                # genus_species_username_timestamp
+                genus = parts[0].capitalize()
+                species = parts[1]
+                # Username might have underscores, timestamp is last part
+                # Find the timestamp (format: YYYYMMDD_HHMMSS)
+                for i in range(len(parts) - 1, 1, -1):
+                    if len(parts[i]) == 6 and parts[i].isdigit():  # HHMMSS
+                        if i > 0 and len(parts[i-1]) == 8 and parts[i-1].isdigit():  # YYYYMMDD
+                            submitter = '_'.join(parts[2:i-1]) if i > 3 else parts[2]
+                            break
+                else:
+                    submitter = parts[2] if len(parts) > 2 else 'Unknown'
+            
+            # Format submitter name nicely
+            submitter = submitter.replace('_', ' ').title()
             
             img_data = {
-                'public_id': resource.get('public_id'),
+                'public_id': public_id,
                 'url': resource.get('secure_url'),
-                'thumbnail_url': cloudinary.CloudinaryImage(resource.get('public_id')).build_url(
+                'thumbnail_url': cloudinary.CloudinaryImage(public_id).build_url(
                     height=200, crop='limit', quality='auto'
                 ),
                 'format': resource.get('format'),
@@ -506,9 +529,9 @@ def get_pending_images(limit=50):
                 'height': resource.get('height'),
                 'tags': resource.get('tags', []),
                 'created_at': resource.get('created_at'),
-                'submitter': custom.get('submitter', 'Unknown'),
-                'genus': custom.get('genus', ''),
-                'species': custom.get('species', '')
+                'submitter': submitter,
+                'genus': genus,
+                'species': species
             }
             images.append(img_data)
         
@@ -562,11 +585,11 @@ def get_approved_images_for_species(genus, species, limit=50):
     try:
         genus_clean = genus.lower().strip()
         species_clean = species.lower().strip().replace(' ', '_')
-        species_tag = f"species:{genus_clean}_{species_clean}"
+        filename_pattern = f"{genus_clean}_{species_clean}_*"
         
         search = Search()
-        # Images that have the species tag but NOT the Pending tag
-        search.expression(f'tags="{species_tag}" AND -tags="Pending"')
+        # Images in UserSubmitted folder with matching filename, NOT pending
+        search.expression(f'folder:UserSubmitted AND filename:{genus_clean}_{species_clean}* AND tags="UserSubmitted" AND -tags="Pending"')
         search.sort_by('created_at', 'desc')
         search.max_results(limit)
         search.with_field('tags')
