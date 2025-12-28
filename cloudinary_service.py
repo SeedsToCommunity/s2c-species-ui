@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cloudinary
 import cloudinary.api
+import cloudinary.uploader
 from cloudinary.search import Search
 
 # Configure logging
