@@ -39,10 +39,16 @@
                 <i data-feather="check-circle" class="me-2"></i>
                 Review Pending Images
             </h1>
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                <i data-feather="arrow-left" class="me-1"></i>
-                Back to Species List
-            </a>
+            <div class="btn-group">
+                <a href="{{ url_for('admin_review') }}" class="btn btn-outline-primary">
+                    <i data-feather="refresh-cw" class="me-1"></i>
+                    Refresh
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Species List
+                </a>
+            </div>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
