@@ -1,6 +1,6 @@
 {
   "image_groups": {
-    "identification_lake_county_photos": {
+    "identification_photos": {
       "label": "Cloudinary Images - Identification",
       "description": "Cloudinary Images - Identification",
       "icon": "image",
@@ -8,7 +8,7 @@
       "default_screens": ["identification"],
       "display_style": "gallery"
     },
-    "species_photos": {
+    "collection_seeds": {
       "label": "Cloudinary Seed Images - Collection",
       "description": "Cloudinary Seed Images - Collection",
       "icon": "image",
@@ -16,7 +16,7 @@
       "default_screens": ["collection"],
       "display_style": "gallery"
     },
-    "species_photos": {
+    "planting_seeds": {
       "label": "Cloudinary Seed Images - Planting",
       "description": "Cloudinary Seed Images - Planting",
       "icon": "image",
@@ -24,7 +24,7 @@
       "default_screens": ["planting"],
       "display_style": "gallery"
     },
-    "species_photos": {
+    "planting_seedling": {
       "label": "Cloudinary Seedling Images - Planting",
       "description": "Cloudinary Seedling Images - Planting",
       "icon": "image",
