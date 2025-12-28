@@ -8,19 +8,35 @@
       "default_screens": ["identification"],
       "display_style": "gallery"
     },
-    "collection_seeds": {
-      "label": "Cloudinary Seed Images - Collection",
-      "description": "Cloudinary Seed Images - Collection",
+    "collection_seeds_mm": {
+      "label": "Cloudinary Seed Images (mm) - Collection",
+      "description": "Cloudinary Seed Images (mm) - Collection",
       "icon": "image",
-      "tags": ["seeds"],
+      "tags": ["Lake County", "seeds"],
       "default_screens": ["collection"],
       "display_style": "gallery"
     },
-    "planting_seeds": {
-      "label": "Cloudinary Seed Images - Planting",
-      "description": "Cloudinary Seed Images - Planting",
+    "collection_seeds_16thinch": {
+      "label": "Cloudinary Seed Images (1/16th inch) - Collection",
+      "description": "Cloudinary Seed Images (1/16th inch) - Collection",
       "icon": "image",
-      "tags": ["seeds"],
+      "tags": ["MissouriSeedlingGuide", "seeds"],
+      "default_screens": ["collection"],
+      "display_style": "gallery"
+    },
+    "planting_seeds_mm": {
+      "label": "Cloudinary Seed Images (mm) - Planting",
+      "description": "Cloudinary Seed Images (mm) - Planting",
+      "icon": "image",
+      "tags": ["Lake County","seeds"],
+      "default_screens": ["planting"],
+      "display_style": "gallery"
+    },
+    "planting_seeds_16thinch": {
+      "label": "Cloudinary Seed Images (1/16th inch) - Planting",
+      "description": "Cloudinary Seed Images (1/16th inch) - Planting",
+      "icon": "image",
+      "tags": ["MissouriSeedlingGuide", "seeds"],
       "default_screens": ["planting"],
       "display_style": "gallery"
     },
