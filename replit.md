@@ -71,6 +71,18 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Production security** - All administrative functions properly hidden when deployed
 - **Environment-specific behavior** - Different feature sets based on deployment context
 
+### Crowdsourced Contributions System ✅ (December 2025)
+- **Combined submission modal** - Single "Contribute" button opens modal for both photos and knowledge
+- **Multi-file image upload** - Users can select multiple images at once with shared tags (seeds/seedling)
+- **Knowledge text submissions** - Free-form text area for tips, methods, and community knowledge
+- **Category tagging** - Separate checkboxes for images (seeds, seedling) and text (identification, collection, storage, processing, stratification)
+- **Attribution and consent** - First/last name required, consent checkbox for free educational use
+- **Local pending storage** - Text submissions stored as JSON in `pending_metadata/` folder
+- **Cloudinary image storage** - Images uploaded to Cloudinary with "Pending" tag
+- **Admin review page** - Tabbed interface showing pending images and knowledge submissions separately
+- **Approve/reject workflow** - Admin can approve (move to `approved_metadata/`) or delete submissions
+- **Future LLM integration** - Approved metadata will feed into AI prompts for species-specific questions
+
 ## New Feature Requirements (Enhancement Phase)
 
 ### Data Enhancement
