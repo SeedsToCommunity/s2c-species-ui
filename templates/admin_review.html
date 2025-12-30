@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Pending Images - Admin</title>
+    <title>Review Pending Submissions - Admin</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <style>
-        .pending-image-container {
+        .pending-image-container, .pending-metadata-container {
             border: 3px solid #ffc107;
             border-radius: 8px;
             padding: 0.75rem;
@@ -49,6 +49,24 @@
                 padding: 0.5rem 0.75rem;
             }
         }
+        .metadata-text-content {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .nav-pills .nav-link {
+            position: relative;
+        }
+        .badge-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 <body>
@@ -56,7 +74,7 @@
         <div class="mb-3">
             <h1 class="text-primary fs-4 mb-2">
                 <i data-feather="check-circle" class="me-2"></i>
-                Review Pending Images
+                Review Pending Submissions
             </h1>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="{{ url_for('admin_review') }}" class="btn btn-sm btn-outline-primary">
@@ -81,103 +99,198 @@
             {% endif %}
         {% endwith %}
 
-        {% if pending_image %}
-            <div class="alert alert-warning py-2 mb-3">
-                <strong>{{ pending_count }}</strong> image(s) pending review
-            </div>
-
-            <div class="pending-image-container mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                    <span class="badge bg-warning text-dark">PENDING</span>
-                    <small class="text-muted">{{ pending_image.genus }} {{ pending_image.species }}</small>
-                </div>
-
-                <div class="text-center mb-3">
-                    <a href="{{ pending_image.url }}" target="_blank">
-                        <img src="{{ pending_image.url }}" alt="Pending image" class="img-fluid rounded pending-image">
-                    </a>
-                </div>
-
-                <div class="d-flex gap-2 mb-3">
-                    <form action="{{ url_for('admin_approve_image') }}" method="POST" class="action-btn">
-                        <input type="hidden" name="public_id" value="{{ pending_image.public_id }}">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i data-feather="check"></i>
-                            <span class="btn-text ms-1">Approve</span>
-                        </button>
-                    </form>
-                    <form action="{{ url_for('admin_delete_image') }}" method="POST" class="action-btn">
-                        <input type="hidden" name="public_id" value="{{ pending_image.public_id }}">
-                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Delete this image?')">
-                            <i data-feather="trash-2"></i>
-                            <span class="btn-text ms-1">Delete</span>
-                        </button>
-                    </form>
-                    <form action="{{ url_for('admin_skip_image') }}" method="POST" class="action-btn">
-                        <button type="submit" class="btn btn-secondary w-100">
-                            <i data-feather="skip-forward"></i>
-                            <span class="btn-text ms-1">Skip</span>
-                        </button>
-                    </form>
-                </div>
-
-                <table class="table table-sm metadata-table mb-0">
-                    <tbody>
-                        <tr>
-                            <td>By:</td>
-                            <td>{{ pending_image.submitter }}</td>
-                        </tr>
-                        <tr>
-                            <td>Date:</td>
-                            <td>{{ pending_image.created_at[:10] if pending_image.created_at else 'Unknown' }}</td>
-                        </tr>
-                        <tr>
-                            <td>Size:</td>
-                            <td>{{ pending_image.width }} x {{ pending_image.height }}</td>
-                        </tr>
-                        <tr>
-                            <td>Tags:</td>
-                            <td>
-                                {% for tag in pending_image.tags %}
-                                    <span class="badge bg-secondary me-1">{{ tag }}</span>
-                                {% endfor %}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="card">
-                <div class="card-header py-2">
-                    <h6 class="mb-0">
-                        <i data-feather="image" class="me-1" style="width: 16px; height: 16px;"></i>
-                        Existing {{ pending_image.genus }} {{ pending_image.species }} Images
-                    </h6>
-                </div>
-                <div class="card-body py-2">
-                    {% if approved_images %}
-                        <div class="approved-gallery d-flex flex-wrap gap-2">
-                            {% for img in approved_images %}
-                                <a href="{{ img.url }}" target="_blank">
-                                    <img src="{{ img.thumbnail_url }}" alt="Existing image" class="rounded">
-                                </a>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted mb-0 small">No existing images for this species.</p>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-pills mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ 'active' if pending_image else '' }} position-relative" id="images-tab" data-bs-toggle="pill" data-bs-target="#images-panel" type="button" role="tab">
+                    <i data-feather="image" class="me-1"></i>
+                    Images
+                    {% if pending_image_count > 0 %}
+                        <span class="badge bg-warning text-dark badge-count">{{ pending_image_count }}</span>
                     {% endif %}
-                </div>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ 'active' if not pending_image and pending_metadata else '' }} position-relative" id="metadata-tab" data-bs-toggle="pill" data-bs-target="#metadata-panel" type="button" role="tab">
+                    <i data-feather="book-open" class="me-1"></i>
+                    Knowledge
+                    {% if pending_metadata_count > 0 %}
+                        <span class="badge bg-warning text-dark badge-count">{{ pending_metadata_count }}</span>
+                    {% endif %}
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Images Panel -->
+            <div class="tab-pane fade {{ 'show active' if pending_image else '' }}" id="images-panel" role="tabpanel">
+                {% if pending_image %}
+                    <div class="alert alert-warning py-2 mb-3">
+                        <strong>{{ pending_image_count }}</strong> image(s) pending review
+                    </div>
+
+                    <div class="pending-image-container mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <span class="badge bg-warning text-dark">PENDING</span>
+                            <small class="text-muted">{{ pending_image.genus }} {{ pending_image.species }}</small>
+                        </div>
+
+                        <div class="text-center mb-3">
+                            <a href="{{ pending_image.url }}" target="_blank">
+                                <img src="{{ pending_image.url }}" alt="Pending image" class="img-fluid rounded pending-image">
+                            </a>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-3">
+                            <form action="{{ url_for('admin_approve_image') }}" method="POST" class="action-btn">
+                                <input type="hidden" name="public_id" value="{{ pending_image.public_id }}">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i data-feather="check"></i>
+                                    <span class="btn-text ms-1">Approve</span>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin_delete_image') }}" method="POST" class="action-btn">
+                                <input type="hidden" name="public_id" value="{{ pending_image.public_id }}">
+                                <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Delete this image?')">
+                                    <i data-feather="trash-2"></i>
+                                    <span class="btn-text ms-1">Delete</span>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin_skip_image') }}" method="POST" class="action-btn">
+                                <button type="submit" class="btn btn-secondary w-100">
+                                    <i data-feather="skip-forward"></i>
+                                    <span class="btn-text ms-1">Skip</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <table class="table table-sm metadata-table mb-0">
+                            <tbody>
+                                <tr>
+                                    <td>By:</td>
+                                    <td>{{ pending_image.submitter }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Date:</td>
+                                    <td>{{ pending_image.created_at[:10] if pending_image.created_at else 'Unknown' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Size:</td>
+                                    <td>{{ pending_image.width }} x {{ pending_image.height }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Tags:</td>
+                                    <td>
+                                        {% for tag in pending_image.tags %}
+                                            <span class="badge bg-secondary me-1">{{ tag }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0">
+                                <i data-feather="image" class="me-1" style="width: 16px; height: 16px;"></i>
+                                Existing {{ pending_image.genus }} {{ pending_image.species }} Images
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            {% if approved_images %}
+                                <div class="approved-gallery d-flex flex-wrap gap-2">
+                                    {% for img in approved_images %}
+                                        <a href="{{ img.url }}" target="_blank">
+                                            <img src="{{ img.thumbnail_url }}" alt="Existing image" class="rounded">
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted mb-0 small">No existing images for this species.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-success mb-3"></i>
+                            <h5 class="text-success">All Caught Up!</h5>
+                            <p class="text-muted mb-0">No pending images to review.</p>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
 
-        {% else %}
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-success mb-3"></i>
-                    <h5 class="text-success">All Caught Up!</h5>
-                    <p class="text-muted mb-0">No pending images to review.</p>
-                </div>
+            <!-- Metadata Panel -->
+            <div class="tab-pane fade {{ 'show active' if not pending_image and pending_metadata else '' }}" id="metadata-panel" role="tabpanel">
+                {% if pending_metadata %}
+                    <div class="alert alert-warning py-2 mb-3">
+                        <strong>{{ pending_metadata_count }}</strong> knowledge submission(s) pending review
+                    </div>
+
+                    <div class="pending-metadata-container mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <span class="badge bg-warning text-dark">PENDING</span>
+                            <small class="text-muted fst-italic">{{ pending_metadata.botanical_name }}</small>
+                        </div>
+
+                        <div class="metadata-text-content mb-3">{{ pending_metadata.text }}</div>
+
+                        <div class="d-flex gap-2 mb-3">
+                            <form action="{{ url_for('admin_approve_metadata') }}" method="POST" class="action-btn">
+                                <input type="hidden" name="filename" value="{{ pending_metadata.filename }}">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i data-feather="check"></i>
+                                    <span class="btn-text ms-1">Approve</span>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin_delete_metadata') }}" method="POST" class="action-btn">
+                                <input type="hidden" name="filename" value="{{ pending_metadata.filename }}">
+                                <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Delete this submission?')">
+                                    <i data-feather="trash-2"></i>
+                                    <span class="btn-text ms-1">Delete</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <table class="table table-sm metadata-table mb-0">
+                            <tbody>
+                                <tr>
+                                    <td>By:</td>
+                                    <td>{{ pending_metadata.submitter_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Date:</td>
+                                    <td>{{ pending_metadata.submitted_at[:10] if pending_metadata.submitted_at else 'Unknown' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Categories:</td>
+                                    <td>
+                                        {% for cat in pending_metadata.categories %}
+                                            <span class="badge bg-info me-1">{{ cat }}</span>
+                                        {% else %}
+                                            <span class="text-muted">None specified</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i data-feather="check-circle" style="width: 48px; height: 48px;" class="text-success mb-3"></i>
+                            <h5 class="text-success">All Caught Up!</h5>
+                            <p class="text-muted mb-0">No pending knowledge submissions to review.</p>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -2908,6 +2908,202 @@ def submit_image(botanical_name):
         flash('Error uploading image. Please try again.', 'error')
         return redirect(url_for('species_detail', botanical_name=botanical_name))
 
+# Directory for pending metadata submissions
+PENDING_METADATA_DIR = 'pending_metadata'
+
+def save_pending_metadata(botanical_name, text, categories, submitter_name):
+    """Save a metadata submission as JSON file pending review"""
+    import json
+    import uuid
+    import re
+    
+    # Ensure directory exists
+    os.makedirs(PENDING_METADATA_DIR, exist_ok=True)
+    
+    # Parse genus/species
+    parts = botanical_name.split()
+    genus = parts[0].lower() if len(parts) > 0 else 'unknown'
+    species_name = parts[1].lower() if len(parts) > 1 else 'unknown'
+    
+    # Generate unique ID
+    unique_id = str(uuid.uuid4())[:8]
+    
+    # Sanitize submitter name for filename (remove non-alphanumeric except underscores)
+    safe_name = re.sub(r'[^a-zA-Z0-9_]', '', submitter_name.replace(' ', '_').lower())
+    if not safe_name:
+        safe_name = 'anonymous'
+    
+    # Create filename with UUID to prevent collisions
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"{genus}_{species_name}_{safe_name}_{timestamp}_{unique_id}.json"
+    filepath = os.path.join(PENDING_METADATA_DIR, filename)
+    
+    # Build data structure
+    data = {
+        'id': unique_id,
+        'botanical_name': botanical_name,
+        'genus': genus,
+        'species': species_name,
+        'text': text,
+        'categories': categories,
+        'submitter_name': submitter_name,
+        'submitted_at': datetime.now().isoformat(),
+        'status': 'pending'
+    }
+    
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    return filepath
+
+def get_pending_metadata():
+    """Get all pending metadata submissions"""
+    import json
+    
+    submissions = []
+    if not os.path.exists(PENDING_METADATA_DIR):
+        return submissions
+    
+    for filename in os.listdir(PENDING_METADATA_DIR):
+        if filename.endswith('.json'):
+            filepath = os.path.join(PENDING_METADATA_DIR, filename)
+            try:
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                    data['filename'] = filename
+                    submissions.append(data)
+            except Exception as e:
+                app.logger.error(f"Error reading metadata file {filename}: {e}")
+    
+    # Sort by submission time, newest first
+    submissions.sort(key=lambda x: x.get('submitted_at', ''), reverse=True)
+    return submissions
+
+@app.route('/submit-contribution/<path:botanical_name>', methods=['POST'])
+def submit_contribution(botanical_name):
+    """Handle combined image and metadata submission"""
+    try:
+        # Validate required fields first
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        consent = request.form.get('consent')
+        
+        if not first_name or not last_name:
+            flash('Please provide your first and last name', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        if not consent:
+            flash('You must agree to share your contribution freely', 'error')
+            return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+        submitter_name = f"{first_name} {last_name}"
+        username = f"{first_name}_{last_name}"
+        
+        # Parse genus/species
+        parts = botanical_name.split()
+        genus = parts[0] if len(parts) > 0 else 'unknown'
+        species = parts[1] if len(parts) > 1 else 'unknown'
+        
+        # Track what was submitted
+        image_count = 0
+        image_errors = 0
+        metadata_saved = False
+        
+        # Handle image uploads
+        files = request.files.getlist('images')
+        has_images = files and any(f.filename != '' for f in files)
+        
+        if has_images and CLOUDINARY_AVAILABLE:
+            # Build image tags
+            image_tags = []
+            if request.form.get('tag_seeds'):
+                image_tags.append('seeds')
+            if request.form.get('tag_seedling'):
+                image_tags.append('seedling')
+            
+            for file in files:
+                if file.filename == '':
+                    continue
+                
+                if not allowed_file(file.filename):
+                    image_errors += 1
+                    continue
+                
+                file.seek(0, 2)
+                size = file.tell()
+                file.seek(0)
+                if size > MAX_UPLOAD_SIZE:
+                    image_errors += 1
+                    continue
+                
+                result = cloudinary_service.upload_user_image(
+                    file_data=file,
+                    genus=genus,
+                    species=species,
+                    username=username,
+                    tags=image_tags
+                )
+                
+                if result.get('success'):
+                    image_count += 1
+                    app.logger.info(f"User image uploaded: {result.get('public_id')} by {username}")
+                else:
+                    image_errors += 1
+        
+        # Handle metadata/text submission
+        metadata_text = request.form.get('metadata_text', '').strip()
+        metadata_error = False
+        if metadata_text:
+            # Build categories list
+            categories = []
+            if request.form.get('cat_identification'):
+                categories.append('identification')
+            if request.form.get('cat_collection'):
+                categories.append('collection')
+            if request.form.get('cat_storage'):
+                categories.append('storage')
+            if request.form.get('cat_processing'):
+                categories.append('processing')
+            if request.form.get('cat_stratification'):
+                categories.append('stratification')
+            
+            try:
+                save_pending_metadata(botanical_name, metadata_text, categories, submitter_name)
+                metadata_saved = True
+                app.logger.info(f"Metadata submitted for {botanical_name} by {submitter_name}")
+            except Exception as e:
+                metadata_error = True
+                app.logger.error(f"Error saving metadata: {e}")
+        
+        # Build response message
+        messages = []
+        if image_count > 0:
+            messages.append(f"{image_count} photo(s)")
+        if metadata_saved:
+            messages.append("your knowledge contribution")
+        
+        if messages:
+            flash(f"Thank you! Submitted {' and '.join(messages)} for review.", 'success')
+        
+        # Report any errors
+        if image_errors > 0 and image_count == 0:
+            flash('Image uploads failed. Please check file types and sizes.', 'error')
+        elif image_errors > 0:
+            flash(f'{image_errors} image(s) failed to upload.', 'warning')
+        
+        if metadata_error:
+            flash('Failed to save your knowledge submission. Please try again.', 'error')
+        
+        if not messages and not image_errors and not metadata_error:
+            flash('No content was submitted.', 'warning')
+        
+        return redirect(url_for('species_detail', botanical_name=botanical_name))
+        
+    except Exception as e:
+        app.logger.error(f"Error in contribution submission: {str(e)}")
+        flash('Error submitting contribution. Please try again.', 'error')
+        return redirect(url_for('species_detail', botanical_name=botanical_name))
+
 def check_admin_auth():
     """Check if request has valid admin credentials.
     
@@ -2941,50 +3137,53 @@ def require_admin_auth(f):
 @app.route('/admin/review')
 @require_admin_auth
 def admin_review():
-    """Admin page for reviewing pending image submissions"""
+    """Admin page for reviewing pending image and metadata submissions"""
     try:
-        if not CLOUDINARY_AVAILABLE:
-            flash('Cloudinary not available', 'error')
-            return render_template('admin_review.html', pending_image=None, approved_images=[])
-        
-        # Get list of recently processed images to exclude (session-based)
-        # This handles the delay in Cloudinary's search index updates
-        processed_ids = session.get('processed_image_ids', [])
-        
-        # Get pending images
-        pending_images = cloudinary_service.get_pending_images()
-        
-        # Filter out recently processed images
-        pending_images = [img for img in pending_images if img['public_id'] not in processed_ids]
-        
-        if not pending_images:
-            # Clear the processed list when queue is empty
-            session.pop('processed_image_ids', None)
-            return render_template('admin_review.html', 
-                                 pending_image=None, 
-                                 approved_images=[],
-                                 pending_count=0)
-        
-        # Show the first pending image (excluding skipped ones)
-        skip_index = session.get('skip_index', 0)
-        if skip_index >= len(pending_images):
-            skip_index = 0
-            session['skip_index'] = 0
-        
-        pending_image = pending_images[skip_index]
-        
-        # Get approved images for the same species
+        pending_image = None
         approved_images = []
-        if pending_image.get('genus') and pending_image.get('species'):
-            approved_images = cloudinary_service.get_approved_images_for_species(
-                pending_image['genus'],
-                pending_image['species']
-            )
+        pending_image_count = 0
+        
+        if CLOUDINARY_AVAILABLE:
+            # Get list of recently processed images to exclude (session-based)
+            processed_ids = session.get('processed_image_ids', [])
+            
+            # Get pending images
+            pending_images = cloudinary_service.get_pending_images()
+            
+            # Filter out recently processed images
+            pending_images = [img for img in pending_images if img['public_id'] not in processed_ids]
+            pending_image_count = len(pending_images)
+            
+            if pending_images:
+                # Show the first pending image (excluding skipped ones)
+                skip_index = session.get('skip_index', 0)
+                if skip_index >= len(pending_images):
+                    skip_index = 0
+                    session['skip_index'] = 0
+                
+                pending_image = pending_images[skip_index]
+                
+                # Get approved images for the same species
+                if pending_image.get('genus') and pending_image.get('species'):
+                    approved_images = cloudinary_service.get_approved_images_for_species(
+                        pending_image['genus'],
+                        pending_image['species']
+                    )
+            else:
+                # Clear the processed list when queue is empty
+                session.pop('processed_image_ids', None)
+        
+        # Get pending metadata submissions
+        pending_metadata = get_pending_metadata()
+        pending_metadata_count = len(pending_metadata)
+        current_metadata = pending_metadata[0] if pending_metadata else None
         
         return render_template('admin_review.html',
                              pending_image=pending_image,
                              approved_images=approved_images,
-                             pending_count=len(pending_images))
+                             pending_image_count=pending_image_count,
+                             pending_metadata=current_metadata,
+                             pending_metadata_count=pending_metadata_count)
         
     except Exception as e:
         app.logger.error(f"Error loading admin review: {str(e)}")
@@ -3060,6 +3259,80 @@ def admin_skip_image():
     session['skip_index'] = skip_index + 1
     flash('Skipped to next image', 'info')
     return redirect(url_for('admin_review'))
+
+# Directory for approved metadata
+APPROVED_METADATA_DIR = 'approved_metadata'
+
+@app.route('/admin/review/approve-metadata', methods=['POST'])
+@require_admin_auth
+def admin_approve_metadata():
+    """Approve a pending metadata submission (move to approved folder)"""
+    import json
+    import shutil
+    
+    try:
+        filename = request.form.get('filename')
+        if not filename:
+            flash('No submission specified', 'error')
+            return redirect(url_for('admin_review'))
+        
+        source_path = os.path.join(PENDING_METADATA_DIR, filename)
+        if not os.path.exists(source_path):
+            flash('Submission not found', 'error')
+            return redirect(url_for('admin_review'))
+        
+        # Create approved directory if needed
+        os.makedirs(APPROVED_METADATA_DIR, exist_ok=True)
+        
+        # Read and update the status
+        with open(source_path, 'r') as f:
+            data = json.load(f)
+        
+        data['status'] = 'approved'
+        data['approved_at'] = datetime.now().isoformat()
+        
+        # Save to approved folder
+        dest_path = os.path.join(APPROVED_METADATA_DIR, filename)
+        with open(dest_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        # Remove from pending
+        os.remove(source_path)
+        
+        flash('Knowledge submission approved', 'success')
+        app.logger.info(f"Metadata approved: {filename}")
+        
+        return redirect(url_for('admin_review'))
+        
+    except Exception as e:
+        app.logger.error(f"Error approving metadata: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('admin_review'))
+
+@app.route('/admin/review/delete-metadata', methods=['POST'])
+@require_admin_auth
+def admin_delete_metadata():
+    """Delete a pending metadata submission"""
+    try:
+        filename = request.form.get('filename')
+        if not filename:
+            flash('No submission specified', 'error')
+            return redirect(url_for('admin_review'))
+        
+        filepath = os.path.join(PENDING_METADATA_DIR, filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            flash('Submission deleted', 'success')
+            app.logger.info(f"Metadata deleted: {filename}")
+        else:
+            flash('Submission not found', 'error')
+        
+        return redirect(url_for('admin_review'))
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting metadata: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('admin_review'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

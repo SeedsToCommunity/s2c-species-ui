@@ -432,17 +432,15 @@
             {% endif %}
         </div>
 
-        <!-- Submit Photo Button (only on identification screen) -->
-        {% if current_screen == 'identification' %}
+        <!-- Contribute Button (all screens) -->
         <div class="row mt-3">
             <div class="col-12">
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitPhotoModal">
-                    <i data-feather="camera" class="me-1"></i>
-                    Submit Your Photo
+                    <i data-feather="edit-3" class="me-1"></i>
+                    Contribute
                 </button>
             </div>
         </div>
-        {% endif %}
 
         <!-- Footer -->
         <footer class="mt-5 pt-4 border-top">
@@ -469,35 +467,98 @@
         </footer>
     </div>
     
-    <!-- Submit Photo Modal -->
+    <!-- Submit Contribution Modal -->
     <div class="modal fade" id="submitPhotoModal" tabindex="-1" aria-labelledby="submitPhotoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ url_for('submit_image', botanical_name=botanical_name) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ url_for('submit_contribution', botanical_name=botanical_name) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateContributionForm()">
                     <div class="modal-header">
                         <h5 class="modal-title" id="submitPhotoModalLabel">
-                            <i data-feather="camera" class="me-2"></i>
-                            Submit a Photo of {{ species.common_name }}
+                            <i data-feather="edit-3" class="me-2"></i>
+                            Contribute to {{ species.common_name }}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <p class="text-muted mb-4">
-                            Share your photo of <strong class="fst-italic">{{ botanical_name }}</strong>. 
-                            Submitted images will be reviewed before appearing on the site.
+                            Share your photos or knowledge about <strong class="fst-italic">{{ botanical_name }}</strong>. 
+                            All submissions will be reviewed before being used.
                         </p>
                         
-                        <div class="mb-3">
-                            <label for="imageFile" class="form-label">Select Images <span class="text-danger">*</span></label>
-                            <input type="file" class="form-control" id="imageFile" name="images" accept="image/png,image/jpeg,image/gif,image/webp" required multiple onchange="previewImages(this)">
-                            <div class="form-text">PNG, JPG, GIF, or WebP. Maximum 10MB each. You can select multiple images.</div>
+                        <!-- Images Section -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-transparent">
+                                <i data-feather="camera" class="me-2"></i>Photos (optional)
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" id="imageFile" name="images" accept="image/png,image/jpeg,image/gif,image/webp" multiple onchange="previewImages(this)">
+                                    <div class="form-text">PNG, JPG, GIF, or WebP. Maximum 10MB each.</div>
+                                </div>
+                                
+                                <div id="imagePreviewContainer" class="mb-3 d-none">
+                                    <div id="imagePreviews" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+                                    <div class="text-center mt-2 text-muted small"><span id="imageCount">0</span> image(s) selected</div>
+                                </div>
+                                
+                                <div id="imageTagsSection" class="d-none">
+                                    <label class="form-label small">Image tags:</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="tagSeeds" name="tag_seeds">
+                                            <label class="form-check-label" for="tagSeeds">Seeds</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="tagSeedling" name="tag_seedling">
+                                            <label class="form-check-label" for="tagSeedling">Seedling</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div id="imagePreviewContainer" class="mb-3 d-none">
-                            <div id="imagePreviews" class="d-flex flex-wrap gap-2 justify-content-center"></div>
-                            <div class="text-center mt-2 text-muted small"><span id="imageCount">0</span> image(s) selected</div>
+                        <!-- Knowledge Section -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-transparent">
+                                <i data-feather="book-open" class="me-2"></i>Knowledge & Tips (optional)
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <textarea class="form-control" id="metadataText" name="metadata_text" rows="4" placeholder="Share your experience, tips, or knowledge about this species..."></textarea>
+                                    <div class="form-text">Describe collection methods, identification tips, processing techniques, or other useful information.</div>
+                                </div>
+                                
+                                <div id="metadataCategoriesSection">
+                                    <label class="form-label small">This information relates to:</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="catIdentification" name="cat_identification">
+                                            <label class="form-check-label" for="catIdentification">Identification</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="catCollection" name="cat_collection">
+                                            <label class="form-check-label" for="catCollection">Collection</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="catStorage" name="cat_storage">
+                                            <label class="form-check-label" for="catStorage">Storage</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="catProcessing" name="cat_processing">
+                                            <label class="form-check-label" for="catProcessing">Processing</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="catStratification" name="cat_stratification">
+                                            <label class="form-check-label" for="catStratification">Stratification</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
+                        <hr>
+                        
+                        <!-- Attribution -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="firstName" class="form-label">First Name <span class="text-danger">*</span></label>
@@ -513,29 +574,17 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="consent" name="consent" required>
                                 <label class="form-check-label" for="consent">
-                                    <span class="text-danger">*</span> I agree to share this image freely for educational and non-commercial use without restrictions.
+                                    <span class="text-danger">*</span> I agree to share this contribution freely for educational and non-commercial use without restrictions.
                                 </label>
                             </div>
-                            <div class="form-text">Your image may be used in this plant database and associated educational materials.</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Image contains (optional):</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="tagSeeds" name="tag_seeds">
-                                <label class="form-check-label" for="tagSeeds">Seeds</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="tagSeedling" name="tag_seedling">
-                                <label class="form-check-label" for="tagSeedling">Seedling</label>
-                            </div>
+                            <div class="form-text">Your contribution may be used in this plant database and associated educational materials.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i data-feather="upload" class="me-1"></i>
-                            Submit Photos
+                            Submit Contribution
                         </button>
                     </div>
                 </form>
@@ -548,12 +597,14 @@
             const container = document.getElementById('imagePreviewContainer');
             const previewsDiv = document.getElementById('imagePreviews');
             const countSpan = document.getElementById('imageCount');
+            const tagsSection = document.getElementById('imageTagsSection');
             
             previewsDiv.innerHTML = '';
             
             if (input.files && input.files.length > 0) {
                 countSpan.textContent = input.files.length;
                 container.classList.remove('d-none');
+                tagsSection.classList.remove('d-none');
                 
                 Array.from(input.files).forEach((file, index) => {
                     const reader = new FileReader();
@@ -571,7 +622,19 @@
                 });
             } else {
                 container.classList.add('d-none');
+                tagsSection.classList.add('d-none');
             }
+        }
+        
+        function validateContributionForm() {
+            const hasImages = document.getElementById('imageFile').files.length > 0;
+            const hasText = document.getElementById('metadataText').value.trim().length > 0;
+            
+            if (!hasImages && !hasText) {
+                alert('Please provide at least one photo or some knowledge to share.');
+                return false;
+            }
+            return true;
         }
     </script>
 
