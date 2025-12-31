@@ -95,6 +95,10 @@ def parse_json_urls_filter(value):
             'tiered_content' for tier1/tier2/tier3 format, 'text' for plain text
     - data: the parsed data or original value
     """
+    # Log at start to confirm filter is called
+    val_preview = str(value)[:80] if value else 'EMPTY'
+    logging.info(f"FILTER_CALLED: value starts with: {val_preview}")
+    
     if not value:
         return {'type': 'text', 'data': value}
     
