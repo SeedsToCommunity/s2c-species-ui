@@ -1312,13 +1312,13 @@
                             if (hasRealValue) {
                                 // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
                                 tieredHtml += `<span class="tier-value">${escapeHtml(String(tier.value))}</span>`;
-                                tieredHtml += `<span class="tier-icon ms-1" style="font-size:10px;color:#28a745;cursor:pointer;" 
-                                    data-bs-toggle="tooltip" data-bs-trigger="click hover focus" data-bs-placement="top" 
+                                tieredHtml += `<span class="tier-icon ms-1" style="font-size:10px;font-weight:bold;color:#6cbf6c;cursor:pointer;" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                             } else if (tier) {
                                 // No real value - show empty tier icon inline (will appear before next value)
-                                tieredHtml += `<span class="tier-icon-empty" style="font-size:9px;color:#28a745;opacity:0.5;cursor:pointer;" 
-                                    data-bs-toggle="tooltip" data-bs-trigger="click hover focus" data-bs-placement="top" 
+                                tieredHtml += `<span class="tier-icon-empty" style="font-size:9px;font-weight:bold;color:#6cbf6c;opacity:0.5;cursor:pointer;" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                             }
                         }
