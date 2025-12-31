@@ -17,6 +17,16 @@
       "field": "similar_species_json",
       "label": "Similar Species JSON",
       "width": "auto"
+    },
+    {
+      "field": "collection_miss_risk",
+      "label": "Collection Miss Risk",
+      "width": "auto"
+    },
+    {
+      "field": "seed_color_at_maturity",
+      "label": "Seed Color at Maturity",
+      "width": "auto"
     }
   ]
 }

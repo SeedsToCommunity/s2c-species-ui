@@ -92,10 +92,33 @@ def parse_json_urls_filter(value):
     Returns a dict with 'type' and 'data' keys:
     - type: 'url_dict' for {name: url} dicts, 'url_list' for [url] lists, 
             'image' for single image URLs, 'image_dict' for {name: image_url} dicts,
-            'text' for plain text
+            'tiered_content' for tier1/tier2/tier3 format, 'text' for plain text
     - data: the parsed data or original value
     """
-    if not value or not isinstance(value, str):
+    if not value:
+        return {'type': 'text', 'data': value}
+    
+    # Handle case where value is already a dict (from pandas parsing)
+    if isinstance(value, dict):
+        # Check for tiered content format first
+        if is_tiered_data(value):
+            logging.info(f"TIERED_DATA: Detected tiered content format (from dict)")
+            return {'type': 'tiered_content', 'data': value}
+        # Check for similar_species
+        if value.get('topic') == 'similar_species' and 'similar_species' in value:
+            return {'type': 'similar_species', 'data': value}
+        # Check if values are image URLs
+        image_count = sum(1 for v in value.values() if is_image_url(v))
+        url_count = sum(1 for v in value.values() if isinstance(v, str) and str(v).startswith('http'))
+        if image_count > 0 and image_count >= len(value) * 0.5:
+            return {'type': 'image_dict', 'data': value}
+        if url_count > 0 and url_count >= len(value) * 0.5:
+            return {'type': 'url_dict', 'data': value}
+        if is_chart_data(value):
+            return {'type': 'chart', 'data': value}
+        return {'type': 'json_dict', 'data': value}
+    
+    if not isinstance(value, str):
         return {'type': 'text', 'data': value}
     
     value = value.strip()
@@ -122,8 +145,12 @@ def parse_json_urls_filter(value):
         if isinstance(parsed, dict):
             # Check for tiered content format (tier1/tier2/tier3 with value and attribution)
             if is_tiered_data(parsed):
-                logging.info(f"TIERED_DATA: Detected tiered content format")
+                logging.info(f"TIERED_DATA: Detected tiered content format from JSON string")
                 return {'type': 'tiered_content', 'data': parsed}
+            
+            # Log when we have tier keys but they don't pass validation
+            if any(key in parsed for key in ['tier1', 'tier2', 'tier3']):
+                logging.warning(f"TIERED_DATA: Found tier keys but is_tiered_data returned False. Keys: {list(parsed.keys())}")
             
             # Check for topic-based structured content (e.g., similar_species)
             topic = parsed.get('topic')
