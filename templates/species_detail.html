@@ -811,6 +811,14 @@
             });
         });
         
+        // Initialize Bootstrap tooltips on page load (mobile-friendly tier icons)
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl, {
+                container: 'body'
+            });
+        });
+        
         // Store active chart instances for cleanup
         const activeCharts = {};
         
@@ -933,6 +941,14 @@
                     new bootstrap.Popover(popoverTriggerEl, {
                         container: 'body',
                         html: true
+                    });
+                });
+                
+                // Re-initialize Bootstrap tooltips for tier icons (mobile-friendly)
+                var newTooltipList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                newTooltipList.forEach(function (tooltipTriggerEl) {
+                    new bootstrap.Tooltip(tooltipTriggerEl, {
+                        container: 'body'
                     });
                 });
                 
@@ -1281,12 +1297,10 @@
                         const tieredData = parsed.data;
                         let tieredHtml = '';
                         const tierNames = ['tier1', 'tier2', 'tier3'];
-                        const tierColors = { tier1: '#28a745', tier2: '#007bff', tier3: '#ffc107' };
                         const tierLabels = { tier1: 't1', tier2: 't2', tier3: 't3' };
                         
                         for (const tierName of tierNames) {
                             const tier = tieredData[tierName];
-                            const tierColor = tierColors[tierName];
                             const tierLabel = tierLabels[tierName];
                             const attrText = tier && tier.attribution ? escapeHtml(tier.attribution) : 'No data';
                             
@@ -1296,12 +1310,16 @@
                                                  String(tier.value).toLowerCase() !== 'unknown';
                             
                             if (hasRealValue) {
-                                // Show value with tier icon inline after it
+                                // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
                                 tieredHtml += `<span class="tier-value">${escapeHtml(String(tier.value))}</span>`;
-                                tieredHtml += `<span class="tier-icon ms-1" style="font-size:10px;font-weight:bold;color:${tierColor};cursor:help;" title="${attrText}">${tierLabel}</span> `;
+                                tieredHtml += `<span class="tier-icon ms-1" style="font-size:10px;color:#28a745;cursor:pointer;" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click hover focus" data-bs-placement="top" 
+                                    data-bs-title="${attrText}">${tierLabel}</span> `;
                             } else if (tier) {
                                 // No real value - show empty tier icon inline (will appear before next value)
-                                tieredHtml += `<span class="tier-icon-empty" style="font-size:9px;color:${tierColor};opacity:0.5;cursor:help;" title="${attrText}">${tierLabel}</span> `;
+                                tieredHtml += `<span class="tier-icon-empty" style="font-size:9px;color:#28a745;opacity:0.5;cursor:pointer;" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click hover focus" data-bs-placement="top" 
+                                    data-bs-title="${attrText}">${tierLabel}</span> `;
                             }
                         }
                         
