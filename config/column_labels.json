@@ -51,5 +51,7 @@
   "similar_species_json": "Similar Species JSON",
   "lake_county_images": "Lake County Images",
   "native-miflora": "Native-MIFlora",
-  "michigan_flora_description": "Michigan Flora Description"
+  "michigan_flora_description": "Michigan Flora Description",
+  "seed_color_at_maturity": "Seed Color at Maturity",
+  "collection_miss_risk": "Collection Miss Risk"
 }

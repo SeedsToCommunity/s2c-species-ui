@@ -113,6 +113,53 @@
             max-width: 100%;
             object-fit: contain;
         }
+        
+        /* Tiered content styling */
+        .tier-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.1rem 0.25rem;
+            border-radius: 3px;
+            cursor: help;
+            vertical-align: middle;
+            margin: 0 1px;
+            line-height: 1;
+        }
+        .tier-icon-t1 {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #5cb377;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+        .tier-icon-t2 {
+            background-color: rgba(23, 162, 184, 0.2);
+            color: #6cb4ee;
+            border: 1px solid rgba(23, 162, 184, 0.4);
+        }
+        .tier-icon-t3 {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.4);
+        }
+        .tier-content-row {
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+        .tier-content-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .tier-content-text {
+            display: inline;
+        }
+        .tier-icons-group {
+            display: inline;
+            white-space: nowrap;
+        }
 
     </style>
 </head>
@@ -130,6 +177,103 @@
             <span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="{{ ns.content|e }}">ⓘ</span>
         {%- endif -%}
     {% endmacro %}
+    
+    {# Macro to render a tier icon with tooltip #}
+    {% macro tier_icon(tier_num, attribution) %}
+        <span class="tier-icon tier-icon-t{{ tier_num }}" 
+              data-bs-toggle="popover" 
+              data-bs-trigger="hover focus" 
+              data-bs-html="true" 
+              data-bs-placement="top" 
+              data-bs-title="Tier {{ tier_num }} Source"
+              data-bs-content="{{ attribution|e }}">t{{ tier_num }}</span>
+    {%- endmacro %}
+    
+    {# Macro to render tiered content #}
+    {% macro render_tiered_content(data) %}
+        {# Build content rows based on which tiers have values #}
+        {%- set t1 = data.get('tier1', {}) -%}
+        {%- set t2 = data.get('tier2', {}) -%}
+        {%- set t3 = data.get('tier3', {}) -%}
+        {%- set t1_val = t1.get('value', '')|trim -%}
+        {%- set t2_val = t2.get('value', '')|trim -%}
+        {%- set t3_val = t3.get('value', '')|trim -%}
+        {%- set t1_attr = t1.get('attribution', '') -%}
+        {%- set t2_attr = t2.get('attribution', '') -%}
+        {%- set t3_attr = t3.get('attribution', '') -%}
+        
+        <div class="tiered-content">
+            {# Case: All tiers empty - just show icons #}
+            {%- if not t1_val and not t2_val and not t3_val -%}
+                <div class="tier-icons-group">
+                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}
+                </div>
+            {# Case: Only T1 has value #}
+            {%- elif t1_val and not t2_val and not t3_val -%}
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 has value, T2 empty, T3 has value #}
+            {%- elif t1_val and not t2_val and t3_val -%}
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}</span>
+                </div>
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 has value, T2 has value, T3 empty #}
+            {%- elif t1_val and t2_val and not t3_val -%}
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
+                </div>
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: All three have values #}
+            {%- elif t1_val and t2_val and t3_val -%}
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
+                </div>
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
+                </div>
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 empty, T2 has value #}
+            {%- elif not t1_val and t2_val and not t3_val -%}
+                <div class="tier-content-row">
+                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 empty, T2 has value, T3 has value #}
+            {%- elif not t1_val and t2_val and t3_val -%}
+                <div class="tier-content-row">
+                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
+                </div>
+                <div class="tier-content-row">
+                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 empty, T2 empty, T3 has value #}
+            {%- elif not t1_val and not t2_val and t3_val -%}
+                <div class="tier-content-row">
+                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}<span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
+                </div>
+            {# Case: T1 has value, T2 empty, T3 empty - already covered above #}
+            {%- endif -%}
+        </div>
+    {%- endmacro %}
     
     <div class="container mt-3">
         <!-- Header with Species Name -->
@@ -299,6 +443,14 @@
                                                     data-labels='{{ parsed.data.keys()|list|tojson|e }}'
                                                     data-values='{{ parsed.data.values()|list|tojson|e }}'
                                                     data-label="{{ column.label }}"></canvas>
+                                        </div>
+                                    </div>
+                                {% elif parsed.type == 'tiered_content' %}
+                                    <!-- Tiered content (tier1/tier2/tier3 with attributions) -->
+                                    <div>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <div class="text-body-secondary">
+                                            {{ render_tiered_content(parsed.data) }}
                                         </div>
                                     </div>
                                 {% elif parsed.type == 'similar_species' %}

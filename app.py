@@ -63,6 +63,27 @@ def is_chart_data(data):
     numeric_count = sum(1 for v in data.values() if isinstance(v, (int, float)))
     return numeric_count >= len(data) * 0.8  # At least 80% numeric values
 
+def is_tiered_data(data):
+    """Check if data is tiered content format (tier1/tier2/tier3 with value and attribution)"""
+    if not isinstance(data, dict):
+        return False
+    # Must have at least one tier (tier1, tier2, or tier3)
+    has_tiers = any(key in data for key in ['tier1', 'tier2', 'tier3'])
+    if not has_tiers:
+        return False
+    # Check that all present tiers have proper structure (value and attribution)
+    tier_count = 0
+    for tier_key in ['tier1', 'tier2', 'tier3']:
+        if tier_key in data:
+            tier = data[tier_key]
+            if not isinstance(tier, dict):
+                return False
+            if 'value' not in tier or 'attribution' not in tier:
+                return False
+            tier_count += 1
+    # Need at least one properly structured tier
+    return tier_count > 0
+
 # Custom Jinja filter to parse JSON and detect URL dictionaries
 @app.template_filter('parse_json_urls')
 def parse_json_urls_filter(value):
@@ -99,6 +120,11 @@ def parse_json_urls_filter(value):
         
         # Check if it's a dict with URL values
         if isinstance(parsed, dict):
+            # Check for tiered content format (tier1/tier2/tier3 with value and attribution)
+            if is_tiered_data(parsed):
+                logging.info(f"TIERED_DATA: Detected tiered content format")
+                return {'type': 'tiered_content', 'data': parsed}
+            
             # Check for topic-based structured content (e.g., similar_species)
             topic = parsed.get('topic')
             has_similar_species_key = 'similar_species' in parsed
