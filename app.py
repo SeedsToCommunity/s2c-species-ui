@@ -140,6 +140,8 @@ def parse_json_urls_filter(value):
     
     try:
         parsed = json.loads(value)
+        if isinstance(parsed, dict):
+            logging.info(f"PARSE_JSON: Parsed JSON with keys: {list(parsed.keys())[:6]}")
         
         # Check if it's a dict with URL values
         if isinstance(parsed, dict):
