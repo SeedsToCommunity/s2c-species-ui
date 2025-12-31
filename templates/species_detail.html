@@ -993,6 +993,24 @@
             return HTML_TAG_PATTERN.test(text);
         }
         
+        // Helper function to check for tiered content format
+        function isTieredData(parsed) {
+            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+                return false;
+            }
+            const tierKeys = ['tier1', 'tier2', 'tier3'];
+            let tierCount = 0;
+            for (const key of tierKeys) {
+                if (parsed[key] && typeof parsed[key] === 'object') {
+                    const tierObj = parsed[key];
+                    if ('value' in tierObj && 'attribution' in tierObj) {
+                        tierCount++;
+                    }
+                }
+            }
+            return tierCount > 0;
+        }
+        
         // Helper function to parse JSON URLs
         function parseJsonUrls(value) {
             if (!value || typeof value !== 'string') {
@@ -1021,6 +1039,12 @@
             try {
                 const parsed = JSON.parse(trimmed);
                 if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    // Check for tiered content format FIRST (before other checks)
+                    if (isTieredData(parsed)) {
+                        console.log('Detected tiered_content JSON');
+                        return { type: 'tiered_content', data: parsed };
+                    }
+                    
                     // Check for topic-based structured content (similar_species)
                     if (parsed.topic === 'similar_species' && parsed.similar_species) {
                         console.log('Detected similar_species JSON');
@@ -1247,6 +1271,51 @@
                                                 Similar Species
                                             </h6>
                                             ${similarHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (parsed.type === 'tiered_content') {
+                        // Tiered content with tier1/tier2/tier3 structure
+                        const tieredData = parsed.data;
+                        let tieredHtml = '';
+                        const tierNames = ['tier1', 'tier2', 'tier3'];
+                        const tierColors = { tier1: '#28a745', tier2: '#007bff', tier3: '#ffc107' };
+                        const tierLabels = { tier1: 't1', tier2: 't2', tier3: 't3' };
+                        
+                        for (const tierName of tierNames) {
+                            const tier = tieredData[tierName];
+                            if (tier && tier.value) {
+                                const tierColor = tierColors[tierName];
+                                const tierLabel = tierLabels[tierName];
+                                const attrText = tier.attribution ? escapeHtml(tier.attribution) : '';
+                                tieredHtml += `
+                                    <div class="tiered-row d-flex align-items-start mb-1" style="border-bottom: 1px dashed #dee2e6; padding-bottom: 4px;">
+                                        <span class="tier-value flex-grow-1">${escapeHtml(String(tier.value))}</span>
+                                        <span class="tier-icon ms-2" style="font-size:10px;font-weight:bold;color:${tierColor};cursor:help;" 
+                                              title="${attrText}">${tierLabel}</span>
+                                    </div>
+                                `;
+                            } else if (tier) {
+                                // Empty tier - show icon before next content
+                                const tierColor = tierColors[tierName];
+                                const tierLabel = tierLabels[tierName];
+                                const attrText = tier.attribution ? escapeHtml(tier.attribution) : 'No data';
+                                tieredHtml += `
+                                    <span class="tier-icon-empty me-1" style="font-size:9px;color:${tierColor};opacity:0.5;cursor:help;" 
+                                          title="${attrText}">${tierLabel}</span>
+                                `;
+                            }
+                        }
+                        
+                        content += `
+                            <div class="col-lg-6 mb-1">
+                                <div class="card h-100">
+                                    <div class="card-body py-1 px-2">
+                                        <div>
+                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <div class="tiered-content">${tieredHtml}</div>
                                         </div>
                                     </div>
                                 </div>
