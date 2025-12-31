@@ -80,8 +80,9 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Local pending storage** - Text submissions stored as JSON in `pending_metadata/` folder
 - **Cloudinary image storage** - Images uploaded to Cloudinary with "Pending" tag
 - **Admin review page** - Tabbed interface showing pending images and knowledge submissions separately
-- **Approve/reject workflow** - Admin can approve (move to `approved_metadata/`) or delete submissions
-- **Future LLM integration** - Approved metadata will feed into AI prompts for species-specific questions
+- **Approve/reject workflow** - Admin can approve or delete submissions
+- **Google Drive integration** - Approved JSON files automatically upload to "Tier 1 Sources" folder in Google Drive
+- **LLM-ready format** - Approved metadata stored in standard JSON format for separate LLM application to consume
 
 ## New Feature Requirements (Enhancement Phase)
 

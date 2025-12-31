@@ -576,8 +576,12 @@ def _get_supplemental_file_info():
         'rows': 0
     }
 
-def get_google_credentials():
-    """Get Google API credentials for service account access"""
+def get_google_credentials(write_access=False):
+    """Get Google API credentials for service account access
+    
+    Args:
+        write_access: If True, request write permissions for Drive
+    """
     if not GOOGLE_API_AVAILABLE:
         app.logger.warning("Google API libraries not available")
         return None
@@ -589,12 +593,19 @@ def get_google_credentials():
     
     try:
         credentials_info = json.loads(service_account_json)
-        credentials = service_account.Credentials.from_service_account_info(
-            credentials_info,
-            scopes=[
+        if write_access:
+            scopes = [
+                'https://www.googleapis.com/auth/drive',
+                'https://www.googleapis.com/auth/spreadsheets.readonly'
+            ]
+        else:
+            scopes = [
                 'https://www.googleapis.com/auth/drive.readonly',
                 'https://www.googleapis.com/auth/spreadsheets.readonly'
             ]
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_info,
+            scopes=scopes
         )
         return credentials
     except Exception as e:
@@ -613,6 +624,114 @@ def get_google_drive_service():
     except Exception as e:
         app.logger.error(f"Error creating Google Drive service: {str(e)}")
         return None
+
+def get_google_drive_service_with_write():
+    """Get an authenticated Google Drive API service with write permissions"""
+    credentials = get_google_credentials(write_access=True)
+    if not credentials:
+        return None
+    
+    try:
+        service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
+        return service
+    except Exception as e:
+        app.logger.error(f"Error creating Google Drive service with write access: {str(e)}")
+        return None
+
+def find_or_create_folder(parent_folder_id, folder_name):
+    """Find a subfolder by name, or create it if it doesn't exist"""
+    service = get_google_drive_service_with_write()
+    if not service:
+        return None, "Google Drive API not configured with write access"
+    
+    try:
+        # Search for existing folder
+        query = f"'{parent_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = service.files().list(
+            q=query,
+            fields='files(id, name)',
+            pageSize=1
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        if files:
+            # Folder exists
+            folder_id = files[0]['id']
+            app.logger.info(f"Found existing folder '{folder_name}' with ID: {folder_id}")
+            return folder_id, None
+        
+        # Create the folder
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': [parent_folder_id]
+        }
+        
+        folder = service.files().create(
+            body=file_metadata,
+            fields='id'
+        ).execute()
+        
+        folder_id = folder.get('id')
+        app.logger.info(f"Created new folder '{folder_name}' with ID: {folder_id}")
+        return folder_id, None
+        
+    except Exception as e:
+        app.logger.error(f"Error finding/creating folder '{folder_name}': {str(e)}")
+        return None, str(e)
+
+def upload_json_to_drive(folder_id, filename, json_data):
+    """Upload a JSON file to a Google Drive folder"""
+    from io import BytesIO
+    from googleapiclient.http import MediaIoBaseUpload
+    
+    service = get_google_drive_service_with_write()
+    if not service:
+        return None, "Google Drive API not configured with write access"
+    
+    try:
+        # Prepare the JSON content
+        json_content = json.dumps(json_data, indent=2)
+        
+        # Create in-memory buffer
+        buffer = BytesIO(json_content.encode('utf-8'))
+        
+        # Create media upload
+        media = MediaIoBaseUpload(
+            buffer,
+            mimetype='application/json',
+            resumable=False
+        )
+        
+        # File metadata
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id],
+            'mimeType': 'application/json'
+        }
+        
+        # Upload the file
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, name, webViewLink'
+        ).execute()
+        
+        file_id = file.get('id')
+        file_name = file.get('name')
+        web_link = file.get('webViewLink', '')
+        
+        app.logger.info(f"Uploaded JSON file '{file_name}' to Drive with ID: {file_id}")
+        return {
+            'id': file_id,
+            'name': file_name,
+            'webViewLink': web_link
+        }, None
+        
+    except Exception as e:
+        app.logger.error(f"Error uploading JSON to Drive: {str(e)}")
+        return None, str(e)
 
 def get_file_id_from_url(url):
     """Extract file ID from a Google Drive URL"""
@@ -3266,9 +3385,8 @@ APPROVED_METADATA_DIR = 'approved_metadata'
 @app.route('/admin/review/approve-metadata', methods=['POST'])
 @require_admin_auth
 def admin_approve_metadata():
-    """Approve a pending metadata submission (move to approved folder)"""
+    """Approve a pending metadata submission (upload to Google Drive 'Tier 1 Sources' folder)"""
     import json
-    import shutil
     
     try:
         filename = request.form.get('filename')
@@ -3281,9 +3399,6 @@ def admin_approve_metadata():
             flash('Submission not found', 'error')
             return redirect(url_for('admin_review'))
         
-        # Create approved directory if needed
-        os.makedirs(APPROVED_METADATA_DIR, exist_ok=True)
-        
         # Read and update the status
         with open(source_path, 'r') as f:
             data = json.load(f)
@@ -3291,16 +3406,37 @@ def admin_approve_metadata():
         data['status'] = 'approved'
         data['approved_at'] = datetime.now().isoformat()
         
-        # Save to approved folder
+        # Get the parent folder ID from settings
+        settings = load_app_settings()
+        parent_folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+        
+        if not parent_folder_id:
+            flash('Google Drive folder not configured in settings', 'error')
+            return redirect(url_for('admin_review'))
+        
+        # Find or create "Tier 1 Sources" folder
+        tier1_folder_id, error = find_or_create_folder(parent_folder_id, 'Tier 1 Sources')
+        if not tier1_folder_id:
+            flash(f'Could not access Tier 1 Sources folder: {error}', 'error')
+            return redirect(url_for('admin_review'))
+        
+        # Upload JSON to Google Drive
+        result, error = upload_json_to_drive(tier1_folder_id, filename, data)
+        if not result:
+            flash(f'Failed to upload to Google Drive: {error}', 'error')
+            return redirect(url_for('admin_review'))
+        
+        # Also keep a local backup in approved_metadata/
+        os.makedirs(APPROVED_METADATA_DIR, exist_ok=True)
         dest_path = os.path.join(APPROVED_METADATA_DIR, filename)
         with open(dest_path, 'w') as f:
             json.dump(data, f, indent=2)
         
-        # Remove from pending
+        # Remove from pending after successful upload
         os.remove(source_path)
         
-        flash('Knowledge submission approved', 'success')
-        app.logger.info(f"Metadata approved: {filename}")
+        flash(f'Knowledge submission approved and uploaded to Google Drive', 'success')
+        app.logger.info(f"Metadata approved and uploaded: {filename} -> Drive ID: {result.get('id')}")
         
         return redirect(url_for('admin_review'))
         
