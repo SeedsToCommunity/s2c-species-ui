@@ -1277,7 +1277,7 @@
                             </div>
                         `;
                     } else if (parsed.type === 'tiered_content') {
-                        // Tiered content with tier1/tier2/tier3 structure
+                        // Tiered content with tier1/tier2/tier3 structure - inline display
                         const tieredData = parsed.data;
                         let tieredHtml = '';
                         const tierNames = ['tier1', 'tier2', 'tier3'];
@@ -1286,26 +1286,22 @@
                         
                         for (const tierName of tierNames) {
                             const tier = tieredData[tierName];
-                            if (tier && tier.value) {
-                                const tierColor = tierColors[tierName];
-                                const tierLabel = tierLabels[tierName];
-                                const attrText = tier.attribution ? escapeHtml(tier.attribution) : '';
-                                tieredHtml += `
-                                    <div class="tiered-row d-flex align-items-start mb-1" style="border-bottom: 1px dashed #dee2e6; padding-bottom: 4px;">
-                                        <span class="tier-value flex-grow-1">${escapeHtml(String(tier.value))}</span>
-                                        <span class="tier-icon ms-2" style="font-size:10px;font-weight:bold;color:${tierColor};cursor:help;" 
-                                              title="${attrText}">${tierLabel}</span>
-                                    </div>
-                                `;
+                            const tierColor = tierColors[tierName];
+                            const tierLabel = tierLabels[tierName];
+                            const attrText = tier && tier.attribution ? escapeHtml(tier.attribution) : 'No data';
+                            
+                            // Check if tier has a real value (not empty, null, or "unknown")
+                            const hasRealValue = tier && tier.value && 
+                                                 String(tier.value).trim() !== '' && 
+                                                 String(tier.value).toLowerCase() !== 'unknown';
+                            
+                            if (hasRealValue) {
+                                // Show value with tier icon inline after it
+                                tieredHtml += `<span class="tier-value">${escapeHtml(String(tier.value))}</span>`;
+                                tieredHtml += `<span class="tier-icon ms-1" style="font-size:10px;font-weight:bold;color:${tierColor};cursor:help;" title="${attrText}">${tierLabel}</span> `;
                             } else if (tier) {
-                                // Empty tier - show icon before next content
-                                const tierColor = tierColors[tierName];
-                                const tierLabel = tierLabels[tierName];
-                                const attrText = tier.attribution ? escapeHtml(tier.attribution) : 'No data';
-                                tieredHtml += `
-                                    <span class="tier-icon-empty me-1" style="font-size:9px;color:${tierColor};opacity:0.5;cursor:help;" 
-                                          title="${attrText}">${tierLabel}</span>
-                                `;
+                                // No real value - show empty tier icon inline (will appear before next value)
+                                tieredHtml += `<span class="tier-icon-empty" style="font-size:9px;color:${tierColor};opacity:0.5;cursor:help;" title="${attrText}">${tierLabel}</span> `;
                             }
                         }
                         
@@ -1315,7 +1311,7 @@
                                     <div class="card-body py-1 px-2">
                                         <div>
                                             <small class="field-label d-block mb-1">${column.label}:</small>
-                                            <div class="tiered-content">${tieredHtml}</div>
+                                            <div class="tiered-content text-body-secondary">${tieredHtml.trim()}</div>
                                         </div>
                                     </div>
                                 </div>
