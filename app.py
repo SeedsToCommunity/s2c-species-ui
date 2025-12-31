@@ -626,7 +626,20 @@ def get_google_drive_service():
         return None
 
 def get_google_drive_service_with_write():
-    """Get an authenticated Google Drive API service with write permissions"""
+    """Get an authenticated Google Drive API service with write permissions using Replit connector"""
+    # Try Replit connector first (for uploads with proper user quota)
+    try:
+        access_token = get_replit_drive_access_token()
+        if access_token:
+            from google.oauth2.credentials import Credentials as OAuth2Credentials
+            creds = OAuth2Credentials(token=access_token)
+            service = build('drive', 'v3', credentials=creds, cache_discovery=False)
+            app.logger.info("Using Replit Google Drive connector for write access")
+            return service
+    except Exception as e:
+        app.logger.warning(f"Replit connector not available: {e}")
+    
+    # Fall back to service account (read-only typically works)
     credentials = get_google_credentials(write_access=True)
     if not credentials:
         return None
@@ -636,6 +649,59 @@ def get_google_drive_service_with_write():
         return service
     except Exception as e:
         app.logger.error(f"Error creating Google Drive service with write access: {str(e)}")
+        return None
+
+def get_replit_drive_access_token():
+    """Get access token from Replit's Google Drive connector"""
+    import requests
+    
+    hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
+    if not hostname:
+        return None
+    
+    # Get the appropriate token
+    repl_identity = os.environ.get('REPL_IDENTITY')
+    web_repl_renewal = os.environ.get('WEB_REPL_RENEWAL')
+    
+    if repl_identity:
+        x_replit_token = f'repl {repl_identity}'
+    elif web_repl_renewal:
+        x_replit_token = f'depl {web_repl_renewal}'
+    else:
+        app.logger.warning("No Replit token found for connector authentication")
+        return None
+    
+    try:
+        response = requests.get(
+            f'https://{hostname}/api/v2/connection?include_secrets=true&connector_names=google-drive',
+            headers={
+                'Accept': 'application/json',
+                'X_REPLIT_TOKEN': x_replit_token
+            },
+            timeout=10
+        )
+        
+        if response.status_code != 200:
+            app.logger.warning(f"Replit connector returned status {response.status_code}")
+            return None
+        
+        data = response.json()
+        connection = data.get('items', [{}])[0] if data.get('items') else {}
+        settings = connection.get('settings', {})
+        
+        # Try different paths for access token
+        access_token = settings.get('access_token') or \
+                       settings.get('oauth', {}).get('credentials', {}).get('access_token')
+        
+        if access_token:
+            app.logger.info("Successfully retrieved Replit Drive access token")
+            return access_token
+        
+        app.logger.warning("No access token found in Replit connector response")
+        return None
+        
+    except Exception as e:
+        app.logger.error(f"Error getting Replit Drive access token: {e}")
         return None
 
 def find_or_create_folder(parent_folder_id, folder_name):
