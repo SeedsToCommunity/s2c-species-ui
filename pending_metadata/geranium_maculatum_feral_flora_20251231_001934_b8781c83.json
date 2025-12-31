@@ -1,5 +1,5 @@
 {
-  "id": "e9a6a23c",
+  "id": "b8781c83",
   "botanical_name": "Geranium maculatum",
   "genus": "geranium",
   "species": "maculatum",
@@ -10,7 +10,6 @@
     "stratification"
   ],
   "submitter_name": "Feral Flora",
-  "submitted_at": "2025-12-31T00:02:04.720584",
-  "status": "approved",
-  "approved_at": "2025-12-31T00:02:28.866431"
+  "submitted_at": "2025-12-31T00:19:34.361185",
+  "status": "pending"
 }
