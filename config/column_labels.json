@@ -53,5 +53,18 @@
   "native-miflora": "Native-MIFlora",
   "michigan_flora_description": "Michigan Flora Description",
   "seed_color_at_maturity": "Seed Color at Maturity",
-  "collection_miss_risk": "Collection Miss Risk"
+  "collection_miss_risk": "Collection Miss Risk",
+  "processing_hazards": "Processing Hazards",
+  "germination_ecology_/_real-world_behavior": "Germination Ecology / Real-World Behavior",
+  "stratification_requirements": "Stratification Requirements",
+  "artificial_stratification_risks": "Artificial Stratification Risks",
+  "collection_quantity_notes": "Collection Quantity Notes",
+  "readiness_collection_cues": "Readiness Collection Cues",
+  "collection_safety_and_nuisance_notes": "Collection Safety and Nuisance Notes",
+  "some_useful_collection_tools": "Some Useful Collection Tools",
+  "what_you_collect": "What You Collect",
+  "ease_of_collection": "Ease of Collection",
+  "seed_visibility_at_maturity": "Seed Visibility at Maturity",
+  "habitat_notes": "Habitat Notes",
+  "collection_challenges": "Collection Challenges"
 }
