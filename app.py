@@ -41,6 +41,12 @@ IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp')
 import re
 HTML_TAG_PATTERN = re.compile(r'<(b|i|strong|em|p|br|ul|li|ol|a|span|div|h[1-6])[^>]*>', re.IGNORECASE)
 
+def fix_http_url(url):
+    """Convert http:// to https:// for sites that require it (like bonap.net)"""
+    if isinstance(url, str) and url.startswith('http://bonap.net'):
+        return url.replace('http://', 'https://', 1)
+    return url
+
 def is_image_url(url):
     """Check if a URL points to an image file"""
     if not isinstance(url, str) or not url.startswith('http'):
