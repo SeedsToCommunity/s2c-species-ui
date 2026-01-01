@@ -254,6 +254,12 @@
                                     <span class="btn-text ms-1">Delete</span>
                                 </button>
                             </form>
+                            <form action="{{ url_for('admin_skip_metadata') }}" method="POST" class="action-btn">
+                                <button type="submit" class="btn btn-secondary w-100">
+                                    <i data-feather="skip-forward"></i>
+                                    <span class="btn-text ms-1">Skip</span>
+                                </button>
+                            </form>
                         </div>
 
                         <table class="table table-sm metadata-table mb-0">

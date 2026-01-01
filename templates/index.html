@@ -8,44 +8,47 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
     
     <style>
-        /* Mobile-friendly touch targets for species links */
+        /* Species name links - obvious clickable styling */
         .species-link {
-            display: inline-block !important;
-            min-height: 44px; /* iOS recommended touch target size */
-            line-height: 1.4;
-            padding: 8px 12px !important;
-            border-radius: 6px;
-            transition: background-color 0.2s ease;
-            text-decoration: none !important;
-            position: relative;
+            display: inline !important;
+            text-decoration: underline !important;
+            text-decoration-style: dotted !important;
+            text-underline-offset: 3px;
+            color: var(--bs-info) !important;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+            cursor: pointer;
         }
         
         .species-link:hover {
-            background-color: rgba(var(--bs-info-rgb), 0.15) !important;
-            color: var(--bs-info) !important;
+            text-decoration-style: solid !important;
+            color: var(--bs-primary) !important;
         }
         
         .species-link:active {
-            background-color: rgba(var(--bs-info-rgb), 0.25) !important;
+            color: var(--bs-success) !important;
         }
         
-        /* Mobile-specific improvements */
+        /* Common name link styling */
+        .common-name-link {
+            display: inline !important;
+            text-decoration: underline !important;
+            text-decoration-style: dotted !important;
+            text-underline-offset: 3px;
+            color: var(--bs-primary) !important;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .common-name-link:hover {
+            text-decoration-style: solid !important;
+            color: var(--bs-info) !important;
+        }
+        
+        /* Mobile-specific - keep inline, don't expand width */
         @media (max-width: 768px) {
-            .species-link {
-                font-size: 1.1rem !important;
-                padding: 12px 16px !important;
-                margin: 4px 0 !important;
-                min-height: 48px; /* Larger touch target for mobile */
-                display: block !important;
-                width: 100%;
-                text-align: left;
+            .species-link, .common-name-link {
+                font-size: 1rem !important;
             }
-        }
-        
-        /* Ensure links are always clickable */
-        .species-link {
-            pointer-events: auto !important;
-            -webkit-tap-highlight-color: rgba(var(--bs-info-rgb), 0.3);
         }
         
         .form-floating > label {
@@ -251,7 +254,10 @@
                                                     {% if column.type == 'title' %}
                                                         <h5 class="card-title text-primary">
                                                             <i data-feather="star" class="me-2"></i>
-                                                            {{ field_value }}
+                                                            <a href="{{ url_for('species_detail', botanical_name=plant.get('botanical_name', '')|urlencode, **(url_filters or {})) }}" 
+                                                               class="common-name-link">
+                                                                {{ field_value }}
+                                                            </a>
                                                         </h5>
                                                     {% elif column.type == 'subtitle' %}
                                                         <h6 class="card-subtitle mb-2 text-muted fst-italic">
@@ -300,13 +306,15 @@
                                             <!-- Fallback if no configuration -->
                                             <h5 class="card-title text-primary">
                                                 <i data-feather="star" class="me-2"></i>
-                                                {{ plant.common_name }}
+                                                <a href="{{ url_for('species_detail', botanical_name=plant.botanical_name|urlencode, **current_filters) }}" 
+                                                   class="common-name-link">
+                                                    {{ plant.common_name }}
+                                                </a>
                                             </h5>
                                             <h6 class="card-subtitle mb-3 text-muted fst-italic">
                                                 <a href="{{ url_for('species_detail', botanical_name=plant.botanical_name|urlencode, **current_filters) }}" 
-                                                   class="species-link text-info">
+                                                   class="species-link">
                                                     {{ plant.botanical_name }}
-                                                    <i data-feather="arrow-right" class="ms-1 small"></i>
                                                 </a>
                                             </h6>
                                         {% endif %}

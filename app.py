@@ -3426,7 +3426,15 @@ def admin_review():
         # Get pending metadata submissions
         pending_metadata = get_pending_metadata()
         pending_metadata_count = len(pending_metadata)
-        current_metadata = pending_metadata[0] if pending_metadata else None
+        
+        # Apply skip index for metadata
+        current_metadata = None
+        if pending_metadata:
+            metadata_skip_index = session.get('metadata_skip_index', 0)
+            if metadata_skip_index >= len(pending_metadata):
+                metadata_skip_index = 0
+                session['metadata_skip_index'] = 0
+            current_metadata = pending_metadata[metadata_skip_index]
         
         return render_template('admin_review.html',
                              pending_image=pending_image,
@@ -3566,6 +3574,9 @@ def admin_approve_metadata():
         # Remove from pending after successful upload
         os.remove(source_path)
         
+        # Reset skip index since we removed an item
+        session['metadata_skip_index'] = 0
+        
         flash(f'Knowledge submission approved and uploaded to Google Drive', 'success')
         app.logger.info(f"Metadata approved and uploaded: {filename} -> Drive ID: {result.get('id')}")
         
@@ -3589,6 +3600,8 @@ def admin_delete_metadata():
         filepath = os.path.join(PENDING_METADATA_DIR, filename)
         if os.path.exists(filepath):
             os.remove(filepath)
+            # Reset skip index since we removed an item
+            session['metadata_skip_index'] = 0
             flash('Submission deleted', 'success')
             app.logger.info(f"Metadata deleted: {filename}")
         else:
@@ -3599,7 +3612,15 @@ def admin_delete_metadata():
     except Exception as e:
         app.logger.error(f"Error deleting metadata: {str(e)}")
         flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('admin_review'))
+
+@app.route('/admin/review/skip-metadata', methods=['POST'])
+@require_admin_auth
+def admin_skip_metadata():
+    """Skip to the next pending metadata submission"""
+    skip_index = session.get('metadata_skip_index', 0)
+    session['metadata_skip_index'] = skip_index + 1
+    flash('Skipped to next submission', 'info')
+    return redirect(url_for('admin_review'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
