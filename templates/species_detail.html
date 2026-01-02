@@ -114,34 +114,21 @@
             object-fit: contain;
         }
         
-        /* Tiered content styling */
-        .tier-icon {
+        /* Tiered content styling - all tiers same bright green */
+        .tier-icon, .tier-icon-t1, .tier-icon-t2, .tier-icon-t3 {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.65rem;
-            font-weight: 600;
-            padding: 0.1rem 0.25rem;
-            border-radius: 3px;
-            cursor: help;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #7fba93;
+            cursor: pointer;
             vertical-align: middle;
-            margin: 0 1px;
+            margin: 0 2px;
             line-height: 1;
         }
-        .tier-icon-t1 {
-            background-color: rgba(40, 167, 69, 0.2);
-            color: #5cb377;
-            border: 1px solid rgba(40, 167, 69, 0.4);
-        }
-        .tier-icon-t2 {
-            background-color: rgba(23, 162, 184, 0.2);
-            color: #6cb4ee;
-            border: 1px solid rgba(23, 162, 184, 0.4);
-        }
-        .tier-icon-t3 {
-            background-color: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-            border: 1px solid rgba(255, 193, 7, 0.4);
+        .tier-icon-empty {
+            opacity: 0.5;
         }
         .tier-content-row {
             margin-bottom: 0.5rem;
@@ -1312,12 +1299,12 @@
                             if (hasRealValue) {
                                 // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
                                 tieredHtml += `<span class="tier-value">${escapeHtml(String(tier.value))}</span>`;
-                                tieredHtml += `<span class="tier-icon ms-1" style="font-weight:bold;color:#6cbf6c;cursor:pointer;" 
+                                tieredHtml += `<span class="tier-icon ms-1" 
                                     data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                             } else if (tier) {
                                 // No real value - show empty tier icon inline (will appear before next value)
-                                tieredHtml += `<span class="tier-icon-empty" style="font-weight:bold;color:#6cbf6c;opacity:0.5;cursor:pointer;" 
+                                tieredHtml += `<span class="tier-icon tier-icon-empty ms-1" 
                                     data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                             }
