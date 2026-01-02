@@ -68,11 +68,6 @@
       "width": "auto"
     },
     {
-      "field": "what_you_collect",
-      "label": "What You Collect",
-      "width": "auto"
-    },
-    {
       "field": "external_reference_urls",
       "label": "External Reference URLs",
       "width": "auto"

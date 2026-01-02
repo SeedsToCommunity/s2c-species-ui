@@ -198,63 +198,63 @@
             {# Case: Only T1 has value #}
             {%- elif t1_val and not t2_val and not t3_val -%}
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 has value, T2 empty, T3 has value #}
             {%- elif t1_val and not t2_val and t3_val -%}
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}</span>
                 </div>
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 has value, T2 has value, T3 empty #}
             {%- elif t1_val and t2_val and not t3_val -%}
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
                 </div>
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-content-text">{{ t2_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: All three have values #}
             {%- elif t1_val and t2_val and t3_val -%}
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val }}</span>
+                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
                 </div>
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t2_val }}</span>
+                    <span class="tier-content-text">{{ t2_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
                 </div>
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 empty, T2 has value #}
             {%- elif not t1_val and t2_val and not t3_val -%}
                 <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val }}</span>
+                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 empty, T2 has value, T3 has value #}
             {%- elif not t1_val and t2_val and t3_val -%}
                 <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val }}</span>
+                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
                 </div>
                 <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val }}</span>
+                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 empty, T2 empty, T3 has value #}
             {%- elif not t1_val and not t2_val and t3_val -%}
                 <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}<span class="tier-content-text">{{ t3_val }}</span>
+                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}<span class="tier-content-text">{{ t3_val|format_list_content }}</span>
                     <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
                 </div>
             {# Case: T1 has value, T2 empty, T3 empty - already covered above #}
@@ -1112,6 +1112,26 @@
             return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
         
+        // Function to format list-like content with proper line breaks
+        function formatListContent(text) {
+            if (!text || typeof text !== 'string') return text;
+            
+            // Check if content looks like a list (has bullet points or numbered items)
+            const listPatterns = [
+                /^\s*[•\-\*]\s/m,  // Bullet points: •, -, *
+                /^\s*\d+[\.\)]\s/m  // Numbered: 1. or 1)
+            ];
+            
+            const isList = listPatterns.some(pattern => pattern.test(text));
+            
+            if (isList || text.includes('\n')) {
+                // Escape HTML first, then convert newlines to <br>
+                return escapeHtml(text).replace(/\n/g, '<br>');
+            }
+            
+            return escapeHtml(text);
+        }
+        
         // Function to update screen content
         function updateScreenContent(species, screenConfig, cloudinaryImages, attributionData) {
             let content = '';
@@ -1298,7 +1318,8 @@
                             
                             if (hasRealValue) {
                                 // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
-                                tieredHtml += `<span class="tier-value">${escapeHtml(String(tier.value))}</span>`;
+                                // Use formatListContent to handle bullet points and newlines
+                                tieredHtml += `<span class="tier-value">${formatListContent(String(tier.value))}</span>`;
                                 tieredHtml += `<span class="tier-icon ms-1" 
                                     data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;

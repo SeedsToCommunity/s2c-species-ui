@@ -210,6 +210,45 @@ def interpret_w_value_filter(value):
     """Template filter to interpret Wetland Indicator value"""
     return interpret_wetland(value)
 
+@app.template_filter('format_list_content')
+def format_list_content_filter(value):
+    """Template filter to format list-like content with proper line breaks.
+    
+    Detects bullet points (•, -, *, numbered) and converts newlines to <br> tags.
+    Returns HTML-safe markup.
+    """
+    from markupsafe import Markup
+    import re
+    
+    if not value or not isinstance(value, str):
+        return value
+    
+    # Check if content looks like a list (has bullet points or numbered items)
+    list_patterns = [
+        r'^\s*[•\-\*]\s',  # Bullet points: •, -, *
+        r'^\s*\d+[\.\)]\s',  # Numbered: 1. or 1)
+    ]
+    
+    lines = value.split('\n')
+    is_list = False
+    
+    for line in lines:
+        for pattern in list_patterns:
+            if re.match(pattern, line.strip()):
+                is_list = True
+                break
+        if is_list:
+            break
+    
+    if is_list or '\n' in value:
+        # Escape HTML entities first, then convert newlines to <br>
+        import html
+        escaped = html.escape(value)
+        formatted = escaped.replace('\n', '<br>')
+        return Markup(formatted)
+    
+    return value
+
 _data_cache_timestamp = None
 _last_known_modified_time = None  # Track Google Drive file modification time
 _data_load_lock = threading.Lock()  # Prevent concurrent data loads

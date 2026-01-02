@@ -3,16 +3,6 @@
   "description": "Requirements and methods for storing processed seeds",
   "columns": [
     {
-      "field": "germination_code",
-      "label": "Germination Code",
-      "type": "text"
-    },
-    {
-      "field": "strat_notes",
-      "label": "Strat Notes",
-      "type": "text"
-    },
-    {
       "field": "process_notes",
       "label": "Process Notes",
       "type": "text"
@@ -20,11 +10,6 @@
     {
       "field": "artificial_stratification_risks",
       "label": "Artificial Stratification Risks",
-      "width": "auto"
-    },
-    {
-      "field": "stratification_requirements",
-      "label": "Stratification Requirements",
       "width": "auto"
     }
   ]

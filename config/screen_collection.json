@@ -57,6 +57,11 @@
       "field": "ease_of_collection",
       "label": "Ease of Collection",
       "width": "auto"
+    },
+    {
+      "field": "what_you_collect",
+      "label": "What You Collect",
+      "width": "auto"
     }
   ]
 }

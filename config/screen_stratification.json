@@ -11,6 +11,11 @@
       "field": "strat_notes",
       "label": "Strat Notes",
       "type": "text"
+    },
+    {
+      "field": "stratification_requirements",
+      "label": "Stratification Requirements",
+      "width": "auto"
     }
   ]
 }
