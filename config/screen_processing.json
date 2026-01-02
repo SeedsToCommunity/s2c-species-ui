@@ -16,6 +16,11 @@
       "field": "process_notes",
       "label": "Process Notes",
       "type": "text"
+    },
+    {
+      "field": "processing_hazards",
+      "label": "Processing Hazards",
+      "width": "auto"
     }
   ]
 }

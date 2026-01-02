@@ -1496,10 +1496,29 @@ def create_species_key_from_botanical_name(botanical_name):
 
 def merge_supplemental_data(main_df, supplemental_df):
     """Merge supplemental data into main dataframe using genus + species as key"""
-    if supplemental_df is None or supplemental_df.empty:
+    if supplemental_df is None:
         return main_df
     
     try:
+        # Handle case where supplemental data has headers but no rows
+        # We still want to add those columns (as empty) so assignments are preserved
+        if supplemental_df.empty:
+            main_cols = set(main_df.columns)
+            supp_cols = set(supplemental_df.columns)
+            new_cols = supp_cols - main_cols - {'genus', 'species'}
+            
+            if new_cols:
+                app.logger.info(f"Supplemental data has headers but no rows - adding {len(new_cols)} empty columns to preserve assignments")
+                main_df = main_df.copy()
+                for col in new_cols:
+                    main_df[col] = ''
+                # Only set has_community_data if it doesn't already exist
+                if 'has_community_data' not in main_df.columns:
+                    main_df['has_community_data'] = False
+                # Update column labels for the new columns
+                update_column_labels_from_headers(list(new_cols))
+            
+            return main_df
         # Check if supplemental data has genus and species columns
         supp_has_keys = 'genus' in supplemental_df.columns and 'species' in supplemental_df.columns
         

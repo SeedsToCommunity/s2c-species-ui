@@ -16,6 +16,16 @@
       "field": "process_notes",
       "label": "Process Notes",
       "type": "text"
+    },
+    {
+      "field": "artificial_stratification_risks",
+      "label": "Artificial Stratification Risks",
+      "width": "auto"
+    },
+    {
+      "field": "stratification_requirements",
+      "label": "Stratification Requirements",
+      "width": "auto"
     }
   ]
 }

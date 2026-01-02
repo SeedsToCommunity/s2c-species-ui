@@ -14,8 +14,18 @@
       "width": "auto"
     },
     {
-      "field": "similar_species_json",
-      "label": "Similar Species JSON",
+      "field": "seed_color_at_maturity",
+      "label": "Seed Color at Maturity",
+      "width": "auto"
+    },
+    {
+      "field": "collection_quantity_notes",
+      "label": "Collection Quantity Notes",
+      "width": "auto"
+    },
+    {
+      "field": "collection_safety_and_nuisance_notes",
+      "label": "Collection Safety and Nuisance Notes",
       "width": "auto"
     },
     {
@@ -24,8 +34,28 @@
       "width": "auto"
     },
     {
-      "field": "seed_color_at_maturity",
-      "label": "Seed Color at Maturity",
+      "field": "collection_challenges",
+      "label": "Collection Challenges",
+      "width": "auto"
+    },
+    {
+      "field": "readiness_collection_cues",
+      "label": "Readiness Collection Cues",
+      "width": "auto"
+    },
+    {
+      "field": "seed_visibility_at_maturity",
+      "label": "Seed Visibility at Maturity",
+      "width": "auto"
+    },
+    {
+      "field": "some_useful_collection_tools",
+      "label": "Some Useful Collection Tools",
+      "width": "auto"
+    },
+    {
+      "field": "ease_of_collection",
+      "label": "Ease of Collection",
       "width": "auto"
     }
   ]
