@@ -130,17 +130,37 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i data-feather="info" class="me-2"></i>
+                            <i data-feather="zap" class="me-2"></i>
                             Quick Actions
                         </h5>
                         <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Need to update plant data?</strong></p>
-                                <p class="text-muted small">Update your Google Sheets, then use the "Refresh Data" link above to reload the changes immediately.</p>
+                            <div class="col-md-4">
+                                <p><strong>Check for Data Updates</strong></p>
+                                <p class="text-muted small mb-2">Check if new data files exist in Google Drive and reload if needed.</p>
+                                <button type="button" class="btn btn-outline-primary" id="checkUpdatesBtn" onclick="checkForUpdates()">
+                                    <i data-feather="download-cloud" class="me-1"></i>
+                                    Check for Updates
+                                </button>
+                                <span id="updateStatus" class="ms-2 small"></span>
                             </div>
-                            <div class="col-md-6">
-                                <p><strong>Community feedback?</strong></p>
-                                <p class="text-muted small">Check "Issue Reports" regularly to see what your 550+ members are reporting about the plant data.</p>
+                            {% if cloudinary_available %}
+                            <div class="col-md-4">
+                                <p><strong>Refresh Images</strong></p>
+                                <p class="text-muted small mb-2">Clear the Cloudinary image cache to load fresh images.</p>
+                                <button type="button" class="btn btn-outline-secondary" id="refreshImagesBtn" onclick="refreshImages()">
+                                    <i data-feather="camera" class="me-1"></i>
+                                    Refresh Images
+                                </button>
+                                <span id="imageStatus" class="ms-2 small"></span>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-4">
+                                <p><strong>Community Feedback</strong></p>
+                                <p class="text-muted small mb-2">Check "Issue Reports" regularly to see what your 550+ members are reporting.</p>
+                                <a href="/admin/issues" class="btn btn-outline-warning">
+                                    <i data-feather="alert-triangle" class="me-1"></i>
+                                    View Issues
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -154,6 +174,92 @@
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
         });
+        
+        function refreshImages() {
+            const btn = document.getElementById('refreshImagesBtn');
+            const statusSpan = document.getElementById('imageStatus');
+            
+            if (!btn) return;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refreshing...';
+            statusSpan.innerHTML = '';
+            
+            fetch('/api/refresh-images')
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    feather.replace();
+                    
+                    if (data.refreshed) {
+                        statusSpan.className = 'ms-2 small text-success';
+                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message;
+                    } else {
+                        statusSpan.className = 'ms-2 small text-warning';
+                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
+                    }
+                    feather.replace();
+                    setTimeout(() => { statusSpan.innerHTML = ''; }, 5000);
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    feather.replace();
+                    statusSpan.className = 'ms-2 small text-danger';
+                    statusSpan.innerHTML = 'Error refreshing images';
+                    console.error('Refresh images failed:', error);
+                });
+        }
+        
+        function checkForUpdates() {
+            const btn = document.getElementById('checkUpdatesBtn');
+            const statusSpan = document.getElementById('updateStatus');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
+            statusSpan.innerHTML = '';
+            
+            fetch('/api/check-updates')
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Check for Updates';
+                    feather.replace();
+                    
+                    let suppInfo = '';
+                    if (data.supplemental) {
+                        if (data.supplemental.found) {
+                            suppInfo = ' | Supplemental: ' + data.supplemental.file_name;
+                        } else {
+                            suppInfo = ' | Supplemental: not found';
+                        }
+                    }
+                    
+                    if (data.status === 'updated' || data.status === 'reloaded') {
+                        statusSpan.className = 'ms-2 small text-success';
+                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message + suppInfo;
+                        feather.replace();
+                    } else if (data.status === 'unchanged') {
+                        statusSpan.className = 'ms-2 small text-info';
+                        statusSpan.innerHTML = '<i data-feather="check" class="me-1"></i>' + data.message + suppInfo;
+                        feather.replace();
+                        setTimeout(() => { statusSpan.innerHTML = ''; }, 8000);
+                    } else {
+                        statusSpan.className = 'ms-2 small text-warning';
+                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
+                        feather.replace();
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Check for Updates';
+                    feather.replace();
+                    statusSpan.className = 'ms-2 small text-danger';
+                    statusSpan.innerHTML = 'Error checking for updates';
+                    console.error('Check for updates failed:', error);
+                });
+        }
     </script>
 </body>
 </html>

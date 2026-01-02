@@ -31,6 +31,12 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
+# Context processor to make is_development available in all templates
+@app.context_processor
+def inject_is_development():
+    """Make is_development available to all templates for nav menu visibility"""
+    return {'is_development': os.environ.get('REPLIT_ENVIRONMENT') == 'development'}
+
 # Global cache for plant data to avoid reloading on every request
 _cached_plant_data = None
 
@@ -2324,6 +2330,13 @@ def refresh_images_endpoint():
             'refreshed': False
         })
 
+@app.route('/about')
+def about_page():
+    """About page with organization info and contact links"""
+    settings = load_app_settings()
+    is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
+    return render_template('about.html', settings=settings, is_development=is_development)
+
 @app.route('/attribution')
 def attribution_page():
     """Full attribution page showing data sources for all columns"""
@@ -2337,11 +2350,13 @@ def attribution_page():
             headers = list(attributions[0].keys()) if attributions else []
         
         settings = load_app_settings()
+        is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
         
         return render_template('attribution.html',
                              attributions=attributions,
                              headers=headers,
-                             settings=settings)
+                             settings=settings,
+                             is_development=is_development)
     except Exception as e:
         app.logger.error(f"Error loading attribution page: {str(e)}")
         flash(f'Error loading attribution data: {str(e)}', 'error')
@@ -2351,6 +2366,12 @@ def attribution_page():
 def admin_dashboard():
     """Admin dashboard listing all admin pages"""
     admin_pages = [
+        {
+            'title': 'Review Contributions',
+            'url': '/admin/review',
+            'description': 'Review and approve community-submitted photos and knowledge',
+            'icon': 'check-circle'
+        },
         {
             'title': 'Issue Reports',
             'url': '/admin/issues',
@@ -2364,26 +2385,26 @@ def admin_dashboard():
             'icon': 'columns'
         },
         {
+            'title': 'Column Usage Grid',
+            'url': '/admin/column-usage',
+            'description': 'Grid view showing which columns are used on which pages',
+            'icon': 'grid'
+        },
+        {
             'title': 'Refresh Data',
             'url': '/admin/refresh',
             'description': 'Manually refresh cached plant data from Google Drive',
             'icon': 'refresh-cw'
         },
         {
-            'title': 'API Columns',
-            'url': '/api/columns',
-            'description': 'JSON API endpoint for programmatic access to column data',
-            'icon': 'code'
-        },
-        {
-            'title': 'Column Usage Grid',
-            'url': '/admin/column-usage',
-            'description': 'Grid view showing which columns are used on which pages',
-            'icon': 'grid'
+            'title': 'Column Reorder',
+            'url': '/admin/column-reorder',
+            'description': 'Reorder columns on each screen configuration',
+            'icon': 'list'
         }
     ]
     
-    return render_template('admin_dashboard.html', admin_pages=admin_pages)
+    return render_template('admin_dashboard.html', admin_pages=admin_pages, cloudinary_available=CLOUDINARY_AVAILABLE)
 
 @app.route('/admin/refresh')
 def refresh_data():
@@ -2690,12 +2711,14 @@ def api_data_columns():
 @app.route('/explain/wetland-indicator')
 def explain_wetland():
     """Explanation page for Wetland Indicator values"""
-    return render_template('explain_wetland.html')
+    is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
+    return render_template('explain_wetland.html', is_development=is_development)
 
 @app.route('/explain/coefficient-of-conservatism')
 def explain_conservatism():
     """Explanation page for Coefficient of Conservatism values"""
-    return render_template('explain_conservatism.html')
+    is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
+    return render_template('explain_conservatism.html', is_development=is_development)
 
 @app.route('/report-issue/<path:botanical_name>', methods=['GET', 'POST'])
 def report_issue(botanical_name):

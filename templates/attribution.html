@@ -26,6 +26,8 @@
 </head>
 <body>
     <div class="container mt-4">
+        {% include 'nav_menu.html' %}
+        
         <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
                 <h1 class="text-primary">
@@ -35,12 +37,6 @@
                 <p class="text-muted">
                     Documentation of data sources, algorithms, and metadata for all fields in the Plant Species Directory.
                 </p>
-            </div>
-            <div>
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                    <i data-feather="arrow-left" class="me-1"></i>
-                    Back to Directory
-                </a>
             </div>
         </div>
         

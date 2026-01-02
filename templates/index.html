@@ -88,11 +88,13 @@
 </head>
 <body>
     <div class="container py-3">
+        {% include 'nav_menu.html' %}
+        
         <!-- Header Section -->
         <div class="row mb-3">
             <div class="col">
                 <h1 class="display-4 mb-3">
-                    <i data-feather="home" class="me-3"></i>
+                    <i data-feather="leaf" class="me-3"></i>
                     Plant Species Directory
                 </h1>
                 <p class="lead text-muted">
@@ -189,21 +191,10 @@
                                     <i data-feather="x-circle" class="me-1"></i>
                                     Clear All Filters
                                 </a>
-                                <button type="button" class="btn btn-outline-info" id="checkUpdatesBtn" onclick="checkForUpdates()">
-                                    <i data-feather="refresh-cw" class="me-1"></i>
-                                    Check for Updates
-                                </button>
-                                {% if cloudinary_available %}
-                                <button type="button" class="btn btn-outline-secondary" id="refreshImagesBtn" onclick="refreshImages()">
-                                    <i data-feather="camera" class="me-1"></i>
-                                    Refresh Images
-                                </button>
-                                {% endif %}
                                 <span class="text-muted ms-2 small">
                                     <i data-feather="zap" class="me-1"></i>
                                     Filters update automatically
                                 </span>
-                                <span id="updateStatus" class="ms-2 small"></span>
                             </div>
                         </form>
                     </div>
@@ -576,109 +567,6 @@
             });
         });
         
-        // Check for updates function
-        function refreshImages() {
-            const btn = document.getElementById('refreshImagesBtn');
-            const statusSpan = document.getElementById('updateStatus');
-            
-            if (!btn) return;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refreshing...';
-            statusSpan.innerHTML = '';
-            statusSpan.className = 'ms-2 small';
-            
-            fetch('/api/refresh-images')
-                .then(response => response.json())
-                .then(data => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
-                    feather.replace();
-                    
-                    if (data.refreshed) {
-                        statusSpan.className = 'ms-2 small text-success';
-                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message;
-                    } else {
-                        statusSpan.className = 'ms-2 small text-warning';
-                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
-                    }
-                    feather.replace();
-                    setTimeout(() => { statusSpan.innerHTML = ''; }, 5000);
-                })
-                .catch(error => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
-                    feather.replace();
-                    statusSpan.className = 'ms-2 small text-danger';
-                    statusSpan.innerHTML = '<i data-feather="x-circle" class="me-1"></i>Error refreshing images';
-                    feather.replace();
-                    console.error('Refresh images failed:', error);
-                });
-        }
-        
-        function checkForUpdates() {
-            const btn = document.getElementById('checkUpdatesBtn');
-            const statusSpan = document.getElementById('updateStatus');
-            
-            // Disable button and show loading state
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
-            statusSpan.innerHTML = '';
-            statusSpan.className = 'ms-2 small';
-            
-            fetch('/api/check-updates')
-                .then(response => response.json())
-                .then(data => {
-                    // Re-enable button
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Check for Updates';
-                    feather.replace();
-                    
-                    // Build supplemental info string
-                    let suppInfo = '';
-                    if (data.supplemental) {
-                        if (data.supplemental.found) {
-                            suppInfo = ` | Supplemental: ${data.supplemental.file_name} (${data.supplemental.columns} columns)`;
-                        } else {
-                            suppInfo = ' | Supplemental: not found';
-                        }
-                    }
-                    
-                    // Show status message
-                    if (data.status === 'updated' || data.status === 'reloaded') {
-                        statusSpan.className = 'ms-2 small text-success';
-                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message + suppInfo;
-                        feather.replace();
-                        // Reload the page to show new data
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else if (data.status === 'unchanged') {
-                        statusSpan.className = 'ms-2 small text-info';
-                        statusSpan.innerHTML = '<i data-feather="check" class="me-1"></i>' + data.message + suppInfo;
-                        feather.replace();
-                        // Clear message after 8 seconds
-                        setTimeout(() => {
-                            statusSpan.innerHTML = '';
-                        }, 8000);
-                    } else {
-                        statusSpan.className = 'ms-2 small text-warning';
-                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
-                        feather.replace();
-                    }
-                })
-                .catch(error => {
-                    // Re-enable button
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Check for Updates';
-                    feather.replace();
-                    
-                    statusSpan.className = 'ms-2 small text-danger';
-                    statusSpan.innerHTML = '<i data-feather="x-circle" class="me-1"></i>Error checking for updates';
-                    feather.replace();
-                    console.error('Check for updates failed:', error);
-                });
-        }
     </script>
 </body>
 </html>

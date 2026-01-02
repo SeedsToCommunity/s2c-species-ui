@@ -1,0 +1,54 @@
+<nav class="navbar navbar-expand-lg mb-4" style="background: rgba(255,255,255,0.03); border-radius: 0.5rem;">
+    <div class="container-fluid">
+        <a class="navbar-brand text-success" href="/">
+            <i data-feather="home" class="me-1"></i>
+            Plant Directory
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" 
+                aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/about">
+                        <i data-feather="info" class="me-1" style="width:16px;height:16px;"></i>
+                        About
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/attribution">
+                        <i data-feather="file-text" class="me-1" style="width:16px;height:16px;"></i>
+                        Attribution
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/explain/coefficient-of-conservatism">
+                        <i data-feather="award" class="me-1" style="width:16px;height:16px;"></i>
+                        Conservatism
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/explain/wetland-indicator">
+                        <i data-feather="droplet" class="me-1" style="width:16px;height:16px;"></i>
+                        Wetness
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="mailto:seeds2community@gmail.com">
+                        <i data-feather="mail" class="me-1" style="width:16px;height:16px;"></i>
+                        Contact
+                    </a>
+                </li>
+                {% if is_development %}
+                <li class="nav-item">
+                    <a class="nav-link text-warning" href="/admin">
+                        <i data-feather="settings" class="me-1" style="width:16px;height:16px;"></i>
+                        Admin
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
