@@ -300,57 +300,57 @@
                         <td class="usage-indicator {{ 'usage-yes' if usage.main_page else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="main_page" data-enabled="{{ 'true' if usage.main_page else 'false' }}"{% endif %}>
                             {% if usage.main_page %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.identification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="identification" data-enabled="{{ 'true' if usage.identification else 'false' }}"{% endif %}>
                             {% if usage.identification %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.collection else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="collection" data-enabled="{{ 'true' if usage.collection else 'false' }}"{% endif %}>
                             {% if usage.collection %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.processing else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="processing" data-enabled="{{ 'true' if usage.processing else 'false' }}"{% endif %}>
                             {% if usage.processing %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.storage else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="storage" data-enabled="{{ 'true' if usage.storage else 'false' }}"{% endif %}>
                             {% if usage.storage %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="stratification" data-enabled="{{ 'true' if usage.stratification else 'false' }}"{% endif %}>
                             {% if usage.stratification %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="usage-indicator {{ 'usage-yes' if usage.planting else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="planting" data-enabled="{{ 'true' if usage.planting else 'false' }}"{% endif %}>
                             {% if usage.planting %}
-                                <i data-feather="check" class="text-success"></i>
+                                <span class="text-success fw-bold">✓</span>
                             {% else %}
-                                <i data-feather="minus" class="text-muted"></i>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
                         <td class="total-uses">
@@ -499,10 +499,10 @@
                             
                             if (newEnabled) {
                                 this.className = this.className.replace('usage-no', 'usage-yes');
-                                this.innerHTML = '<i data-feather="check" class="text-success"></i>';
+                                this.innerHTML = '<span class="text-success fw-bold">✓</span>';
                             } else {
                                 this.className = this.className.replace('usage-yes', 'usage-no');
-                                this.innerHTML = '<i data-feather="minus" class="text-muted"></i>';
+                                this.innerHTML = '<span class="text-muted">–</span>';
                             }
                             
                             // Update total uses count for this row
@@ -516,9 +516,6 @@
                                 }
                             });
                             totalCell.innerHTML = '<strong>' + totalUses + '</strong>';
-                            
-                            // Re-render feather icons
-                            feather.replace();
                             
                             // Show success feedback
                             showNotification('Configuration updated! Click any species tab to see changes.', 'success');
