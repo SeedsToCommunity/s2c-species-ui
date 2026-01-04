@@ -66,5 +66,17 @@
   "ease_of_collection": "Ease of Collection",
   "seed_visibility_at_maturity": "Seed Visibility at Maturity",
   "habitat_notes": "Habitat Notes",
-  "collection_challenges": "Collection Challenges"
+  "collection_challenges": "Collection Challenges",
+  "seed_cleaning_complexity": "Seed Cleaning Complexity",
+  "seed_drying_needs": "Seed Drying Needs",
+  "collection_id_cautions": "Collection ID Cautions",
+  "processing_difficulty": "Processing Difficulty",
+  "processing_nuggets": "Processing Nuggets",
+  "processing_time_/_labor": "Processing Time / Labor",
+  "other_storage_hazards_/_warnings": "Other Storage Hazards / Warnings",
+  "storage_mold_risk": "Storage Mold Risk",
+  "safe_storage_method_\u2013_dry_fridge": "Safe Storage Method \u2013 Dry Fridge",
+  "safe_storage_method_\u2013_room_temp": "Safe Storage Method \u2013 Room Temp",
+  "similar_species_/_distinguishing_features": "Similar Species / Distinguishing Features",
+  "processing_duration": "Processing Duration"
 }

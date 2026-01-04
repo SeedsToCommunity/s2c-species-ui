@@ -2391,9 +2391,9 @@ def admin_dashboard():
             'icon': 'grid'
         },
         {
-            'title': 'Refresh Data',
+            'title': 'Reload Current Data',
             'url': '/admin/refresh',
-            'description': 'Manually refresh cached plant data from Google Drive',
+            'description': 'Reload data from current Google Drive files (use after editing existing files)',
             'icon': 'refresh-cw'
         },
         {

@@ -135,11 +135,11 @@
                         </h5>
                         <div class="row">
                             <div class="col-md-4">
-                                <p><strong>Check for Data Updates</strong></p>
-                                <p class="text-muted small mb-2">Check if new data files exist in Google Drive and reload if needed.</p>
+                                <p><strong>Detect New Data Files</strong></p>
+                                <p class="text-muted small mb-2">Check if a differently-named data file exists in Google Drive and switch to it.</p>
                                 <button type="button" class="btn btn-outline-primary" id="checkUpdatesBtn" onclick="checkForUpdates()">
                                     <i data-feather="download-cloud" class="me-1"></i>
-                                    Check for Updates
+                                    Detect New Files
                                 </button>
                                 <span id="updateStatus" class="ms-2 small"></span>
                             </div>
@@ -224,7 +224,7 @@
                 .then(response => response.json())
                 .then(data => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Check for Updates';
+                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Detect New Files';
                     feather.replace();
                     
                     let suppInfo = '';
@@ -253,11 +253,11 @@
                 })
                 .catch(error => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Check for Updates';
+                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Detect New Files';
                     feather.replace();
                     statusSpan.className = 'ms-2 small text-danger';
-                    statusSpan.innerHTML = 'Error checking for updates';
-                    console.error('Check for updates failed:', error);
+                    statusSpan.innerHTML = 'Error detecting new files';
+                    console.error('Detect new files failed:', error);
                 });
         }
     </script>
