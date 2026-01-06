@@ -40,13 +40,24 @@
                         Coeficient of Wetness
                     </a>
                 </li>
-                {% if is_development %}
                 <li class="nav-item">
                     <a class="nav-link text-warning" href="/admin">
                         <i data-feather="settings" class="me-1" style="width:16px;height:16px;"></i>
                         Admin Controls
                     </a>
                 </li>
+                {% if is_development %}
+                    <script>
+                        document.querySelector('.nav-link[href="/admin"]').addEventListener('click', function(event) {
+                            event.preventDefault();
+                            const password = prompt('Admin password:');
+                            if (password === 'correct-password') {
+                                window.location.href = '/admin';
+                            } else {
+                                alert('Access denied');
+                            }
+                        });
+                    </script>
                 {% endif %}
             </ul>
         </div>
