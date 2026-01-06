@@ -43,13 +43,13 @@
       "label": "Moisture"
     },
     {
-      "field": "germination_ecology_/_real-world_behavior",
-      "label": "Germination Ecology / Real-World Behavior",
+      "field": "native-miflora",
+      "label": "Native-MIFlora",
       "width": "auto"
     },
     {
-      "field": "native-miflora",
-      "label": "Native-MIFlora",
+      "field": "stature",
+      "label": "Stature",
       "width": "auto"
     }
   ],

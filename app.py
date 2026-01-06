@@ -2386,10 +2386,16 @@ def check_admin_auth():
 def require_admin_auth(f):
     """Decorator to require admin authentication"""
     from functools import wraps
+    from flask import Response
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_admin_auth():
-            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin Access"'})
+            app.logger.info("Admin auth check failed - prompting for credentials")
+            return Response(
+                'Authentication required to access admin area',
+                401,
+                {'WWW-Authenticate': 'Basic realm="Admin Access"'}
+            )
         return f(*args, **kwargs)
     return decorated
 
