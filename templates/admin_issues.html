@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Issue Reports - Plant Species Directory</title>
-    <link href="https://repls.us/cdn/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
     <style>
         .issue-card {
             transition: all 0.2s ease;
-            border-left: 4px solid #dee2e6;
+            border-left: 4px solid var(--bs-border-color);
         }
         .issue-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .issue-card.urgent {
             border-left-color: #dc3545;
@@ -22,38 +23,29 @@
         }
         .issue-date {
             font-size: 0.85rem;
-            color: #6c757d;
+            color: var(--bs-secondary);
         }
         .issue-type-badge {
             font-size: 0.75rem;
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container-fluid py-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="text-dark mb-2">
-                            <i data-feather="alert-triangle" class="me-2"></i>
-                            Issue Reports
-                        </h1>
-                        <p class="text-muted mb-0">Community-reported data issues and corrections</p>
-                    </div>
-                    <div>
-                        <a href="{{ url_for('admin_data_columns') }}" class="btn btn-outline-primary me-2">
-                            <i data-feather="database" class="me-1"></i>
-                            Manage Columns
-                        </a>
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                            <i data-feather="arrow-left" class="me-1"></i>
-                            Back to App
-                        </a>
-                    </div>
-                </div>
+<body>
+    <div class="container py-3">
+        {% include 'nav_menu.html' %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i data-feather="alert-triangle" class="me-2"></i>
+                    Issue Reports
+                </h1>
+                <p class="text-muted mb-0">Community-reported data issues and corrections</p>
             </div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i data-feather="arrow-left" class="me-1"></i>
+                Admin Dashboard
+            </a>
         </div>
 
         <!-- Statistics -->

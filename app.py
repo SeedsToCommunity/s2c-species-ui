@@ -2362,7 +2362,39 @@ def attribution_page():
         flash(f'Error loading attribution data: {str(e)}', 'error')
         return render_template('attribution.html', attributions=[], headers=[])
 
+# Admin authentication functions
+def check_admin_auth():
+    """Check if request has valid admin credentials.
+    
+    Returns False if credentials are not configured or don't match.
+    This fails closed - if env vars are not set, no access is granted.
+    """
+    auth = request.authorization
+    if not auth:
+        return False
+    
+    admin_user = os.environ.get('ADMIN_USERNAME')
+    admin_pass = os.environ.get('ADMIN_PASSWORD')
+    
+    # Fail closed: if credentials not configured, deny access
+    if not admin_user or not admin_pass:
+        app.logger.warning("Admin credentials not configured - access denied")
+        return False
+    
+    return auth.username == admin_user and auth.password == admin_pass
+
+def require_admin_auth(f):
+    """Decorator to require admin authentication"""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not check_admin_auth():
+            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin Access"'})
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route('/admin')
+@require_admin_auth
 def admin_dashboard():
     """Admin dashboard listing all admin pages"""
     admin_pages = [
@@ -2407,6 +2439,7 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', admin_pages=admin_pages, cloudinary_available=CLOUDINARY_AVAILABLE)
 
 @app.route('/admin/refresh')
+@require_admin_auth
 def refresh_data():
     """Admin route to manually refresh cached data"""
     global _cached_plant_data, _cached_supplemental_data
@@ -2591,6 +2624,7 @@ def check_for_updates_endpoint():
         })
 
 @app.route('/admin/columns')
+@require_admin_auth
 def admin_data_columns():
     """Admin page to view all available columns and their current assignments"""
     try:
@@ -2783,6 +2817,7 @@ def report_issue(botanical_name):
         return redirect(url_for('index'))
 
 @app.route('/admin/column-usage')
+@require_admin_auth
 def admin_column_usage():
     """Admin page showing column usage across all pages in a grid format"""
     global _cached_plant_data, _cached_column_usage
@@ -2865,6 +2900,7 @@ def admin_column_usage():
                              cloudinary_available=CLOUDINARY_AVAILABLE)
 
 @app.route('/admin/toggle-column', methods=['POST'])
+@require_admin_auth
 def toggle_column():
     """Toggle column usage for a specific screen"""
     try:
@@ -2953,6 +2989,7 @@ def toggle_column():
         return {"error": str(e)}, 500
 
 @app.route('/admin/column-reorder')
+@require_admin_auth
 def admin_column_reorder():
     """Admin page for reordering columns on species screens"""
     # Initialize defaults for image group display
@@ -3006,6 +3043,7 @@ def admin_column_reorder():
         return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/save-column-order', methods=['POST'])
+@require_admin_auth
 def save_column_order():
     """Save the new column order for a screen"""
     try:
@@ -3052,6 +3090,7 @@ def save_column_order():
         return {"error": str(e)}, 500
 
 @app.route('/admin/issues')
+@require_admin_auth
 def admin_issues():
     """View all reported issues"""
     try:
@@ -3434,36 +3473,6 @@ def submit_contribution(botanical_name):
         app.logger.error(f"Error in contribution submission: {str(e)}")
         flash('Error submitting contribution. Please try again.', 'error')
         return redirect(url_for('species_detail', botanical_name=botanical_name))
-
-def check_admin_auth():
-    """Check if request has valid admin credentials.
-    
-    Returns False if credentials are not configured or don't match.
-    This fails closed - if env vars are not set, no access is granted.
-    """
-    auth = request.authorization
-    if not auth:
-        return False
-    
-    admin_user = os.environ.get('ADMIN_USERNAME')
-    admin_pass = os.environ.get('ADMIN_PASSWORD')
-    
-    # Fail closed: if credentials not configured, deny access
-    if not admin_user or not admin_pass:
-        app.logger.warning("Admin credentials not configured - access denied")
-        return False
-    
-    return auth.username == admin_user and auth.password == admin_pass
-
-def require_admin_auth(f):
-    """Decorator to require admin authentication"""
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not check_admin_auth():
-            return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin Access"'})
-        return f(*args, **kwargs)
-    return decorated
 
 @app.route('/admin/review')
 @require_admin_auth

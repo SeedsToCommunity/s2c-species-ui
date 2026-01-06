@@ -1,92 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Plant Species Directory</title>
-    <link href="https://replitcdn.com/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
     <style>
-        :root {
-            --bs-primary: #28a745;
-            --bs-primary-rgb: 40, 167, 69;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-        }
-        
         .admin-card {
             transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--bs-border-color);
         }
         
         .admin-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: translateY(-3px);
+            border-color: var(--bs-primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         
         .admin-card .card-body {
-            padding: 2rem;
+            padding: 1.5rem;
         }
         
         .admin-icon {
-            width: 48px;
-            height: 48px;
-            color: var(--bs-primary);
-            margin-bottom: 1rem;
+            width: 40px;
+            height: 40px;
+            color: var(--bs-success);
+            margin-bottom: 0.75rem;
         }
         
         .admin-card h5 {
-            color: var(--bs-primary);
+            color: var(--bs-success);
             font-weight: 600;
-        }
-        
-        .admin-card .btn {
-            width: 100%;
-            font-weight: 500;
-        }
-        
-        .header-section {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .back-link {
-            color: #6c757d;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .back-link:hover {
-            color: var(--bs-primary);
         }
     </style>
 </head>
 <body>
-    <div class="header-section py-4">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h1 class="h3 mb-1">
-                        <i data-feather="settings" class="me-2"></i>
-                        Admin Dashboard
-                    </h1>
-                    <p class="text-muted mb-0">Manage and monitor your plant species directory</p>
-                </div>
-                <a href="/" class="back-link">
-                    <i data-feather="arrow-left" class="me-1"></i>
-                    Back to Main Site
-                </a>
+    <div class="container py-3">
+        {% include 'nav_menu.html' %}
+        
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i data-feather="settings" class="me-2"></i>
+                    Admin Dashboard
+                </h1>
+                <p class="text-muted mb-0">Manage and monitor your plant species directory</p>
             </div>
+            <a href="/" class="btn btn-outline-secondary">
+                <i data-feather="arrow-left" class="me-1"></i>
+                Back to Directory
+            </a>
         </div>
-    </div>
 
-    <div class="container">
-        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -105,15 +71,15 @@
                     <div class="card-body text-center">
                         <i data-feather="{{ page.icon }}" class="admin-icon"></i>
                         <h5 class="card-title">{{ page.title }}</h5>
-                        <p class="card-text text-muted">{{ page.description }}</p>
+                        <p class="card-text text-muted small">{{ page.description }}</p>
                         <div class="mt-auto">
                             {% if page.url.startswith('/api/') %}
-                                <a href="{{ page.url }}" class="btn btn-outline-primary" target="_blank">
+                                <a href="{{ page.url }}" class="btn btn-outline-success btn-sm" target="_blank">
                                     <i data-feather="external-link" class="me-1"></i>
                                     Open API
                                 </a>
                             {% else %}
-                                <a href="{{ page.url }}" class="btn btn-primary">
+                                <a href="{{ page.url }}" class="btn btn-success btn-sm">
                                     <i data-feather="arrow-right" class="me-1"></i>
                                     Open
                                 </a>
@@ -123,53 +89,46 @@
                 </div>
             </div>
             {% endfor %}
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i data-feather="zap" class="me-2"></i>
-                            Quick Actions
-                        </h5>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <p><strong>Detect New Data Files</strong></p>
-                                <p class="text-muted small mb-2">Check if a differently-named data file exists in Google Drive and switch to it.</p>
-                                <button type="button" class="btn btn-outline-primary" id="checkUpdatesBtn" onclick="checkForUpdates()">
-                                    <i data-feather="download-cloud" class="me-1"></i>
-                                    Detect New Files
-                                </button>
-                                <span id="updateStatus" class="ms-2 small"></span>
-                            </div>
-                            {% if cloudinary_available %}
-                            <div class="col-md-4">
-                                <p><strong>Refresh Images</strong></p>
-                                <p class="text-muted small mb-2">Clear the Cloudinary image cache to load fresh images.</p>
-                                <button type="button" class="btn btn-outline-secondary" id="refreshImagesBtn" onclick="refreshImages()">
-                                    <i data-feather="camera" class="me-1"></i>
-                                    Refresh Images
-                                </button>
-                                <span id="imageStatus" class="ms-2 small"></span>
-                            </div>
-                            {% endif %}
-                            <div class="col-md-4">
-                                <p><strong>Community Feedback</strong></p>
-                                <p class="text-muted small mb-2">Check "Issue Reports" regularly to see what your 550+ members are reporting.</p>
-                                <a href="/admin/issues" class="btn btn-outline-warning">
-                                    <i data-feather="alert-triangle" class="me-1"></i>
-                                    View Issues
-                                </a>
-                            </div>
+            
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="download-cloud" class="admin-icon"></i>
+                        <h5 class="card-title">Detect New Files</h5>
+                        <p class="card-text text-muted small">Check for differently-named data files in Google Drive</p>
+                        <div class="mt-auto">
+                            <button type="button" class="btn btn-success btn-sm" id="checkUpdatesBtn" onclick="checkForUpdates()">
+                                <i data-feather="search" class="me-1"></i>
+                                Check Now
+                            </button>
+                            <div id="updateStatus" class="mt-2 small"></div>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            {% if cloudinary_available %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="camera" class="admin-icon"></i>
+                        <h5 class="card-title">Refresh Images</h5>
+                        <p class="card-text text-muted small">Clear Cloudinary cache to load fresh images</p>
+                        <div class="mt-auto">
+                            <button type="button" class="btn btn-success btn-sm" id="refreshImagesBtn" onclick="refreshImages()">
+                                <i data-feather="refresh-cw" class="me-1"></i>
+                                Refresh
+                            </button>
+                            <div id="imageStatus" class="mt-2 small"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <script src="https://replitcdn.com/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
@@ -177,87 +136,72 @@
         
         function refreshImages() {
             const btn = document.getElementById('refreshImagesBtn');
-            const statusSpan = document.getElementById('imageStatus');
+            const statusDiv = document.getElementById('imageStatus');
             
             if (!btn) return;
             
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refreshing...';
-            statusSpan.innerHTML = '';
+            statusDiv.innerHTML = '';
             
             fetch('/api/refresh-images')
                 .then(response => response.json())
                 .then(data => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Refresh';
                     feather.replace();
                     
                     if (data.refreshed) {
-                        statusSpan.className = 'ms-2 small text-success';
-                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message;
+                        statusDiv.className = 'mt-2 small text-success';
+                        statusDiv.innerHTML = 'Cache cleared!';
                     } else {
-                        statusSpan.className = 'ms-2 small text-warning';
-                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
+                        statusDiv.className = 'mt-2 small text-warning';
+                        statusDiv.innerHTML = data.message;
                     }
-                    feather.replace();
-                    setTimeout(() => { statusSpan.innerHTML = ''; }, 5000);
+                    setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
                 })
                 .catch(error => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="camera" class="me-1"></i>Refresh Images';
+                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Refresh';
                     feather.replace();
-                    statusSpan.className = 'ms-2 small text-danger';
-                    statusSpan.innerHTML = 'Error refreshing images';
-                    console.error('Refresh images failed:', error);
+                    statusDiv.className = 'mt-2 small text-danger';
+                    statusDiv.innerHTML = 'Error refreshing';
                 });
         }
         
         function checkForUpdates() {
             const btn = document.getElementById('checkUpdatesBtn');
-            const statusSpan = document.getElementById('updateStatus');
+            const statusDiv = document.getElementById('updateStatus');
             
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
-            statusSpan.innerHTML = '';
+            statusDiv.innerHTML = '';
             
             fetch('/api/check-updates')
                 .then(response => response.json())
                 .then(data => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Detect New Files';
+                    btn.innerHTML = '<i data-feather="search" class="me-1"></i>Check Now';
                     feather.replace();
                     
-                    let suppInfo = '';
-                    if (data.supplemental) {
-                        if (data.supplemental.found) {
-                            suppInfo = ' | Supplemental: ' + data.supplemental.file_name;
-                        } else {
-                            suppInfo = ' | Supplemental: not found';
-                        }
-                    }
-                    
                     if (data.status === 'updated' || data.status === 'reloaded') {
-                        statusSpan.className = 'ms-2 small text-success';
-                        statusSpan.innerHTML = '<i data-feather="check-circle" class="me-1"></i>' + data.message + suppInfo;
-                        feather.replace();
+                        statusDiv.className = 'mt-2 small text-success';
+                        statusDiv.innerHTML = 'New file loaded!';
                     } else if (data.status === 'unchanged') {
-                        statusSpan.className = 'ms-2 small text-info';
-                        statusSpan.innerHTML = '<i data-feather="check" class="me-1"></i>' + data.message + suppInfo;
-                        feather.replace();
-                        setTimeout(() => { statusSpan.innerHTML = ''; }, 8000);
+                        statusDiv.className = 'mt-2 small text-info';
+                        statusDiv.innerHTML = 'Already up to date';
                     } else {
-                        statusSpan.className = 'ms-2 small text-warning';
-                        statusSpan.innerHTML = '<i data-feather="alert-triangle" class="me-1"></i>' + data.message;
-                        feather.replace();
+                        statusDiv.className = 'mt-2 small text-warning';
+                        statusDiv.innerHTML = data.message;
                     }
+                    setTimeout(() => { statusDiv.innerHTML = ''; }, 8000);
                 })
                 .catch(error => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="download-cloud" class="me-1"></i>Detect New Files';
+                    btn.innerHTML = '<i data-feather="search" class="me-1"></i>Check Now';
                     feather.replace();
-                    statusSpan.className = 'ms-2 small text-danger';
-                    statusSpan.innerHTML = 'Error detecting new files';
-                    console.error('Detect new files failed:', error);
+                    statusDiv.className = 'mt-2 small text-danger';
+                    statusDiv.innerHTML = 'Error checking';
                 });
         }
     </script>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Review Pending Submissions - Admin</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
     <style>
         .pending-image-container, .pending-metadata-container {
             border: 3px solid #ffc107;
@@ -70,19 +71,25 @@
     </style>
 </head>
 <body>
-    <div class="container-fluid px-3 py-3">
+    <div class="container py-3">
+        {% include 'nav_menu.html' %}
+        
         <div class="mb-3">
-            <h1 class="text-primary fs-4 mb-2">
+            <h1 class="text-success fs-4 mb-2">
                 <i data-feather="check-circle" class="me-2"></i>
                 Review Pending Submissions
             </h1>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ url_for('admin_review') }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Admin Dashboard
+                </a>
+                <a href="{{ url_for('admin_review') }}" class="btn btn-sm btn-outline-success">
                     <i data-feather="refresh-cw" class="me-1"></i>
                     Refresh
                 </a>
                 <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i data-feather="arrow-left" class="me-1"></i>
+                    <i data-feather="home" class="me-1"></i>
                     Back
                 </a>
             </div>
