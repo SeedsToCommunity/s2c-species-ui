@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Explorer - Plant Directory</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.05) 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .prompt-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .prompt-section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .prompt-section-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .prompt-content {
+            white-space: pre-wrap;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .topic-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .topic-item {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            margin-bottom: 0.25rem;
+            transition: background 0.2s;
+        }
+        .topic-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .topic-item.active {
+            background: rgba(25, 135, 84, 0.3);
+            border-left: 3px solid #198754;
+        }
+        .tier-btn {
+            min-width: 80px;
+        }
+        .tier-btn.active {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+        .section-base { border-left: 4px solid #6c757d; }
+        .section-tier { border-left: 4px solid #0dcaf0; }
+        .section-topic { border-left: 4px solid #198754; }
+        .category-header {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            padding: 0.5rem 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .prompt-content h1, .prompt-content h2, .prompt-content h3 {
+            color: #5cb377;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .prompt-content h1:first-child, .prompt-content h2:first-child, .prompt-content h3:first-child {
+            margin-top: 0;
+        }
+        .prompt-content ul, .prompt-content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        .prompt-content li {
+            margin-bottom: 0.25rem;
+        }
+        .prompt-content code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+        .prompt-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+        .prompt-content pre code {
+            background: none;
+            padding: 0;
+        }
+        .prompt-content p {
+            margin-bottom: 0.75rem;
+        }
+        .prompt-content strong {
+            color: #7ec994;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        {% include 'nav_menu.html' %}
+
+        <div class="hero-section text-center">
+            <h1 class="display-5 mb-3">
+                <i data-feather="terminal" class="me-2"></i>
+                Prompt Explorer
+            </h1>
+            <p class="lead text-muted mb-0">See exactly what instructions guide the AI when generating plant data</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header border-secondary">
+                        <h5 class="mb-0">Select Tier</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('prompt_explorer', tier=1, topic=current_topic) }}" 
+                               class="btn btn-outline-info tier-btn {{ 'active' if current_tier == 1 }}">Tier 1</a>
+                            <a href="{{ url_for('prompt_explorer', tier=2, topic=current_topic) }}" 
+                               class="btn btn-outline-warning tier-btn {{ 'active' if current_tier == 2 }}">Tier 2</a>
+                            <a href="{{ url_for('prompt_explorer', tier=3, topic=current_topic) }}" 
+                               class="btn btn-outline-secondary tier-btn {{ 'active' if current_tier == 3 }}">Tier 3</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-dark border-secondary mt-3">
+                    <div class="card-header border-secondary">
+                        <h5 class="mb-0">Select Topic</h5>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="topic-list">
+                            {% for category, topics in topics_by_category.items() %}
+                            <div class="category-header">{{ category }}</div>
+                            {% for topic in topics %}
+                            <a href="{{ url_for('prompt_explorer', tier=current_tier, topic=topic.id) }}" 
+                               class="topic-item d-block text-decoration-none text-light {{ 'active' if current_topic == topic.id }}">
+                                {{ topic.name }}
+                            </a>
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <div class="prompt-section section-base">
+                    <div class="prompt-section-header">
+                        <span class="prompt-section-label text-secondary">
+                            <i data-feather="layers" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Base Context (Always Included)
+                        </span>
+                    </div>
+                    <div class="prompt-content text-light">{{ base_prompt }}</div>
+                </div>
+
+                <div class="prompt-section section-tier">
+                    <div class="prompt-section-header">
+                        <span class="prompt-section-label text-info">
+                            <i data-feather="git-branch" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Tier {{ current_tier }} Guidance
+                        </span>
+                    </div>
+                    <div class="prompt-content text-light">{{ tier_prompt }}</div>
+                </div>
+
+                {% if topic_prompt %}
+                <div class="prompt-section section-topic">
+                    <div class="prompt-section-header">
+                        <span class="prompt-section-label text-success">
+                            <i data-feather="file-text" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Topic: {{ current_topic_name }}
+                        </span>
+                    </div>
+                    <div class="prompt-content text-light">{{ topic_prompt }}</div>
+                </div>
+                {% else %}
+                <div class="prompt-section section-topic">
+                    <div class="prompt-section-header">
+                        <span class="prompt-section-label text-success">
+                            <i data-feather="file-text" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Topic Prompt
+                        </span>
+                    </div>
+                    <div class="prompt-content text-muted">
+                        <em>Select a topic from the list to see its specific prompt guidance.</em>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-center mt-4">
+                    <a href="/" class="btn btn-outline-success">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Plant Directory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

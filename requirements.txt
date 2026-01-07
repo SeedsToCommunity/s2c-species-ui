@@ -10,3 +10,4 @@ sendgrid
 google-api-python-client
 google-auth
 cloudinary
+markdown

@@ -147,6 +147,21 @@
             display: inline;
             white-space: nowrap;
         }
+        .prompt-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #6c757d;
+            text-decoration: none;
+            margin-left: 0.25rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .prompt-link:hover {
+            opacity: 1;
+            color: #adb5bd;
+        }
 
     </style>
 </head>
@@ -174,6 +189,14 @@
               data-bs-placement="top" 
               data-bs-title="Tier {{ tier_num }} Source"
               data-bs-content="{{ attribution|e }}">t{{ tier_num }}</span>
+    {%- endmacro %}
+    
+    {# Macro to render prompt explorer link for a field #}
+    {% macro prompt_link(field_name) %}
+        {%- set topic_id = prompt_mappings.get(field_name, '') -%}
+        {%- if topic_id -%}
+            <a href="/prompts?tier=1&topic={{ topic_id }}" class="prompt-link" title="View AI prompt for this field" target="_blank">(ⓘ Prompt)</a>
+        {%- endif -%}
     {%- endmacro %}
     
     {# Macro to render tiered content #}
@@ -437,7 +460,7 @@
                                 {% elif parsed.type == 'tiered_content' %}
                                     <!-- Tiered content (tier1/tier2/tier3 with attributions) -->
                                     <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:</small>
+                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ prompt_link(column.field) }}</small>
                                         <div class="text-body-secondary">
                                             {{ render_tiered_content(parsed.data) }}
                                         </div>
@@ -919,7 +942,7 @@
                 updateAnnouncement(data.screen_config);
                 
                 // Update content
-                updateScreenContent(data.species, data.screen_config, data.cloudinary_images, data.attribution_data);
+                updateScreenContent(data.species, data.screen_config, data.cloudinary_images, data.attribution_data, data.prompt_mappings);
                 
                 // Re-initialize Feather icons for new content
                 feather.replace();
@@ -1135,11 +1158,21 @@
         }
         
         // Function to update screen content
-        function updateScreenContent(species, screenConfig, cloudinaryImages, attributionData) {
+        function updateScreenContent(species, screenConfig, cloudinaryImages, attributionData, promptMappings) {
             let content = '';
             let hasData = false;
             cloudinaryImages = cloudinaryImages || {};
             attributionData = attributionData || {};
+            promptMappings = promptMappings || {};
+            
+            // Helper to generate prompt link HTML
+            function getPromptLinkHtml(fieldName) {
+                const topicId = promptMappings[fieldName];
+                if (topicId) {
+                    return `<a href="/prompts?tier=1&topic=${topicId}" class="prompt-link" title="View AI prompt for this field" target="_blank">(ⓘ Prompt)</a>`;
+                }
+                return '';
+            }
             
             screenConfig.columns.forEach(column => {
                 const fieldValue = species[column.field];
@@ -1333,12 +1366,13 @@
                             }
                         }
                         
+                        const promptLink = getPromptLinkHtml(column.field);
                         content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
                                         <div>
-                                            <small class="field-label d-block mb-1">${column.label}:</small>
+                                            <small class="field-label d-block mb-1">${column.label}:${promptLink}</small>
                                             <div class="tiered-content text-body-secondary">${tieredHtml.trim()}</div>
                                         </div>
                                     </div>

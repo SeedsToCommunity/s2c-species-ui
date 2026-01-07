@@ -2171,6 +2171,18 @@ def species_detail(botanical_name, screen_type='identification'):
         except Exception as e:
             app.logger.warning(f"Could not load attribution data: {e}")
         
+        # Load prompt mappings for prompt explorer links
+        prompt_mappings = {}
+        try:
+            import json
+            prompt_config_path = 'config/prompt_mappings.json'
+            if os.path.exists(prompt_config_path):
+                with open(prompt_config_path, 'r') as f:
+                    prompt_config = json.load(f)
+                    prompt_mappings = prompt_config.get('mappings', {})
+        except Exception as e:
+            app.logger.warning(f"Could not load prompt mappings: {e}")
+        
         return render_template('species_detail.html', 
                              species=species, 
                              screen_config=screen_config,
@@ -2180,6 +2192,7 @@ def species_detail(botanical_name, screen_type='identification'):
                              botanical_name=unquote(botanical_name),
                              cloudinary_images=cloudinary_images,
                              attribution_data=attribution_data,
+                             prompt_mappings=prompt_mappings,
                              is_development=True)
         
     except Exception as e:
@@ -2236,13 +2249,26 @@ def api_species_screen(botanical_name, screen_type):
         except Exception as e:
             app.logger.warning(f"Could not load attribution data for API: {e}")
         
+        # Load prompt mappings
+        prompt_mappings = {}
+        try:
+            import json
+            prompt_config_path = 'config/prompt_mappings.json'
+            if os.path.exists(prompt_config_path):
+                with open(prompt_config_path, 'r') as f:
+                    prompt_config = json.load(f)
+                    prompt_mappings = prompt_config.get('mappings', {})
+        except Exception as e:
+            app.logger.warning(f"Could not load prompt mappings for API: {e}")
+        
         # Return JSON data
         return {
             "species": species,
             "screen_config": screen_config,
             "current_screen": screen_type,
             "cloudinary_images": cloudinary_images,
-            "attribution_data": attribution_data
+            "attribution_data": attribution_data,
+            "prompt_mappings": prompt_mappings
         }
         
     except Exception as e:
@@ -2765,6 +2791,100 @@ def explain_ai_data():
     """Explanation page for the 3-tier AI data approach"""
     is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
     return render_template('explain_ai_data.html', is_development=is_development)
+
+@app.route('/prompts')
+def prompt_explorer():
+    """Prompt Explorer page showing how AI prompts are constructed"""
+    import os
+    import markdown
+    from markupsafe import Markup
+    
+    is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
+    
+    current_tier = request.args.get('tier', 1, type=int)
+    if current_tier not in [1, 2, 3]:
+        current_tier = 1
+    current_topic = request.args.get('topic', '')
+    
+    prompts_dir = 'prompts'
+    
+    # Helper to read and convert markdown to HTML
+    def read_markdown_file(filepath):
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as f:
+                content = f.read()
+                return Markup(markdown.markdown(content, extensions=['fenced_code', 'tables']))
+        return ''
+    
+    base_prompt = read_markdown_file(os.path.join(prompts_dir, 'tiered_base_prompt.md'))
+    tier_prompt = read_markdown_file(os.path.join(prompts_dir, f'tier{current_tier}_prompt_guidance.md'))
+    
+    topic_files = []
+    excluded_files = ['tiered_base_prompt.md', 'tier1_prompt_guidance.md', 
+                      'tier2_prompt_guidance.md', 'tier3_prompt_guidance.md',
+                      'similar-species.md']
+    
+    # Category prefixes and their display names
+    category_prefixes = [
+        ('collection_', 'Collection'),
+        ('identification_', 'Identification'),
+        ('processing_', 'Processing'),
+        ('storage_', 'Storage'),
+        ('stratification_', 'Stratification'),
+    ]
+    
+    if os.path.exists(prompts_dir):
+        for filename in sorted(os.listdir(prompts_dir)):
+            if filename.endswith('.md') and filename not in excluded_files:
+                topic_id = filename.replace('.md', '')
+                
+                # Determine category and clean name
+                category = 'General'
+                display_name = topic_id
+                
+                for prefix, cat_name in category_prefixes:
+                    if topic_id.startswith(prefix):
+                        category = cat_name
+                        # Remove prefix from display name
+                        display_name = topic_id[len(prefix):]
+                        break
+                
+                # Convert underscores/dashes to spaces and title case
+                display_name = display_name.replace('_', ' ').replace('-', ' ').title()
+                
+                topic_files.append({
+                    'id': topic_id,
+                    'name': display_name,
+                    'category': category,
+                    'filename': filename
+                })
+    
+    # Group by category with specific order
+    category_order = ['Identification', 'Collection', 'Processing', 'Storage', 'Stratification', 'General']
+    topics_by_category = {}
+    for cat in category_order:
+        topics_in_cat = [t for t in topic_files if t['category'] == cat]
+        if topics_in_cat:
+            topics_by_category[cat] = topics_in_cat
+    
+    topic_prompt = ''
+    current_topic_name = ''
+    if current_topic:
+        topic_prompt = read_markdown_file(os.path.join(prompts_dir, f'{current_topic}.md'))
+        for topic in topic_files:
+            if topic['id'] == current_topic:
+                current_topic_name = topic['name']
+                break
+    
+    return render_template('prompt_explorer.html',
+                         is_development=is_development,
+                         current_tier=current_tier,
+                         current_topic=current_topic,
+                         current_topic_name=current_topic_name,
+                         base_prompt=base_prompt,
+                         tier_prompt=tier_prompt,
+                         topic_prompt=topic_prompt,
+                         topics_by_category=topics_by_category)
 
 @app.route('/report-issue/<path:botanical_name>', methods=['GET', 'POST'])
 def report_issue(botanical_name):

@@ -1,0 +1,31 @@
+{
+  "description": "Maps column field names to prompt topic IDs for the Prompt Explorer links",
+  "mappings": {
+    "collection_challenges": "collection_challenges",
+    "collection_cleaning_complexity": "collection_cleaning_complexity",
+    "collection_drying_needs": "collection_drying_needs",
+    "ease_of_collection": "collection_ease",
+    "collection_id_cautions": "collection_id_cautions",
+    "seed_color_at_maturity": "collection_mature_seed_color",
+    "seed_visibility_at_maturity": "collection_mature_seed_visibility",
+    "collection_miss_risk": "collection_miss_risk",
+    "collection_quantity_notes": "collection_quantity_notes",
+    "readiness_collection_cues": "collection_readiness_cues",
+    "collection_safety_and_nuisance_notes": "collection_safety_nuisances",
+    "similar_species": "collection_similar_species",
+    "some_useful_collection_tools": "collection_tools",
+    "what_you_collect": "collection_what_to_collect",
+    "habitat_notes": "identification_habitat_notes",
+    "processing_difficulty": "processing_difficulty",
+    "processing_hazards": "processing_hazards",
+    "processing_nuggets": "processing_nuggets",
+    "processing_time_labor": "processing_time_labor",
+    "storage_hazards": "storage_hazards",
+    "mold_risk_notes": "storage_mold_risk",
+    "safe_in_fridge": "storage_safe_fridge",
+    "safe_at_room_temp": "storage_safe_room_temperature",
+    "stratification_ecology": "stratification_ecology",
+    "stratification_requirements": "stratification_requirements",
+    "stratification_risks": "stratification_risks"
+  }
+}
