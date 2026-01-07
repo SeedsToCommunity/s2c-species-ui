@@ -2239,13 +2239,16 @@ def api_species_screen(botanical_name, screen_type):
         # Get attribution data
         attribution_data = {}
         try:
-            all_attributions = load_attribution_data()
-            for attr in all_attributions:
-                if attr:
-                    first_key = list(attr.keys())[0] if attr else None
-                    if first_key:
-                        field_name = str(attr.get(first_key, '')).lower().replace(' ', '_')
-                        attribution_data[field_name] = attr
+            attribution_df = load_attribution_data()
+            # load_attribution_data returns a DataFrame, not a list of dicts
+            if isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+                for _, row in attribution_df.iterrows():
+                    attr = {k: v for k, v in row.items() if pd.notna(v) and str(v).strip()}
+                    if attr:
+                        first_key = list(attr.keys())[0]
+                        if first_key:
+                            field_name = str(attr.get(first_key, '')).lower().replace(' ', '_').replace('/', '_')
+                            attribution_data[field_name] = attr
         except Exception as e:
             app.logger.warning(f"Could not load attribution data for API: {e}")
         
