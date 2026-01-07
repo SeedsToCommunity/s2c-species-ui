@@ -6,6 +6,26 @@
       "field": "planting_notes",
       "label": "Planting Notes",
       "width": "auto"
+    },
+    {
+      "field": "plant_spacing",
+      "label": "Plant Spacing",
+      "width": "auto"
+    },
+    {
+      "field": "spread",
+      "label": "Spread",
+      "width": "auto"
+    },
+    {
+      "field": "soil",
+      "label": "Soil",
+      "width": "auto"
+    },
+    {
+      "field": "germination_ecology_/_real-world_behavior",
+      "label": "Germination Ecology / Real-World Behavior",
+      "width": "auto"
     }
   ]
 }

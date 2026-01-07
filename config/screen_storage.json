@@ -11,6 +11,11 @@
       "field": "artificial_stratification_risks",
       "label": "Artificial Stratification Risks",
       "width": "auto"
+    },
+    {
+      "field": "storage_mold_risk",
+      "label": "Storage Mold Risk",
+      "width": "auto"
     }
   ]
 }

@@ -71,6 +71,16 @@
       "field": "external_reference_urls",
       "label": "External Reference URLs",
       "width": "auto"
+    },
+    {
+      "field": "wikipedia_summary",
+      "label": "Wikipedia Summary",
+      "width": "auto"
+    },
+    {
+      "field": "michigan_flora_description",
+      "label": "Michigan Flora Description",
+      "width": "auto"
     }
   ]
 }

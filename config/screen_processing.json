@@ -21,6 +21,21 @@
       "field": "processing_hazards",
       "label": "Processing Hazards",
       "width": "auto"
+    },
+    {
+      "field": "processing_difficulty",
+      "label": "Processing Difficulty",
+      "width": "auto"
+    },
+    {
+      "field": "processing_time_/_labor",
+      "label": "Processing Time / Labor",
+      "width": "auto"
+    },
+    {
+      "field": "seed_drying_needs",
+      "label": "Seed Drying Needs",
+      "width": "auto"
     }
   ]
 }

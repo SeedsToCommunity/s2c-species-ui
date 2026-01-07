@@ -82,14 +82,21 @@
             margin-top: 0;
         }
         .prompt-content ul, .prompt-content ol {
-            display: block;
-            margin-bottom: 0.5rem;
-            padding-left: 1.25rem;
-            list-style-position: outside;
+            display: block !important;
+            margin-bottom: 0.5rem !important;
+            padding-left: 1.5rem !important;
+            list-style-type: disc !important;
+        }
+        .prompt-content ol {
+            list-style-type: decimal !important;
         }
         .prompt-content li {
-            display: list-item;
-            margin-bottom: 0.15rem;
+            display: list-item !important;
+            margin-bottom: 0.2rem !important;
+            padding-left: 0.25rem;
+        }
+        .prompt-content ul li::marker {
+            color: #5cb377;
         }
         .prompt-content code {
             background: rgba(255, 255, 255, 0.1);

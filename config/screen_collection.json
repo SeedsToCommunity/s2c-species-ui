@@ -62,6 +62,16 @@
       "field": "what_you_collect",
       "label": "What You Collect",
       "width": "auto"
+    },
+    {
+      "field": "collection_id_cautions",
+      "label": "Collection ID Cautions",
+      "width": "auto"
+    },
+    {
+      "field": "seed_drying_needs",
+      "label": "Seed Drying Needs",
+      "width": "auto"
     }
   ]
 }
