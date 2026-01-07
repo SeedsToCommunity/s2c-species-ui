@@ -88,11 +88,6 @@
       "width": "auto"
     },
     {
-      "field": "collection_quantity_notes",
-      "label": "Collection Quantity Notes",
-      "width": "auto"
-    },
-    {
       "field": "similar_species_/_distinguishing_features",
       "label": "Similar Species / Distinguishing Features",
       "width": "auto"
