@@ -25,7 +25,9 @@
     "safe_in_fridge": "storage_safe_fridge",
     "safe_at_room_temp": "storage_safe_room_temperature",
     "stratification_ecology": "stratification_ecology",
+    "germination_ecology": "stratification_ecology",
     "stratification_requirements": "stratification_requirements",
-    "stratification_risks": "stratification_risks"
+    "stratification_risks": "stratification_risks",
+    "artificial_stratification_risks": "stratification_risks"
   }
 }
