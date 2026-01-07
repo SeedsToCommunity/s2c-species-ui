@@ -3300,11 +3300,21 @@ def toggle_column():
             columns = display_config.get('main_page_columns', [])
             
             if enabled:
-                # Add column if not present
+                # Add column if not present with full metadata for main page rendering
                 if not any(c.get('field') == column_name for c in columns):
+                    label = get_column_label(column_name)
+                    # Preserve special column types for known fields
+                    col_type = "text"
+                    if column_name == "common_name":
+                        col_type = "title"
+                    elif column_name == "botanical_name":
+                        col_type = "subtitle"
                     columns.append({
                         "field": column_name,
-                        "label": get_column_label(column_name),
+                        "display_name": label,
+                        "type": col_type,
+                        "show_as_badge": False,
+                        "label": label,
                         "width": "auto"
                     })
             else:
@@ -3376,12 +3386,13 @@ def admin_column_reorder():
     
     try:
         screen = request.args.get('screen', 'identification')
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+        valid_screens = ['main_page', 'identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         
         if screen not in valid_screens:
             screen = 'identification'
         
         screens = [
+            {'id': 'main_page', 'name': 'Main Page', 'icon': 'home'},
             {'id': 'identification', 'name': 'Identification', 'icon': 'search'},
             {'id': 'collection', 'name': 'Collection', 'icon': 'package'},
             {'id': 'processing', 'name': 'Processing', 'icon': 'settings'},
@@ -3390,9 +3401,15 @@ def admin_column_reorder():
             {'id': 'planting', 'name': 'Planting', 'icon': 'sun'}
         ]
         
-        screen_config = load_screen_config(screen)
-        columns = screen_config.get('columns', [])
-        active_screen_name = screen_config.get('screen_name', screen.title())
+        # Handle main_page separately - it uses display_columns.json
+        if screen == 'main_page':
+            display_config = load_display_config()
+            columns = display_config.get('main_page_columns', [])
+            active_screen_name = 'Main Page'
+        else:
+            screen_config = load_screen_config(screen)
+            columns = screen_config.get('columns', [])
+            active_screen_name = screen_config.get('screen_name', screen.title())
         
         # Get image groups that will appear on this screen
         if CLOUDINARY_AVAILABLE:
@@ -3430,13 +3447,42 @@ def save_column_order():
         screen = data.get('screen')
         order = data.get('order', [])
         
-        valid_screens = ['identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
+        valid_screens = ['main_page', 'identification', 'collection', 'processing', 'storage', 'stratification', 'planting']
         if screen not in valid_screens:
             return {"error": f"Invalid screen: {screen}"}, 400
         
         if not order:
             return {"error": "No column order provided"}, 400
         
+        # Handle main_page separately - uses display_columns.json
+        if screen == 'main_page':
+            display_config = load_display_config()
+            current_columns = display_config.get('main_page_columns', [])
+            
+            columns_by_field = {c.get('field'): c for c in current_columns}
+            
+            new_columns = []
+            for field in order:
+                if field in columns_by_field:
+                    new_columns.append(columns_by_field[field])
+            
+            display_config['main_page_columns'] = new_columns
+            
+            with open('config/display_columns.json', 'w') as f:
+                json.dump(display_config, f, indent=2)
+            
+            # Invalidate caches so changes appear immediately
+            global _cached_column_usage, _cached_plant_data
+            _cached_column_usage = None
+            
+            # Rebuild cache using already-cached plant data (fast)
+            if _cached_plant_data is not None and not _cached_plant_data.empty:
+                compute_column_usage(_cached_plant_data)
+            
+            app.logger.info(f"Column order saved for screen: main_page")
+            return {"success": True}
+        
+        # Handle species detail screens
         screen_config = load_screen_config(screen)
         current_columns = screen_config.get('columns', [])
         
