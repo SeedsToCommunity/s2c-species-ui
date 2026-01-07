@@ -5,18 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Issue - {{ species.common_name }} - Plant Species Directory</title>
     <link href="https://repls.us/cdn/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
     <div class="container mt-4">
+        {% include 'nav_menu.html' %}
+        
         <!-- Header -->
         <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('species_detail', botanical_name=botanical_name) }}">{{ species.common_name }}</a></li>
-                    <li class="breadcrumb-item active">Report Issue</li>
-                </ol>
-            </nav>
             
             <h1 class="text-primary mb-2">
                 <i data-feather="alert-triangle" class="me-2"></i>
@@ -71,11 +74,7 @@
                         <div class="form-text">Leave your email if you'd like us to follow up with you about this issue.</div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('species_detail', botanical_name=botanical_name) }}" class="btn btn-outline-secondary">
-                            <i data-feather="arrow-left" class="me-1"></i>
-                            Back to Species
-                        </a>
+                    <div class="text-end">
                         <button type="submit" class="btn btn-primary">
                             <i data-feather="send" class="me-1"></i>
                             Submit Report
