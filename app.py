@@ -221,14 +221,51 @@ def interpret_w_value_filter(value):
 def format_list_content_filter(value):
     """Template filter to format list-like content with proper line breaks.
     
-    Detects bullet points (•, -, *, numbered) and converts newlines to <br> tags.
-    Returns HTML-safe markup.
+    Detects:
+    - Group tags: "Native —", "Non-native —", "Horticultural —", "Invasive —"
+    - Bullet points (•, -, *, numbered)
+    - Newlines
+    Returns HTML-safe markup with proper formatting.
     """
     from markupsafe import Markup
     import re
+    import html
     
     if not value or not isinstance(value, str):
         return value
+    
+    # Group tag patterns for Similar Species / Distinguishing Features
+    group_tags = ['Native —', 'Non-native —', 'Horticultural —', 'Invasive —']
+    
+    # Check if text contains group tags (these may not have newlines)
+    has_group_tags = any(tag in value for tag in group_tags)
+    
+    if has_group_tags:
+        # Split text by group tags, keeping the tags
+        pattern = r'((?:Native|Non-native|Horticultural|Invasive)\s*—)'
+        parts = re.split(pattern, value)
+        
+        # Rebuild as list items
+        items = []
+        current_item = ''
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            # Check if this part is a group tag
+            if re.match(r'^(?:Native|Non-native|Horticultural|Invasive)\s*—$', part):
+                if current_item:
+                    items.append(current_item.strip())
+                current_item = part + ' '
+            else:
+                current_item += part
+        if current_item:
+            items.append(current_item.strip())
+        
+        # Format as bullet list
+        if items:
+            formatted_items = ['• ' + html.escape(item) for item in items if item]
+            return Markup('<br>'.join(formatted_items))
     
     # Check if content looks like a list (has bullet points or numbered items)
     list_patterns = [
@@ -249,7 +286,6 @@ def format_list_content_filter(value):
     
     if is_list or '\n' in value:
         # Escape HTML entities first, then convert newlines to <br>
-        import html
         escaped = html.escape(value)
         formatted = escaped.replace('\n', '<br>')
         return Markup(formatted)
