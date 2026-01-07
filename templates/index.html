@@ -191,6 +191,13 @@
                                     <i data-feather="x-circle" class="me-1"></i>
                                     Clear All Filters
                                 </a>
+                                <span class="badge bg-info fs-6 ms-auto">
+                                    {% if current_filters and (current_filters.name or current_filters.start_seed_watch or current_filters.germination_code or current_filters.light or current_filters.moisture or current_filters.community_data) %}
+                                        {{ plants|length }} of {{ filter_options.total_count }} species found
+                                    {% else %}
+                                        {{ plants|length }} species
+                                    {% endif %}
+                                </span>
                             </div>
                         </form>
                     </div>
@@ -215,20 +222,6 @@
         <div class="row">
             <div class="col" id="results-container">
                 {% if plants %}
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3>
-                            <i data-feather="list" class="me-2"></i>
-                            Plant Species
-                        </h3>
-                        <span class="badge bg-info fs-6">
-                            {% if current_filters and (current_filters.name or current_filters.start_seed_watch or current_filters.germination_code or current_filters.light or current_filters.moisture or current_filters.community_data) %}
-                                {{ plants|length }} of {{ filter_options.total_count }} species found
-                            {% else %}
-                                {{ plants|length }} species
-                            {% endif %}
-                        </span>
-                    </div>
-
                     <div class="row" id="species-cards-container">
                         {% for plant in plants %}
                             <div class="col-lg-6 col-xl-4 mb-3">
