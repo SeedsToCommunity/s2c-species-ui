@@ -62,23 +62,23 @@
             pointer-events: none;
         }
         
-        /* Distinct pastel colors for each screen column */
-        .col-main-page { background-color: rgba(255, 182, 193, 0.3) !important; } /* Light pink */
-        .col-identification { background-color: rgba(255, 218, 185, 0.3) !important; } /* Peach */
-        .col-collection { background-color: rgba(255, 255, 186, 0.3) !important; } /* Light yellow */
-        .col-processing { background-color: rgba(186, 255, 201, 0.3) !important; } /* Mint green */
-        .col-storage { background-color: rgba(186, 225, 255, 0.3) !important; } /* Light blue */
-        .col-stratification { background-color: rgba(221, 186, 255, 0.3) !important; } /* Lavender */
-        .col-planting { background-color: rgba(255, 186, 255, 0.3) !important; } /* Light magenta */
+        /* Distinct pastel colors for each screen column - visible on dark theme */
+        td.col-main-page { background-color: rgba(255, 120, 150, 0.25) !important; } /* Pink */
+        td.col-identification { background-color: rgba(255, 180, 120, 0.25) !important; } /* Peach */
+        td.col-collection { background-color: rgba(230, 230, 100, 0.25) !important; } /* Yellow */
+        td.col-processing { background-color: rgba(100, 220, 140, 0.25) !important; } /* Green */
+        td.col-storage { background-color: rgba(100, 180, 255, 0.25) !important; } /* Blue */
+        td.col-stratification { background-color: rgba(180, 130, 255, 0.25) !important; } /* Lavender */
+        td.col-planting { background-color: rgba(255, 130, 255, 0.25) !important; } /* Magenta */
         
-        /* Header colors - slightly more saturated */
-        th.col-main-page { background-color: rgba(255, 140, 160, 0.6) !important; }
-        th.col-identification { background-color: rgba(255, 180, 140, 0.6) !important; }
-        th.col-collection { background-color: rgba(240, 240, 140, 0.6) !important; }
-        th.col-processing { background-color: rgba(140, 220, 160, 0.6) !important; }
-        th.col-storage { background-color: rgba(140, 190, 240, 0.6) !important; }
-        th.col-stratification { background-color: rgba(190, 140, 240, 0.6) !important; }
-        th.col-planting { background-color: rgba(240, 140, 240, 0.6) !important; }
+        /* Header colors - more saturated for visibility */
+        th.col-main-page { background-color: rgba(255, 100, 130, 0.7) !important; color: white !important; }
+        th.col-identification { background-color: rgba(255, 160, 100, 0.7) !important; color: white !important; }
+        th.col-collection { background-color: rgba(200, 200, 80, 0.7) !important; color: white !important; }
+        th.col-processing { background-color: rgba(80, 180, 120, 0.7) !important; color: white !important; }
+        th.col-storage { background-color: rgba(80, 150, 220, 0.7) !important; color: white !important; }
+        th.col-stratification { background-color: rgba(150, 100, 220, 0.7) !important; color: white !important; }
+        th.col-planting { background-color: rgba(220, 100, 220, 0.7) !important; color: white !important; }
         
         .development-badge {
             background: linear-gradient(135deg, #28a745, #20c997);
