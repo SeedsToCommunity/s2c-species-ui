@@ -63,22 +63,23 @@
         }
         
         /* Distinct pastel colors for each screen column - visible on dark theme */
-        td.col-main-page { background-color: rgba(255, 120, 150, 0.25) !important; } /* Pink */
-        td.col-identification { background-color: rgba(255, 180, 120, 0.25) !important; } /* Peach */
-        td.col-collection { background-color: rgba(230, 230, 100, 0.25) !important; } /* Yellow */
-        td.col-processing { background-color: rgba(100, 220, 140, 0.25) !important; } /* Green */
-        td.col-storage { background-color: rgba(100, 180, 255, 0.25) !important; } /* Blue */
-        td.col-stratification { background-color: rgba(180, 130, 255, 0.25) !important; } /* Lavender */
-        td.col-planting { background-color: rgba(255, 130, 255, 0.25) !important; } /* Magenta */
+        /* Using high specificity to override Bootstrap table-striped */
+        .usage-table tbody tr td.col-main-page { background-color: #4a2a35 !important; } /* Dark pink */
+        .usage-table tbody tr td.col-identification { background-color: #4a3a2a !important; } /* Dark peach */
+        .usage-table tbody tr td.col-collection { background-color: #4a4a2a !important; } /* Dark yellow */
+        .usage-table tbody tr td.col-processing { background-color: #2a4a35 !important; } /* Dark green */
+        .usage-table tbody tr td.col-storage { background-color: #2a3a4a !important; } /* Dark blue */
+        .usage-table tbody tr td.col-stratification { background-color: #3a2a4a !important; } /* Dark lavender */
+        .usage-table tbody tr td.col-planting { background-color: #4a2a4a !important; } /* Dark magenta */
         
         /* Header colors - more saturated for visibility */
-        th.col-main-page { background-color: rgba(255, 100, 130, 0.7) !important; color: white !important; }
-        th.col-identification { background-color: rgba(255, 160, 100, 0.7) !important; color: white !important; }
-        th.col-collection { background-color: rgba(200, 200, 80, 0.7) !important; color: white !important; }
-        th.col-processing { background-color: rgba(80, 180, 120, 0.7) !important; color: white !important; }
-        th.col-storage { background-color: rgba(80, 150, 220, 0.7) !important; color: white !important; }
-        th.col-stratification { background-color: rgba(150, 100, 220, 0.7) !important; color: white !important; }
-        th.col-planting { background-color: rgba(220, 100, 220, 0.7) !important; color: white !important; }
+        .usage-table thead th.col-main-page { background-color: #8b3a50 !important; }
+        .usage-table thead th.col-identification { background-color: #8b5a3a !important; }
+        .usage-table thead th.col-collection { background-color: #7a7a3a !important; }
+        .usage-table thead th.col-processing { background-color: #3a6b4a !important; }
+        .usage-table thead th.col-storage { background-color: #3a5a7b !important; }
+        .usage-table thead th.col-stratification { background-color: #5a3a7b !important; }
+        .usage-table thead th.col-planting { background-color: #7b3a7b !important; }
         
         .development-badge {
             background: linear-gradient(135deg, #28a745, #20c997);
