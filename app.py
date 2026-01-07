@@ -1842,26 +1842,25 @@ def merge_supplemental_data(main_df, supplemental_df):
         return main_df
 
 def load_display_config():
-    """Load display configuration from Google Drive (with local fallback)
-    
-    Uses Drive as the authoritative source so configs persist across deployments.
-    """
-    # Load from Drive (with local fallback)
-    config, source = load_config_from_drive('display_columns')
-    
-    if config is None:
-        app.logger.error("Display configuration not found in Drive or locally")
+    """Load display configuration from JSON file"""
+    try:
+        with open('config/display_columns.json', 'r') as f:
+            config = json.load(f)
+        
+        # Apply original column labels from column_labels.json
+        for col in config.get('main_page_columns', []):
+            field_name = col.get('field')
+            if field_name:
+                original_label = get_column_label(field_name)
+                col['label'] = original_label
+        
+        return config
+    except FileNotFoundError:
+        app.logger.error("Display configuration file not found")
         return {"main_page_columns": [], "filter_columns": []}
-    
-    # Apply original column labels from column_labels.json
-    for col in config.get('main_page_columns', []):
-        field_name = col.get('field')
-        if field_name:
-            original_label = get_column_label(field_name)
-            col['label'] = original_label
-    
-    app.logger.debug(f"Loaded display config from {source}")
-    return config
+    except Exception as e:
+        app.logger.error(f"Error loading display configuration: {str(e)}")
+        return {"main_page_columns": [], "filter_columns": []}
 
 def convert_google_drive_url(share_url):
     """Convert Google Drive share URL to direct CSV download URL"""
@@ -2159,50 +2158,56 @@ def get_unique_values_ordered(df, column, preferred_order):
 _cached_screen_configs = {}
 
 def load_screen_config(screen_type, force_reload=False):
-    """Load screen configuration for species detail view
+    """Load screen configuration for species detail view (cached in memory with mtime check)
     
-    Uses Google Drive as the authoritative source so configs persist across deployments.
-    Falls back to local files if Drive is unavailable.
+    Uses file modification time to detect changes across Gunicorn workers.
+    When the config file is updated on disk, all workers will reload it.
     """
     global _cached_screen_configs
     
-    # Check cache first (short TTL to allow Drive updates to propagate)
-    cache_key = f"screen_{screen_type}"
+    config_path = f'config/screen_{screen_type}.json'
+    
+    try:
+        # Get current file modification time
+        current_mtime = os.path.getmtime(config_path)
+    except OSError:
+        current_mtime = None
+    
+    # Check cache - validate mtime to ensure consistency across workers
     if not force_reload and screen_type in _cached_screen_configs:
         cached = _cached_screen_configs[screen_type]
-        cache_age = time.time() - cached.get('timestamp', 0)
-        # Cache for 60 seconds to balance performance vs freshness
-        if cache_age < 60:
+        cached_mtime = cached.get('mtime')
+        # If file hasn't changed, use cached version
+        if cached_mtime is not None and current_mtime == cached_mtime:
             return cached['config']
     
-    # Load from Drive (with local fallback)
-    config, source = load_config_from_drive(cache_key)
-    
-    if config is None:
-        # No config found anywhere - return default
-        app.logger.error(f"Screen configuration for {screen_type} not found")
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        # Apply original column labels from column_labels.json
+        # This ensures labels match original spreadsheet headers
+        labels = load_column_labels()
+        for col in config.get('columns', []):
+            field_name = col.get('field')
+            if field_name:
+                if field_name in labels:
+                    col['label'] = labels[field_name]
+                else:
+                    col['label'] = field_name.replace('_', ' ').title()
+        
+        # Cache the result with modification time
+        _cached_screen_configs[screen_type] = {
+            'config': config,
+            'mtime': current_mtime
+        }
+        return config
+    except FileNotFoundError:
+        app.logger.error(f"Screen configuration file for {screen_type} not found")
         return {"screen_name": screen_type.title(), "columns": []}
-    
-    # Apply original column labels from column_labels.json
-    # This ensures labels match original spreadsheet headers
-    labels = load_column_labels()
-    for col in config.get('columns', []):
-        field_name = col.get('field')
-        if field_name:
-            if field_name in labels:
-                col['label'] = labels[field_name]
-            else:
-                col['label'] = field_name.replace('_', ' ').title()
-    
-    # Cache the result with timestamp
-    _cached_screen_configs[screen_type] = {
-        'config': config,
-        'timestamp': time.time(),
-        'source': source
-    }
-    
-    app.logger.debug(f"Loaded screen config '{screen_type}' from {source}")
-    return config
+    except Exception as e:
+        app.logger.error(f"Error loading screen configuration for {screen_type}: {str(e)}")
+        return {"screen_name": screen_type.title(), "columns": []}
 
 def invalidate_screen_config_cache(screen_type=None):
     """Invalidate the screen config cache (all or specific screen)"""
@@ -3289,12 +3294,9 @@ def toggle_column():
             # Update config
             display_config['main_page_columns'] = columns
             
-            # Save to Google Drive (persistent across deployments)
-            success, error = save_config_to_drive('display_columns', display_config)
-            if not success:
-                app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
-                with open('config/display_columns.json', 'w') as f:
-                    json.dump(display_config, f, indent=2)
+            # Save back to file
+            with open('config/display_columns.json', 'w') as f:
+                json.dump(display_config, f, indent=2)
         
         else:
             # Handle species screen configurations
@@ -3324,13 +3326,9 @@ def toggle_column():
             # Update config
             screen_config['columns'] = columns
             
-            # Save to Google Drive (persistent across deployments)
-            success, error = save_config_to_drive(f'screen_{screen_name}', screen_config)
-            if not success:
-                app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
-                # Fall back to local file
-                with open(f'config/screen_{screen_name}.json', 'w') as f:
-                    json.dump(screen_config, f, indent=2)
+            # Save back to file
+            with open(f'config/screen_{screen_name}.json', 'w') as f:
+                json.dump(screen_config, f, indent=2)
             
             # Invalidate screen config cache for this screen
             invalidate_screen_config_cache(screen_name)
@@ -3431,12 +3429,8 @@ def save_column_order():
         
         screen_config['columns'] = new_columns
         
-        # Save to Google Drive (persistent across deployments)
-        success, error = save_config_to_drive(f'screen_{screen}', screen_config)
-        if not success:
-            app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
-            with open(f'config/screen_{screen}.json', 'w') as f:
-                json.dump(screen_config, f, indent=2)
+        with open(f'config/screen_{screen}.json', 'w') as f:
+            json.dump(screen_config, f, indent=2)
         
         # Invalidate caches
         invalidate_screen_config_cache(screen)
