@@ -520,7 +520,11 @@
                                 {% else %}
                                     <div>
                                         <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <span class="text-body-secondary ms-1">{{ field_value }}</span>
+                                        {% if '\n' in field_value or '•' in field_value or '- ' in field_value %}
+                                            <div class="text-body-secondary ms-1" style="white-space: pre-line;">{{ field_value|format_list_content }}</div>
+                                        {% else %}
+                                            <span class="text-body-secondary ms-1">{{ field_value }}</span>
+                                        {% endif %}
                                     </div>
                                 {% endif %}
                             </div>
