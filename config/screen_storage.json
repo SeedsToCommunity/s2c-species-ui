@@ -3,18 +3,23 @@
   "description": "Requirements and methods for storing processed seeds",
   "columns": [
     {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "width": "auto"
+    },
+    {
       "field": "process_notes",
       "label": "Process Notes",
       "type": "text"
     },
     {
-      "field": "storage_mold_risk",
-      "label": "Storage Mold Risk",
+      "field": "strat_notes",
+      "label": "Strat Notes",
       "width": "auto"
     },
     {
-      "field": "other_storage_hazards_/_warnings",
-      "label": "Other Storage Hazards / Warnings",
+      "field": "barn_action",
+      "label": "Barn Action",
       "width": "auto"
     },
     {
@@ -28,18 +33,13 @@
       "width": "auto"
     },
     {
-      "field": "germination_code",
-      "label": "Germination Code",
+      "field": "storage_mold_risk",
+      "label": "Storage Mold Risk",
       "width": "auto"
     },
     {
-      "field": "strat_notes",
-      "label": "Strat Notes",
-      "width": "auto"
-    },
-    {
-      "field": "barn_action",
-      "label": "Barn Action",
+      "field": "other_storage_hazards_/_warnings",
+      "label": "Other Storage Hazards / Warnings",
       "width": "auto"
     }
   ]

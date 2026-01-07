@@ -13,6 +13,11 @@
       "width": "auto"
     },
     {
+      "field": "growth_habit",
+      "label": "Growth Habit",
+      "width": "auto"
+    },
+    {
       "field": "spread",
       "label": "Spread",
       "width": "auto"
@@ -20,16 +25,6 @@
     {
       "field": "soil",
       "label": "Soil",
-      "width": "auto"
-    },
-    {
-      "field": "germination_ecology_/_real-world_behavior",
-      "label": "Germination Ecology / Real-World Behavior",
-      "width": "auto"
-    },
-    {
-      "field": "growth_habit",
-      "label": "Growth Habit",
       "width": "auto"
     },
     {
@@ -50,6 +45,11 @@
     {
       "field": "coefficient_of_wetness_(cw)",
       "label": "Coefficient of Wetness (CW)",
+      "width": "auto"
+    },
+    {
+      "field": "germination_ecology_/_real-world_behavior",
+      "label": "Germination Ecology / Real-World Behavior",
       "width": "auto"
     },
     {

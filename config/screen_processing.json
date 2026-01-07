@@ -3,19 +3,14 @@
   "description": "Instructions and data for processing collected seeds",
   "columns": [
     {
-      "field": "germination_code",
-      "label": "Germination Code",
-      "type": "text"
-    },
-    {
-      "field": "strat_notes",
-      "label": "Strat Notes",
-      "type": "text"
-    },
-    {
       "field": "process_notes",
       "label": "Process Notes",
       "type": "text"
+    },
+    {
+      "field": "seed_cleaning_complexity",
+      "label": "Seed Cleaning Complexity",
+      "width": "auto"
     },
     {
       "field": "processing_hazards",
@@ -43,14 +38,19 @@
       "width": "auto"
     },
     {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "type": "text"
+    },
+    {
       "field": "barn_action",
       "label": "Barn Action",
       "width": "auto"
     },
     {
-      "field": "seed_cleaning_complexity",
-      "label": "Seed Cleaning Complexity",
-      "width": "auto"
+      "field": "strat_notes",
+      "label": "Strat Notes",
+      "type": "text"
     }
   ]
 }

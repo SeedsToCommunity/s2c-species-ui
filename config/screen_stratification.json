@@ -3,6 +3,11 @@
   "description": "Stratification requirements and procedures",
   "columns": [
     {
+      "field": "germination_ecology_/_real-world_behavior",
+      "label": "Germination Ecology / Real-World Behavior",
+      "width": "auto"
+    },
+    {
       "field": "germination_code",
       "label": "Germination Code",
       "type": "text"
@@ -20,11 +25,6 @@
     {
       "field": "artificial_stratification_risks",
       "label": "Artificial Stratification Risks",
-      "width": "auto"
-    },
-    {
-      "field": "germination_ecology_/_real-world_behavior",
-      "label": "Germination Ecology / Real-World Behavior",
       "width": "auto"
     }
   ]
