@@ -124,13 +124,13 @@
                         <form method="GET" action="/" id="filterForm">
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label for="name" class="form-label">Name Search</label>
+                                    <label for="name" class="form-label">Name</label>
                                     <input type="text" class="form-control" id="name" name="name" 
-                                           placeholder="Search botanical or common name..." 
+                                           placeholder="Botanical or Common" 
                                            value="{{ current_filters.name if current_filters else '' }}">
                                 </div>
                                 <div class="col-md-2">
-                                    <label for="start_seed_watch" class="form-label">Start Collecting Month</label>
+                                    <label for="start_seed_watch" class="form-label">Start Collecting</label>
                                     <select class="form-select" id="start_seed_watch" name="start_seed_watch">
                                         <option value="">All Months</option>
                                         {% for option in filter_options.start_seed_watch %}
