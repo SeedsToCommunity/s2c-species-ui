@@ -2697,10 +2697,11 @@ def admin_dashboard():
 @require_admin_auth
 def reload_data_api():
     """API endpoint to reload data from current Google Drive files"""
-    global _cached_plant_data, _cached_supplemental_data
+    global _cached_plant_data, _cached_supplemental_data, _cached_attribution_data
     try:
         _cached_plant_data = None  # Clear cache
         _cached_supplemental_data = None  # Clear supplemental cache
+        _cached_attribution_data = None  # Clear attribution cache
         df = load_plant_data(force_reload=True)
         
         # Build comprehensive message
@@ -2709,9 +2710,17 @@ def reload_data_api():
         # Check supplemental data info
         if _cached_supplemental_data is not None and not _cached_supplemental_data.empty:
             supp_rows = len(_cached_supplemental_data)
-            # Count species with community data
-            community_count = sum(1 for _, row in df.iterrows() if row.get('_has_community_data', False))
+            # Count species with community data - check if column exists in dataframe
+            if '_has_community_data' in df.columns:
+                community_count = df['_has_community_data'].sum()
+            else:
+                community_count = supp_rows  # Fallback to supplemental row count
             message_parts.append(f'Merged {supp_rows} supplemental records ({community_count} species matched).')
+        
+        # Reload attribution data (Column Sources tab)
+        attribution_df = load_attribution_data(force_reload=True)
+        if attribution_df is not None and isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+            message_parts.append(f'Loaded {len(attribution_df)} column source records.')
         
         # Check for any columns that were cleaned up
         removed = get_last_removed_columns()
