@@ -8,13 +8,23 @@
       "type": "text"
     },
     {
-      "field": "artificial_stratification_risks",
-      "label": "Artificial Stratification Risks",
+      "field": "storage_mold_risk",
+      "label": "Storage Mold Risk",
       "width": "auto"
     },
     {
-      "field": "storage_mold_risk",
-      "label": "Storage Mold Risk",
+      "field": "other_storage_hazards_/_warnings",
+      "label": "Other Storage Hazards / Warnings",
+      "width": "auto"
+    },
+    {
+      "field": "safe_storage_method_\u2013_room_temp",
+      "label": "Safe Storage Method \u2013 Room Temp",
+      "width": "auto"
+    },
+    {
+      "field": "safe_storage_method_\u2013_dry_fridge",
+      "label": "Safe Storage Method \u2013 Dry Fridge",
       "width": "auto"
     }
   ]

@@ -36,6 +36,16 @@
       "field": "seed_drying_needs",
       "label": "Seed Drying Needs",
       "width": "auto"
+    },
+    {
+      "field": "processing_nuggets",
+      "label": "Processing Nuggets",
+      "width": "auto"
+    },
+    {
+      "field": "processing_duration",
+      "label": "Processing Duration",
+      "width": "auto"
     }
   ]
 }

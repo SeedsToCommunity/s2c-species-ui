@@ -81,6 +81,11 @@
       "field": "michigan_flora_description",
       "label": "Michigan Flora Description",
       "width": "auto"
+    },
+    {
+      "field": "common_names",
+      "label": "Common Names",
+      "width": "auto"
     }
   ]
 }

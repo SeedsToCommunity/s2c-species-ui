@@ -26,6 +26,11 @@
       "field": "germination_ecology_/_real-world_behavior",
       "label": "Germination Ecology / Real-World Behavior",
       "width": "auto"
+    },
+    {
+      "field": "growth_habit",
+      "label": "Growth Habit",
+      "width": "auto"
     }
   ]
 }

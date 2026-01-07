@@ -16,6 +16,16 @@
       "field": "stratification_requirements",
       "label": "Stratification Requirements",
       "width": "auto"
+    },
+    {
+      "field": "artificial_stratification_risks",
+      "label": "Artificial Stratification Risks",
+      "width": "auto"
+    },
+    {
+      "field": "germination_ecology_/_real-world_behavior",
+      "label": "Germination Ecology / Real-World Behavior",
+      "width": "auto"
     }
   ]
 }
