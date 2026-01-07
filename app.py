@@ -3442,6 +3442,7 @@ def admin_column_reorder():
 @require_admin_auth
 def save_column_order():
     """Save the new column order for a screen"""
+    global _cached_column_usage, _cached_plant_data
     try:
         data = request.get_json()
         screen = data.get('screen')
@@ -3472,7 +3473,6 @@ def save_column_order():
                 json.dump(display_config, f, indent=2)
             
             # Invalidate caches so changes appear immediately
-            global _cached_column_usage, _cached_plant_data
             _cached_column_usage = None
             
             # Rebuild cache using already-cached plant data (fast)
@@ -3500,7 +3500,6 @@ def save_column_order():
         
         # Invalidate caches
         invalidate_screen_config_cache(screen)
-        global _cached_column_usage, _cached_plant_data
         _cached_column_usage = None
         
         # Rebuild cache using already-cached plant data (fast)
