@@ -2703,12 +2703,22 @@ def reload_data_api():
         _cached_supplemental_data = None  # Clear supplemental cache
         df = load_plant_data(force_reload=True)
         
+        # Build comprehensive message
+        message_parts = [f'Loaded {len(df)} plant species from main data file.']
+        
+        # Check supplemental data info
+        if _cached_supplemental_data is not None and not _cached_supplemental_data.empty:
+            supp_rows = len(_cached_supplemental_data)
+            # Count species with community data
+            community_count = sum(1 for _, row in df.iterrows() if row.get('_has_community_data', False))
+            message_parts.append(f'Merged {supp_rows} supplemental records ({community_count} species matched).')
+        
         # Check for any columns that were cleaned up
         removed = get_last_removed_columns()
-        message = f'Data refreshed successfully! Loaded {len(df)} plant species.'
         if removed:
-            readable_names = [col.replace('_', ' ').title() for col in removed]
-            message += f' Cleaned up {len(removed)} missing columns.'
+            message_parts.append(f'Cleaned up {len(removed)} missing columns.')
+        
+        message = ' '.join(message_parts)
         
         return jsonify({
             'success': True,
