@@ -85,6 +85,30 @@
                 </div>
             </div>
             {% endfor %}
+        </div>
+
+        <hr class="my-4">
+        <h5 class="text-muted mb-3">
+            <i data-feather="database" class="me-2"></i>
+            Data Retrieval
+        </h5>
+        
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card admin-card h-100">
+                    <div class="card-body text-center">
+                        <i data-feather="refresh-cw" class="admin-icon"></i>
+                        <h5 class="card-title">Reload Current Data</h5>
+                        <p class="card-text text-muted small">Reload data from current Google Drive files (use after editing existing files)</p>
+                        <div class="mt-auto">
+                            <button type="button" class="btn btn-success btn-sm" id="reloadDataBtn" onclick="reloadData()">
+                                <i data-feather="refresh-cw" class="me-1"></i>
+                                Reload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card admin-card h-100">
@@ -97,7 +121,6 @@
                                 <i data-feather="search" class="me-1"></i>
                                 Check Now
                             </button>
-                            <div id="updateStatus" class="mt-2 small"></div>
                         </div>
                     </div>
                 </div>
@@ -115,7 +138,6 @@
                                 <i data-feather="refresh-cw" class="me-1"></i>
                                 Refresh
                             </button>
-                            <div id="imageStatus" class="mt-2 small"></div>
                         </div>
                     </div>
                 </div>
@@ -124,80 +146,127 @@
         </div>
     </div>
 
+    <!-- Result Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultModalLabel">
+                        <i data-feather="info" class="me-2" id="resultIcon"></i>
+                        <span id="resultTitle">Result</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="resultMessage" class="mb-0"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.js"></script>
     <script>
+        let resultModal = null;
+        
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
         });
         
-        function refreshImages() {
-            const btn = document.getElementById('refreshImagesBtn');
-            const statusDiv = document.getElementById('imageStatus');
+        function getModal() {
+            if (!resultModal) {
+                resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+            }
+            return resultModal;
+        }
+        
+        function showResult(title, message, isSuccess) {
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+            const header = document.querySelector('#resultModal .modal-header');
+            header.className = 'modal-header ' + (isSuccess ? 'bg-success bg-opacity-25' : 'bg-danger bg-opacity-25');
+            getModal().show();
+            feather.replace();
+        }
+        
+        function setButtonLoading(btn, loading, originalHtml) {
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Working...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                feather.replace();
+            }
+        }
+        
+        function reloadData() {
+            const btn = document.getElementById('reloadDataBtn');
+            const originalHtml = '<i data-feather="refresh-cw" class="me-1"></i>Reload';
+            setButtonLoading(btn, true);
             
-            if (!btn) return;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refreshing...';
-            statusDiv.innerHTML = '';
-            
-            fetch('/api/refresh-images')
+            fetch('/api/reload-data')
                 .then(response => response.json())
                 .then(data => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Refresh';
-                    feather.replace();
-                    
-                    if (data.refreshed) {
-                        statusDiv.className = 'mt-2 small text-success';
-                        statusDiv.innerHTML = 'Cache cleared!';
-                    } else {
-                        statusDiv.className = 'mt-2 small text-warning';
-                        statusDiv.innerHTML = data.message;
-                    }
-                    setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
+                    setButtonLoading(btn, false, originalHtml);
+                    showResult('Reload Data', data.message, data.success);
                 })
                 .catch(error => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="refresh-cw" class="me-1"></i>Refresh';
-                    feather.replace();
-                    statusDiv.className = 'mt-2 small text-danger';
-                    statusDiv.innerHTML = 'Error refreshing';
+                    setButtonLoading(btn, false, originalHtml);
+                    showResult('Reload Data', 'Error reloading data: ' + error, false);
                 });
         }
         
         function checkForUpdates() {
             const btn = document.getElementById('checkUpdatesBtn');
-            const statusDiv = document.getElementById('updateStatus');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
-            statusDiv.innerHTML = '';
+            const originalHtml = '<i data-feather="search" class="me-1"></i>Check Now';
+            setButtonLoading(btn, true);
             
             fetch('/api/check-updates')
                 .then(response => response.json())
                 .then(data => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="search" class="me-1"></i>Check Now';
-                    feather.replace();
+                    setButtonLoading(btn, false, originalHtml);
+                    let message = data.message || '';
+                    let isSuccess = true;
                     
                     if (data.status === 'updated' || data.status === 'reloaded') {
-                        statusDiv.className = 'mt-2 small text-success';
-                        statusDiv.innerHTML = 'New file loaded!';
+                        message = 'New file loaded! ' + message;
                     } else if (data.status === 'unchanged') {
-                        statusDiv.className = 'mt-2 small text-info';
-                        statusDiv.innerHTML = 'Already up to date';
-                    } else {
-                        statusDiv.className = 'mt-2 small text-warning';
-                        statusDiv.innerHTML = data.message;
+                        message = 'Already up to date. Using current data files.';
+                    } else if (data.status === 'error') {
+                        isSuccess = false;
                     }
-                    setTimeout(() => { statusDiv.innerHTML = ''; }, 8000);
+                    
+                    showResult('Detect New Files', message, isSuccess);
                 })
                 .catch(error => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-feather="search" class="me-1"></i>Check Now';
-                    feather.replace();
-                    statusDiv.className = 'mt-2 small text-danger';
-                    statusDiv.innerHTML = 'Error checking';
+                    setButtonLoading(btn, false, originalHtml);
+                    showResult('Detect New Files', 'Error checking for updates: ' + error, false);
+                });
+        }
+        
+        function refreshImages() {
+            const btn = document.getElementById('refreshImagesBtn');
+            if (!btn) return;
+            
+            const originalHtml = '<i data-feather="refresh-cw" class="me-1"></i>Refresh';
+            setButtonLoading(btn, true);
+            
+            fetch('/api/refresh-images')
+                .then(response => response.json())
+                .then(data => {
+                    setButtonLoading(btn, false, originalHtml);
+                    if (data.refreshed) {
+                        showResult('Refresh Images', 'Image cache cleared successfully! Fresh images will be loaded on next page view.', true);
+                    } else {
+                        showResult('Refresh Images', data.message || 'No cache to clear.', true);
+                    }
+                })
+                .catch(error => {
+                    setButtonLoading(btn, false, originalHtml);
+                    showResult('Refresh Images', 'Error refreshing images: ' + error, false);
                 });
         }
     </script>

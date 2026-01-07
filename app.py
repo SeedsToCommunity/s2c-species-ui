@@ -2684,12 +2684,6 @@ def admin_dashboard():
             'icon': 'grid'
         },
         {
-            'title': 'Reload Current Data',
-            'url': '/admin/refresh',
-            'description': 'Reload data from current Google Drive files (use after editing existing files)',
-            'icon': 'refresh-cw'
-        },
-        {
             'title': 'Column Reorder',
             'url': '/admin/column-reorder',
             'description': 'Reorder columns on each screen configuration',
@@ -2699,28 +2693,35 @@ def admin_dashboard():
     
     return render_template('admin_dashboard.html', admin_pages=admin_pages, cloudinary_available=CLOUDINARY_AVAILABLE)
 
-@app.route('/admin/refresh')
+@app.route('/api/reload-data')
 @require_admin_auth
-def refresh_data():
-    """Admin route to manually refresh cached data"""
+def reload_data_api():
+    """API endpoint to reload data from current Google Drive files"""
     global _cached_plant_data, _cached_supplemental_data
     try:
         _cached_plant_data = None  # Clear cache
         _cached_supplemental_data = None  # Clear supplemental cache
         df = load_plant_data(force_reload=True)
-        flash(f'Data refreshed successfully! Loaded {len(df)} plant species.', 'success')
         
-        # Notify about any columns that were cleaned up
+        # Check for any columns that were cleaned up
         removed = get_last_removed_columns()
+        message = f'Data refreshed successfully! Loaded {len(df)} plant species.'
         if removed:
             readable_names = [col.replace('_', ' ').title() for col in removed]
-            flash(f'Cleaned up {len(removed)} missing columns from configurations: {", ".join(readable_names[:5])}{"..." if len(removed) > 5 else ""}', 'warning')
+            message += f' Cleaned up {len(removed)} missing columns.'
         
-        return redirect(url_for('index'))
+        return jsonify({
+            'success': True,
+            'message': message,
+            'species_count': len(df),
+            'removed_columns': len(removed) if removed else 0
+        })
     except Exception as e:
         app.logger.error(f"Error refreshing data: {str(e)}")
-        flash(f'Error refreshing data: {str(e)}', 'error')
-        return redirect(url_for('index'))
+        return jsonify({
+            'success': False,
+            'message': f'Error refreshing data: {str(e)}'
+        })
 
 @app.route('/api/check-updates')
 def check_for_updates_endpoint():
