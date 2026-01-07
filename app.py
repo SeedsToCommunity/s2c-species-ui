@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import logging
 import json
@@ -915,6 +916,211 @@ def get_file_id_from_url(url):
         return url.split('file/d/')[1].split('/')[0]
     return None
 
+# =============================================================================
+# Google Drive Config Storage System
+# Stores column configurations in Drive so they persist across deployments
+# =============================================================================
+
+# Cache for config folder ID
+_config_folder_id = None
+
+def get_config_folder_id():
+    """Get or create the 'AppConfig' folder in Google Drive for storing column configs"""
+    global _config_folder_id
+    
+    if _config_folder_id:
+        return _config_folder_id, None
+    
+    settings = load_app_settings()
+    parent_folder_id = settings.get('data_source', {}).get('google_drive_folder_id')
+    
+    if not parent_folder_id:
+        return None, "No Google Drive folder ID configured"
+    
+    folder_id, error = find_or_create_folder(parent_folder_id, 'AppConfig')
+    if folder_id:
+        _config_folder_id = folder_id
+        app.logger.info(f"Using AppConfig folder: {folder_id}")
+    return folder_id, error
+
+def download_json_from_drive(folder_id, filename):
+    """Download a JSON file from Google Drive folder
+    
+    Returns:
+        (dict, error_message) - The parsed JSON data or None with error message
+    """
+    service = get_google_drive_service()
+    if not service:
+        return None, "Google Drive API not configured"
+    
+    try:
+        # Search for the file
+        query = f"'{folder_id}' in parents and name='{filename}' and trashed=false"
+        results = service.files().list(
+            q=query,
+            fields='files(id, name)',
+            pageSize=1
+        ).execute()
+        
+        files = results.get('files', [])
+        if not files:
+            return None, f"File '{filename}' not found in Drive"
+        
+        file_id = files[0]['id']
+        
+        # Download the file content
+        from io import BytesIO
+        request = service.files().get_media(fileId=file_id)
+        content = request.execute()
+        
+        # Parse JSON
+        if isinstance(content, bytes):
+            content = content.decode('utf-8')
+        
+        data = json.loads(content)
+        app.logger.info(f"Downloaded config '{filename}' from Drive")
+        return data, None
+        
+    except Exception as e:
+        app.logger.error(f"Error downloading '{filename}' from Drive: {str(e)}")
+        return None, str(e)
+
+def update_json_in_drive(folder_id, filename, json_data):
+    """Update an existing JSON file in Google Drive, or create if it doesn't exist
+    
+    Returns:
+        (file_info, error_message) - File info dict or None with error message
+    """
+    from io import BytesIO
+    from googleapiclient.http import MediaIoBaseUpload
+    
+    service = get_google_drive_service_with_write()
+    if not service:
+        return None, "Google Drive API not configured with write access"
+    
+    try:
+        # Search for existing file
+        query = f"'{folder_id}' in parents and name='{filename}' and trashed=false"
+        results = service.files().list(
+            q=query,
+            fields='files(id, name)',
+            pageSize=1
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        # Prepare the JSON content
+        json_content = json.dumps(json_data, indent=2)
+        buffer = BytesIO(json_content.encode('utf-8'))
+        media = MediaIoBaseUpload(buffer, mimetype='application/json', resumable=False)
+        
+        if files:
+            # Update existing file
+            file_id = files[0]['id']
+            file = service.files().update(
+                fileId=file_id,
+                media_body=media,
+                fields='id, name, modifiedTime'
+            ).execute()
+            app.logger.info(f"Updated config '{filename}' in Drive (ID: {file_id})")
+        else:
+            # Create new file
+            file_metadata = {
+                'name': filename,
+                'parents': [folder_id],
+                'mimeType': 'application/json'
+            }
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id, name, modifiedTime'
+            ).execute()
+            app.logger.info(f"Created config '{filename}' in Drive (ID: {file.get('id')})")
+        
+        return {
+            'id': file.get('id'),
+            'name': file.get('name'),
+            'modifiedTime': file.get('modifiedTime')
+        }, None
+        
+    except Exception as e:
+        app.logger.error(f"Error updating '{filename}' in Drive: {str(e)}")
+        return None, str(e)
+
+def load_config_from_drive(config_name):
+    """Load a config file from Drive, falling back to local if not available
+    
+    Args:
+        config_name: Name like 'screen_identification' (without .json)
+    
+    Returns:
+        (config_dict, source) - The config and where it came from ('drive', 'local', or 'default')
+    """
+    filename = f"{config_name}.json"
+    local_path = f"config/{filename}"
+    
+    # Try Google Drive first
+    folder_id, folder_error = get_config_folder_id()
+    if folder_id:
+        config, error = download_json_from_drive(folder_id, filename)
+        if config:
+            return config, 'drive'
+        elif error and 'not found' not in error.lower():
+            # Log errors that aren't just "file not found"
+            app.logger.warning(f"Drive config error for {filename}: {error}")
+    
+    # Fall back to local file
+    try:
+        with open(local_path, 'r') as f:
+            config = json.load(f)
+        app.logger.info(f"Loaded '{filename}' from local file (Drive not available or file not in Drive)")
+        return config, 'local'
+    except FileNotFoundError:
+        app.logger.warning(f"Config '{filename}' not found locally or in Drive")
+        return None, 'default'
+    except Exception as e:
+        app.logger.error(f"Error loading local config '{filename}': {str(e)}")
+        return None, 'default'
+
+def save_config_to_drive(config_name, config_data):
+    """Save a config file to Google Drive
+    
+    Args:
+        config_name: Name like 'screen_identification' (without .json)
+        config_data: The config dictionary to save
+    
+    Returns:
+        (success, error_message)
+    """
+    filename = f"{config_name}.json"
+    
+    # SAFETY CHECK: Never save empty or minimal configs to Drive
+    # This prevents accidental data loss if loading failed
+    columns_key = 'columns' if config_name.startswith('screen_') else 'main_page_columns'
+    columns = config_data.get(columns_key, [])
+    
+    if len(columns) == 0:
+        app.logger.error(f"SAFETY: Refusing to save empty config '{filename}' to Drive - this would destroy production data")
+        return False, "Cannot save empty configuration to Drive (safety check)"
+    
+    folder_id, folder_error = get_config_folder_id()
+    if not folder_id:
+        return False, folder_error or "Could not access config folder"
+    
+    result, error = update_json_in_drive(folder_id, filename, config_data)
+    if result:
+        # Also save locally as backup
+        try:
+            local_path = f"config/{filename}"
+            with open(local_path, 'w') as f:
+                json.dump(config_data, f, indent=2)
+        except Exception as e:
+            app.logger.warning(f"Could not save local backup of {filename}: {e}")
+        
+        return True, None
+    else:
+        return False, error
+
 def check_google_drive_file_modified(file_id):
     """Check if a Google Drive file has been modified since last check"""
     global _last_known_modified_time
@@ -1636,25 +1842,26 @@ def merge_supplemental_data(main_df, supplemental_df):
         return main_df
 
 def load_display_config():
-    """Load display configuration from JSON file"""
-    try:
-        with open('config/display_columns.json', 'r') as f:
-            config = json.load(f)
-        
-        # Apply original column labels from column_labels.json
-        for col in config.get('main_page_columns', []):
-            field_name = col.get('field')
-            if field_name:
-                original_label = get_column_label(field_name)
-                col['label'] = original_label
-        
-        return config
-    except FileNotFoundError:
-        app.logger.error("Display configuration file not found")
+    """Load display configuration from Google Drive (with local fallback)
+    
+    Uses Drive as the authoritative source so configs persist across deployments.
+    """
+    # Load from Drive (with local fallback)
+    config, source = load_config_from_drive('display_columns')
+    
+    if config is None:
+        app.logger.error("Display configuration not found in Drive or locally")
         return {"main_page_columns": [], "filter_columns": []}
-    except Exception as e:
-        app.logger.error(f"Error loading display configuration: {str(e)}")
-        return {"main_page_columns": [], "filter_columns": []}
+    
+    # Apply original column labels from column_labels.json
+    for col in config.get('main_page_columns', []):
+        field_name = col.get('field')
+        if field_name:
+            original_label = get_column_label(field_name)
+            col['label'] = original_label
+    
+    app.logger.debug(f"Loaded display config from {source}")
+    return config
 
 def convert_google_drive_url(share_url):
     """Convert Google Drive share URL to direct CSV download URL"""
@@ -1952,56 +2159,50 @@ def get_unique_values_ordered(df, column, preferred_order):
 _cached_screen_configs = {}
 
 def load_screen_config(screen_type, force_reload=False):
-    """Load screen configuration for species detail view (cached in memory with mtime check)
+    """Load screen configuration for species detail view
     
-    Uses file modification time to detect changes across Gunicorn workers.
-    When the config file is updated on disk, all workers will reload it.
+    Uses Google Drive as the authoritative source so configs persist across deployments.
+    Falls back to local files if Drive is unavailable.
     """
     global _cached_screen_configs
     
-    config_path = f'config/screen_{screen_type}.json'
-    
-    try:
-        # Get current file modification time
-        current_mtime = os.path.getmtime(config_path)
-    except OSError:
-        current_mtime = None
-    
-    # Check cache - validate mtime to ensure consistency across workers
+    # Check cache first (short TTL to allow Drive updates to propagate)
+    cache_key = f"screen_{screen_type}"
     if not force_reload and screen_type in _cached_screen_configs:
         cached = _cached_screen_configs[screen_type]
-        cached_mtime = cached.get('mtime')
-        # If file hasn't changed, use cached version
-        if cached_mtime is not None and current_mtime == cached_mtime:
+        cache_age = time.time() - cached.get('timestamp', 0)
+        # Cache for 60 seconds to balance performance vs freshness
+        if cache_age < 60:
             return cached['config']
     
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-        
-        # Apply original column labels from column_labels.json
-        # This ensures labels match original spreadsheet headers
-        labels = load_column_labels()
-        for col in config.get('columns', []):
-            field_name = col.get('field')
-            if field_name:
-                if field_name in labels:
-                    col['label'] = labels[field_name]
-                else:
-                    col['label'] = field_name.replace('_', ' ').title()
-        
-        # Cache the result with modification time
-        _cached_screen_configs[screen_type] = {
-            'config': config,
-            'mtime': current_mtime
-        }
-        return config
-    except FileNotFoundError:
-        app.logger.error(f"Screen configuration file for {screen_type} not found")
+    # Load from Drive (with local fallback)
+    config, source = load_config_from_drive(cache_key)
+    
+    if config is None:
+        # No config found anywhere - return default
+        app.logger.error(f"Screen configuration for {screen_type} not found")
         return {"screen_name": screen_type.title(), "columns": []}
-    except Exception as e:
-        app.logger.error(f"Error loading screen configuration for {screen_type}: {str(e)}")
-        return {"screen_name": screen_type.title(), "columns": []}
+    
+    # Apply original column labels from column_labels.json
+    # This ensures labels match original spreadsheet headers
+    labels = load_column_labels()
+    for col in config.get('columns', []):
+        field_name = col.get('field')
+        if field_name:
+            if field_name in labels:
+                col['label'] = labels[field_name]
+            else:
+                col['label'] = field_name.replace('_', ' ').title()
+    
+    # Cache the result with timestamp
+    _cached_screen_configs[screen_type] = {
+        'config': config,
+        'timestamp': time.time(),
+        'source': source
+    }
+    
+    app.logger.debug(f"Loaded screen config '{screen_type}' from {source}")
+    return config
 
 def invalidate_screen_config_cache(screen_type=None):
     """Invalidate the screen config cache (all or specific screen)"""
@@ -3088,10 +3289,12 @@ def toggle_column():
             # Update config
             display_config['main_page_columns'] = columns
             
-            # Save back to file
-            import json
-            with open('config/display_columns.json', 'w') as f:
-                json.dump(display_config, f, indent=2)
+            # Save to Google Drive (persistent across deployments)
+            success, error = save_config_to_drive('display_columns', display_config)
+            if not success:
+                app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
+                with open('config/display_columns.json', 'w') as f:
+                    json.dump(display_config, f, indent=2)
         
         else:
             # Handle species screen configurations
@@ -3121,10 +3324,13 @@ def toggle_column():
             # Update config
             screen_config['columns'] = columns
             
-            # Save back to file
-            import json
-            with open(f'config/screen_{screen_name}.json', 'w') as f:
-                json.dump(screen_config, f, indent=2)
+            # Save to Google Drive (persistent across deployments)
+            success, error = save_config_to_drive(f'screen_{screen_name}', screen_config)
+            if not success:
+                app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
+                # Fall back to local file
+                with open(f'config/screen_{screen_name}.json', 'w') as f:
+                    json.dump(screen_config, f, indent=2)
             
             # Invalidate screen config cache for this screen
             invalidate_screen_config_cache(screen_name)
@@ -3225,8 +3431,12 @@ def save_column_order():
         
         screen_config['columns'] = new_columns
         
-        with open(f'config/screen_{screen}.json', 'w') as f:
-            json.dump(screen_config, f, indent=2)
+        # Save to Google Drive (persistent across deployments)
+        success, error = save_config_to_drive(f'screen_{screen}', screen_config)
+        if not success:
+            app.logger.warning(f"Failed to save to Drive: {error}, saving locally only")
+            with open(f'config/screen_{screen}.json', 'w') as f:
+                json.dump(screen_config, f, indent=2)
         
         # Invalidate caches
         invalidate_screen_config_cache(screen)
