@@ -53,7 +53,7 @@
         }
         
         .usage-indicator.interactive:hover {
-            background-color: rgba(255,255,255,0.1);
+            filter: brightness(1.2);
             transform: scale(1.05);
         }
         
@@ -61,6 +61,24 @@
             opacity: 0.6;
             pointer-events: none;
         }
+        
+        /* Distinct pastel colors for each screen column */
+        .col-main-page { background-color: rgba(255, 182, 193, 0.3) !important; } /* Light pink */
+        .col-identification { background-color: rgba(255, 218, 185, 0.3) !important; } /* Peach */
+        .col-collection { background-color: rgba(255, 255, 186, 0.3) !important; } /* Light yellow */
+        .col-processing { background-color: rgba(186, 255, 201, 0.3) !important; } /* Mint green */
+        .col-storage { background-color: rgba(186, 225, 255, 0.3) !important; } /* Light blue */
+        .col-stratification { background-color: rgba(221, 186, 255, 0.3) !important; } /* Lavender */
+        .col-planting { background-color: rgba(255, 186, 255, 0.3) !important; } /* Light magenta */
+        
+        /* Header colors - slightly more saturated */
+        th.col-main-page { background-color: rgba(255, 140, 160, 0.6) !important; }
+        th.col-identification { background-color: rgba(255, 180, 140, 0.6) !important; }
+        th.col-collection { background-color: rgba(240, 240, 140, 0.6) !important; }
+        th.col-processing { background-color: rgba(140, 220, 160, 0.6) !important; }
+        th.col-storage { background-color: rgba(140, 190, 240, 0.6) !important; }
+        th.col-stratification { background-color: rgba(190, 140, 240, 0.6) !important; }
+        th.col-planting { background-color: rgba(240, 140, 240, 0.6) !important; }
         
         .development-badge {
             background: linear-gradient(135deg, #28a745, #20c997);
@@ -269,13 +287,13 @@
                 <thead>
                     <tr>
                         <th class="column-name">Column Name</th>
-                        <th class="usage-indicator">Main Page</th>
-                        <th class="usage-indicator">Identification</th>
-                        <th class="usage-indicator">Collection</th>
-                        <th class="usage-indicator">Processing</th>
-                        <th class="usage-indicator">Storage</th>
-                        <th class="usage-indicator">Stratification</th>
-                        <th class="usage-indicator">Planting</th>
+                        <th class="usage-indicator col-main-page">Main Page</th>
+                        <th class="usage-indicator col-identification">Identification</th>
+                        <th class="usage-indicator col-collection">Collection</th>
+                        <th class="usage-indicator col-processing">Processing</th>
+                        <th class="usage-indicator col-storage">Storage</th>
+                        <th class="usage-indicator col-stratification">Stratification</th>
+                        <th class="usage-indicator col-planting">Planting</th>
                         <th class="usage-indicator">Total Uses</th>
                         <th>Sample Data</th>
                         <th>Fill %</th>
@@ -287,7 +305,7 @@
                         <td class="column-name">
                             <strong>{{ column_name }}</strong>
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.main_page else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-main-page {{ 'usage-yes' if usage.main_page else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="main_page" data-enabled="{{ 'true' if usage.main_page else 'false' }}"{% endif %}>
                             {% if usage.main_page %}
                                 <span class="text-success fw-bold">✓</span>
@@ -295,7 +313,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.identification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-identification {{ 'usage-yes' if usage.identification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="identification" data-enabled="{{ 'true' if usage.identification else 'false' }}"{% endif %}>
                             {% if usage.identification %}
                                 <span class="text-success fw-bold">✓</span>
@@ -303,7 +321,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.collection else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-collection {{ 'usage-yes' if usage.collection else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="collection" data-enabled="{{ 'true' if usage.collection else 'false' }}"{% endif %}>
                             {% if usage.collection %}
                                 <span class="text-success fw-bold">✓</span>
@@ -311,7 +329,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.processing else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-processing {{ 'usage-yes' if usage.processing else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="processing" data-enabled="{{ 'true' if usage.processing else 'false' }}"{% endif %}>
                             {% if usage.processing %}
                                 <span class="text-success fw-bold">✓</span>
@@ -319,7 +337,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.storage else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-storage {{ 'usage-yes' if usage.storage else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="storage" data-enabled="{{ 'true' if usage.storage else 'false' }}"{% endif %}>
                             {% if usage.storage %}
                                 <span class="text-success fw-bold">✓</span>
@@ -327,7 +345,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.stratification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-stratification {{ 'usage-yes' if usage.stratification else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="stratification" data-enabled="{{ 'true' if usage.stratification else 'false' }}"{% endif %}>
                             {% if usage.stratification %}
                                 <span class="text-success fw-bold">✓</span>
@@ -335,7 +353,7 @@
                                 <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="usage-indicator {{ 'usage-yes' if usage.planting else 'usage-no' }} {% if is_development %}interactive{% endif %}"
+                        <td class="usage-indicator col-planting {{ 'usage-yes' if usage.planting else 'usage-no' }} {% if is_development %}interactive{% endif %}"
                             {% if is_development %}data-column="{{ column_name }}" data-screen="planting" data-enabled="{{ 'true' if usage.planting else 'false' }}"{% endif %}>
                             {% if usage.planting %}
                                 <span class="text-success fw-bold">✓</span>

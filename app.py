@@ -1947,19 +1947,36 @@ def get_unique_values_ordered(df, column, preferred_order):
     
     return ordered_values
 
-# In-memory cache for screen configs (invalidated on save)
+# In-memory cache for screen configs with file modification time tracking
+# Structure: {screen_type: {'config': {...}, 'mtime': float}}
 _cached_screen_configs = {}
 
 def load_screen_config(screen_type, force_reload=False):
-    """Load screen configuration for species detail view (cached in memory)"""
+    """Load screen configuration for species detail view (cached in memory with mtime check)
+    
+    Uses file modification time to detect changes across Gunicorn workers.
+    When the config file is updated on disk, all workers will reload it.
+    """
     global _cached_screen_configs
     
-    # Check cache first
-    if not force_reload and screen_type in _cached_screen_configs:
-        return _cached_screen_configs[screen_type]
+    config_path = f'config/screen_{screen_type}.json'
     
     try:
-        with open(f'config/screen_{screen_type}.json', 'r') as f:
+        # Get current file modification time
+        current_mtime = os.path.getmtime(config_path)
+    except OSError:
+        current_mtime = None
+    
+    # Check cache - validate mtime to ensure consistency across workers
+    if not force_reload and screen_type in _cached_screen_configs:
+        cached = _cached_screen_configs[screen_type]
+        cached_mtime = cached.get('mtime')
+        # If file hasn't changed, use cached version
+        if cached_mtime is not None and current_mtime == cached_mtime:
+            return cached['config']
+    
+    try:
+        with open(config_path, 'r') as f:
             config = json.load(f)
         
         # Apply original column labels from column_labels.json
@@ -1973,8 +1990,11 @@ def load_screen_config(screen_type, force_reload=False):
                 else:
                     col['label'] = field_name.replace('_', ' ').title()
         
-        # Cache the result
-        _cached_screen_configs[screen_type] = config
+        # Cache the result with modification time
+        _cached_screen_configs[screen_type] = {
+            'config': config,
+            'mtime': current_mtime
+        }
         return config
     except FileNotFoundError:
         app.logger.error(f"Screen configuration file for {screen_type} not found")
