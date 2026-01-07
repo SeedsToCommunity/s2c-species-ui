@@ -15,20 +15,6 @@
       "label": "Botanical Name"
     },
     {
-      "field": "start_seed_watch",
-      "display_name": "Start Seed Watch",
-      "type": "text",
-      "show_as_badge": false,
-      "label": "Start Seed Watch"
-    },
-    {
-      "field": "compact_bloom_range",
-      "display_name": "Bloom Range",
-      "type": "text",
-      "show_as_badge": false,
-      "label": "Compact Bloom Range"
-    },
-    {
       "field": "light",
       "display_name": "Light",
       "type": "text",
@@ -43,13 +29,26 @@
       "label": "Moisture"
     },
     {
-      "field": "native-miflora",
-      "label": "Native-MIFlora",
+      "field": "stature",
+      "display_name": "Stature",
+      "type": "text",
+      "show_as_badge": false,
+      "label": "Stature",
       "width": "auto"
     },
     {
-      "field": "stature",
-      "label": "Stature",
+      "field": "compact_bloom_range",
+      "display_name": "Bloom Range",
+      "type": "text",
+      "show_as_badge": false,
+      "label": "Compact Bloom Range"
+    },
+    {
+      "field": "native-miflora",
+      "display_name": "Native-MIFlora",
+      "type": "text",
+      "show_as_badge": false,
+      "label": "Native-MIFlora",
       "width": "auto"
     }
   ],

@@ -3,6 +3,11 @@
   "description": "Information needed to identify the plant in the field",
   "columns": [
     {
+      "field": "native-miflora",
+      "label": "Native-MIFlora",
+      "width": "auto"
+    },
+    {
       "field": "duration",
       "label": "Duration",
       "width": "auto"
