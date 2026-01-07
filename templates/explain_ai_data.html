@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Tier AI Data Approach - Plant Directory</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(25, 135, 84, 0.1) 0%, rgba(25, 135, 84, 0.05) 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .tier-card {
+            transition: transform 0.2s;
+        }
+        .tier-card:hover {
+            transform: translateY(-2px);
+        }
+        .callout {
+            background: rgba(13, 110, 253, 0.1);
+            border-left: 4px solid var(--bs-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1.5rem 0;
+        }
+        .callout-success {
+            background: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid #198754;
+        }
+        .section-heading {
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--bs-success);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        {% include 'nav_menu.html' %}
+
+        <div class="hero-section text-center">
+            <h1 class="display-5 mb-3">
+                <i data-feather="layers" class="me-2"></i>
+                A Layered, Community-First Approach to Using AI
+            </h1>
+            <p class="lead text-muted mb-0">Understanding how this app uses AI to support—not replace—community knowledge</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <div class="text-light">
+                            <p class="lead">This app uses AI, but not in the usual way.</p>
+
+                            <p>Nothing here is meant to be a black box, a shortcut, or an authority replacing people. The goal is the opposite: to make knowledge more visible, more inspectable, and more shareable—and to see whether a community resource like this can actually be built together.</p>
+
+                            <p>What you're seeing in the interface is the result of a deliberately constrained, multi-step process designed to show where information comes from, how it expands, and where uncertainty still exists.</p>
+
+                            <div class="callout callout-success my-4">
+                                <p class="mb-0 text-center"><strong>At the center of this experiment is a simple question:</strong></p>
+                                <p class="mb-0 text-center fs-5 mt-2">Can we use new tools to support real community knowledge—without hiding the seams?</p>
+                            </div>
+
+                            <h2 class="section-heading h4 text-success">What You're Seeing in the App</h2>
+
+                            <p>For many fields in this app, you'll see information presented in layers or tiers. That's intentional.</p>
+
+                            <p>Instead of asking an AI for "the answer," the system builds responses step by step, starting with what is known and documented, and only later expanding into broader synthesis. Each layer has a different role, and each is shown openly.</p>
+
+                            <p>This lets you see:</p>
+                            <ul>
+                                <li>What is firmly sourced</li>
+                                <li>What comes from additional references</li>
+                                <li>What is inferred or synthesized</li>
+                                <li>Where gaps still exist</li>
+                            </ul>
+
+                            <p><strong>You don't have to trust the AI. You can inspect it.</strong></p>
+
+                            <h2 class="section-heading h4 text-success">The Three Tiers of Knowledge</h2>
+
+                            <div class="card bg-dark border-info mb-3 tier-card">
+                                <div class="card-header border-info">
+                                    <span class="badge bg-info me-2">Tier 1</span>
+                                    <strong class="text-info">Documented and Traceable</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p>This layer uses only explicitly provided, trusted source material.</p>
+                                    <ul class="mb-0">
+                                        <li>If the source doesn't say it, it doesn't appear here.</li>
+                                        <li>If information is missing, that absence is stated clearly.</li>
+                                    </ul>
+                                    <p class="mt-3 mb-0 text-muted"><em>This tier may feel incomplete—and that's the point. It shows the current state of documented knowledge, not a polished narrative.</em></p>
+                                </div>
+                            </div>
+
+                            <div class="card bg-dark border-warning mb-3 tier-card">
+                                <div class="card-header border-warning">
+                                    <span class="badge bg-warning text-dark me-2">Tier 2</span>
+                                    <strong class="text-warning">Expanded but Still Source-Bound</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p>This layer adds information from additional, identified sources.</p>
+                                    <p>It can:</p>
+                                    <ul>
+                                        <li>Add missing details</li>
+                                        <li>Surface disagreements between sources</li>
+                                        <li>Broaden context carefully</li>
+                                    </ul>
+                                    <p class="mb-0 text-muted"><em>It still does not rely on the AI's general knowledge. Everything added here is tied back to references.</em></p>
+                                </div>
+                            </div>
+
+                            <div class="card bg-dark border-secondary mb-3 tier-card">
+                                <div class="card-header border-secondary">
+                                    <span class="badge bg-secondary me-2">Tier 3</span>
+                                    <strong class="text-light">Synthesized Understanding</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p>Only at this stage does the system allow broader reasoning.</p>
+                                    <p>Here, the AI:</p>
+                                    <ul>
+                                        <li>Fills in reasonable gaps</li>
+                                        <li>Explains patterns</li>
+                                        <li>Connects ideas</li>
+                                        <li>Provides context that isn't fully documented yet</li>
+                                    </ul>
+                                    <p class="mb-0 text-muted"><em>This layer is clearly understood as model-based synthesis, not a citation. It's useful—but it's not presented as fact in the same way as the earlier tiers.</em></p>
+                                </div>
+                            </div>
+
+                            <h2 class="section-heading h4 text-success">Why Do This Instead of "Just Using AI"?</h2>
+
+                            <p><strong>Because ecological restoration, seed work, and community knowledge depend on trust.</strong></p>
+
+                            <p>This structure:</p>
+                            <ul>
+                                <li>Makes uncertainty visible</li>
+                                <li>Prevents quiet drift into confident-sounding errors</li>
+                                <li>Lets novices and experts use the same system safely</li>
+                                <li>Keeps humans in the loop</li>
+                            </ul>
+
+                            <p>AI here is treated as a tool for structured reasoning, not a voice of authority.</p>
+
+                            <h2 class="section-heading h4 text-success">The Rules You Don't See (But Benefit From)</h2>
+
+                            <p>Behind each field in the app are fixed content rules that the AI must follow:</p>
+                            <ul>
+                                <li>What the field is for</li>
+                                <li>What it is not allowed to contain</li>
+                                <li>How long it can be</li>
+                                <li>Whether it must be a list, a paragraph, or an enum</li>
+                                <li>Whether "no data" is an acceptable outcome</li>
+                            </ul>
+
+                            <p>The AI doesn't decide these things. People did.</p>
+
+                            <p>That makes the data predictable, comparable, and reviewable—by humans and by software.</p>
+
+                            <h2 class="section-heading h4 text-success">Why This Exists at All</h2>
+
+                            <p>This project has another purpose beyond producing plant data.</p>
+
+                            <p><strong>It is an experiment.</strong></p>
+
+                            <p>An experiment in:</p>
+                            <ul>
+                                <li>What modern tools can actually do (and where they fail)</li>
+                                <li>How subtle constraints change outcomes</li>
+                                <li>How transparent AI systems feel to real users</li>
+                                <li>Whether shared data can grow through community contribution instead of centralized control</li>
+                            </ul>
+
+                            <p>And most importantly:</p>
+                            <p class="fs-5"><strong>Whether we can build something like this together</strong></p>
+
+                            <div class="card bg-dark border-success mt-5">
+                                <div class="card-header border-success bg-dark">
+                                    <h3 class="h5 text-success mb-0">
+                                        <i data-feather="users" class="me-2"></i>
+                                        A Call to Action
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <p>This app is not finished. It is not complete. It is not owned by one person or one tool.</p>
+                                    <p><strong>If this works at all, it works because of people.</strong></p>
+                                    <ul>
+                                        <li>Got data?</li>
+                                        <li>Got field notes?</li>
+                                        <li>Got photos?</li>
+                                        <li>Got corrections?</li>
+                                        <li>Got a need for better shared resources?</li>
+                                        <li>Got ideas for how this could serve your community better?</li>
+                                    </ul>
+                                    <p>Restoration is collective work. Knowledge has to be too.</p>
+                                    <p class="mb-2">The question isn't whether AI can do this.</p>
+                                    <p class="mb-0 fs-5"><strong>The real question is: What can we build together—and are we willing to try?</strong></p>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <a href="/" class="btn btn-outline-success">
+                                    <i data-feather="arrow-left" class="me-1"></i>
+                                    Back to Plant Directory
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

@@ -2760,6 +2760,12 @@ def explain_conservatism():
     is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
     return render_template('explain_conservatism.html', is_development=is_development)
 
+@app.route('/explain/ai-data-approach')
+def explain_ai_data():
+    """Explanation page for the 3-tier AI data approach"""
+    is_development = os.environ.get('REPLIT_ENVIRONMENT') == 'development'
+    return render_template('explain_ai_data.html', is_development=is_development)
+
 @app.route('/report-issue/<path:botanical_name>', methods=['GET', 'POST'])
 def report_issue(botanical_name):
     """Report an issue with species data"""
