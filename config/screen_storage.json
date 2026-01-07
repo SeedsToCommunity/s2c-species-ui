@@ -26,6 +26,21 @@
       "field": "safe_storage_method_\u2013_dry_fridge",
       "label": "Safe Storage Method \u2013 Dry Fridge",
       "width": "auto"
+    },
+    {
+      "field": "germination_code",
+      "label": "Germination Code",
+      "width": "auto"
+    },
+    {
+      "field": "strat_notes",
+      "label": "Strat Notes",
+      "width": "auto"
+    },
+    {
+      "field": "barn_action",
+      "label": "Barn Action",
+      "width": "auto"
     }
   ]
 }

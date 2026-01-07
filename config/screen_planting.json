@@ -31,6 +31,31 @@
       "field": "growth_habit",
       "label": "Growth Habit",
       "width": "auto"
+    },
+    {
+      "field": "moisture",
+      "label": "Moisture",
+      "width": "auto"
+    },
+    {
+      "field": "light",
+      "label": "Light",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_conservatism_(c)",
+      "label": "Coefficient of Conservatism (C)",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_wetness_(cw)",
+      "label": "Coefficient of Wetness (CW)",
+      "width": "auto"
+    },
+    {
+      "field": "bonap_range_map",
+      "label": "BONAP Range Map",
+      "width": "auto"
     }
   ]
 }

@@ -3,6 +3,11 @@
   "description": "Information needed to identify the plant in the field",
   "columns": [
     {
+      "field": "duration",
+      "label": "Duration",
+      "width": "auto"
+    },
+    {
       "field": "height",
       "label": "Height",
       "type": "text"
@@ -33,23 +38,8 @@
       "type": "text"
     },
     {
-      "field": "coefficient_of_conservatism_(c)",
-      "label": "Coefficient of Conservatism (C)",
-      "width": "auto"
-    },
-    {
-      "field": "bonap_range_map",
-      "label": "BONAP Range Map",
-      "width": "auto"
-    },
-    {
-      "field": "se_michigan_monthly_observations",
-      "label": "SE Michigan Monthly Observations",
-      "width": "auto"
-    },
-    {
-      "field": "coefficient_of_wetness_(cw)",
-      "label": "Coefficient of Wetness (CW)",
+      "field": "michigan_flora_description",
+      "label": "Michigan Flora Description",
       "width": "auto"
     },
     {
@@ -63,8 +53,13 @@
       "width": "auto"
     },
     {
-      "field": "collection_quantity_notes",
-      "label": "Collection Quantity Notes",
+      "field": "bonap_range_map",
+      "label": "BONAP Range Map",
+      "width": "auto"
+    },
+    {
+      "field": "se_michigan_monthly_observations",
+      "label": "SE Michigan Monthly Observations",
       "width": "auto"
     },
     {
@@ -73,18 +68,38 @@
       "width": "auto"
     },
     {
-      "field": "wikipedia_summary",
-      "label": "Wikipedia Summary",
-      "width": "auto"
-    },
-    {
-      "field": "michigan_flora_description",
-      "label": "Michigan Flora Description",
+      "field": "previously_known_as",
+      "label": "Previously Known As",
       "width": "auto"
     },
     {
       "field": "common_names",
       "label": "Common Names",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_conservatism_(c)",
+      "label": "Coefficient of Conservatism (C)",
+      "width": "auto"
+    },
+    {
+      "field": "coefficient_of_wetness_(cw)",
+      "label": "Coefficient of Wetness (CW)",
+      "width": "auto"
+    },
+    {
+      "field": "collection_quantity_notes",
+      "label": "Collection Quantity Notes",
+      "width": "auto"
+    },
+    {
+      "field": "similar_species_/_distinguishing_features",
+      "label": "Similar Species / Distinguishing Features",
+      "width": "auto"
+    },
+    {
+      "field": "wikipedia_summary",
+      "label": "Wikipedia Summary",
       "width": "auto"
     }
   ]

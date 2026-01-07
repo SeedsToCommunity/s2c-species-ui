@@ -43,8 +43,13 @@
       "width": "auto"
     },
     {
-      "field": "processing_duration",
-      "label": "Processing Duration",
+      "field": "barn_action",
+      "label": "Barn Action",
+      "width": "auto"
+    },
+    {
+      "field": "seed_cleaning_complexity",
+      "label": "Seed Cleaning Complexity",
       "width": "auto"
     }
   ]
