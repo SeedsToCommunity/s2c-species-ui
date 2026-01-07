@@ -77,7 +77,8 @@ Rules:
 - Separate multiple sources with semicolons
 - Only include sources that actually contributed information
 
-Examples:
+**Examples:**
+
 - GOOD: `"Michigan Flora (Southeast MI highways, disturbed sites); Lake County Guide (rocky clearings)"`
 - GOOD: `"Go Botany (meadows, fields); Illinois Wildflowers (oak savannas, prairies)"`
 - GOOD: `"Prairie Moon Nursery (30-day cold stratification)"`
@@ -91,7 +92,8 @@ When the provided sources do not contain information to answer the question:
 - **Value**: Use an empty string `""` as the value. Do not write sentences explaining that sources don't have the answer.
 - **Attribution**: Briefly state which sources were checked, e.g., "Not specified in [source names]"
 
-Examples:
+**Examples:**
+
 - GOOD: `{"value": "", "attribution": "Not specified in Lake County Guide or Michigan Flora"}`
 - BAD: `{"value": "Unknown", "attribution": "Not specified in Lake County Guide or Michigan Flora"}`
 - BAD: `{"value": "The provided sources do not give clear guidance on seed color at maturity.", "attribution": "..."}`
