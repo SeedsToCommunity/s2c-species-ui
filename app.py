@@ -1827,25 +1827,33 @@ def get_prompt_by_type(prompt_type):
     if isinstance(prompts_df, dict):
         return ''
     
-    # Look for a row matching the prompt type (case-insensitive)
+    # Find type column (look for column containing 'type', 'key', or 'name')
+    type_col = prompts_df.columns[0]  # default to first column
+    for col in prompts_df.columns:
+        col_lower = col.lower()
+        if 'type' in col_lower or col_lower in ['key', 'name']:
+            type_col = col
+            break
+    
+    # Find content column (skip type_col to avoid matching "Prompt Type")
+    content_col = prompts_df.columns[1] if len(prompts_df.columns) > 1 else None
+    for col in prompts_df.columns:
+        if col == type_col:
+            continue  # Skip the type column
+        col_lower = col.lower()
+        if 'content' in col_lower or col_lower in ['text', 'value']:
+            content_col = col
+            break
+    
+    # Look for a row matching the prompt type (flexible matching)
     type_normalized = prompt_type.lower().strip()
     
-    # Try to find in first column or a 'type' column
-    for col in prompts_df.columns:
-        col_values = prompts_df[col].astype(str).str.lower().str.strip()
-        matches = prompts_df[col_values == type_normalized]
-        if not matches.empty:
-            # Get the prompt content from the row
-            row = matches.iloc[0]
-            # Return the content from a 'prompt' or 'content' column, or second column
-            for content_col in ['prompt', 'content', 'Prompt', 'Content']:
-                if content_col in row.index and pd.notna(row[content_col]):
-                    return str(row[content_col])
-            # Fallback: return value from second column if it exists
-            if len(row) > 1:
-                second_col = prompts_df.columns[1]
-                if pd.notna(row[second_col]):
-                    return str(row[second_col])
+    for _, row in prompts_df.iterrows():
+        row_type = str(row[type_col]).lower().strip() if pd.notna(row[type_col]) else ''
+        # Flexible matching: check if the normalized type is contained in row_type
+        if type_normalized in row_type or row_type == type_normalized:
+            if content_col and pd.notna(row[content_col]):
+                return str(row[content_col])
     
     return ''
 
@@ -2945,7 +2953,7 @@ def check_for_updates_endpoint():
     Checks BOTH main data file AND supplemental PlantData file independently.
     If either has changed, the appropriate data is reloaded.
     """
-    global _cached_plant_data, _cached_supplemental_data, _current_file_id, _current_file_name
+    global _cached_plant_data, _cached_supplemental_data, _cached_attribution_data, _cached_prompts_data, _current_file_id, _current_file_name
     
     settings = load_app_settings()
     folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
@@ -2978,13 +2986,23 @@ def check_for_updates_endpoint():
             # New main file - reload everything
             _cached_plant_data = None
             _cached_supplemental_data = None
+            _cached_attribution_data = None
+            _cached_prompts_data = None
             df = load_plant_data(force_reload=True, file_id_override=file_id)
             supp_info = _get_supplemental_file_info()
+            
+            # Also reload attribution and prompts from the updated supplemental file
+            attribution_df = load_attribution_data(force_reload=True)
+            prompts_df = load_prompts_data(force_reload=True)
             
             msg_parts = [f"New main file loaded: '{file_name}'."]
             if is_new_supp_file and supp_file_name:
                 msg_parts.append(f"New supplemental file: '{supp_file_name}'.")
             msg_parts.append(f"Loaded {len(df)} species.")
+            if attribution_df is not None and isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+                msg_parts.append(f"Loaded {len(attribution_df)} column source records.")
+            if prompts_df is not None and isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
+                msg_parts.append(f"Loaded {len(prompts_df)} prompt records.")
             
             return jsonify({
                 'status': 'updated',
@@ -2999,12 +3017,24 @@ def check_for_updates_endpoint():
         elif is_new_supp_file:
             # Only supplemental file changed - reload supplemental and re-merge
             app.logger.info(f"New supplemental file detected: '{supp_file_name}' - reloading")
+            _cached_attribution_data = None
+            _cached_prompts_data = None
             df = reload_supplemental_and_merge()
             supp_info = _get_supplemental_file_info()
             
+            # Also reload attribution and prompts from the updated supplemental file
+            attribution_df = load_attribution_data(force_reload=True)
+            prompts_df = load_prompts_data(force_reload=True)
+            
+            msg_parts = [f"New supplemental data loaded: '{supp_file_name}'.", f"Main file unchanged: '{file_name}'.", f"{len(df)} species loaded."]
+            if attribution_df is not None and isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+                msg_parts.append(f"Loaded {len(attribution_df)} column source records.")
+            if prompts_df is not None and isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
+                msg_parts.append(f"Loaded {len(prompts_df)} prompt records.")
+            
             return jsonify({
                 'status': 'updated',
-                'message': f"New supplemental data loaded: '{supp_file_name}'. Main file unchanged: '{file_name}'. {len(df)} species loaded.",
+                'message': ' '.join(msg_parts),
                 'reloaded': True,
                 'main_updated': False,
                 'supplemental_updated': True,
@@ -3016,9 +3046,20 @@ def check_for_updates_endpoint():
             # Neither file changed
             df = _cached_plant_data if _cached_plant_data is not None else load_plant_data()
             supp_info = _get_supplemental_file_info()
+            
+            # Check current counts for attribution and prompts
+            attribution_df = load_attribution_data()
+            prompts_df = load_prompts_data()
+            
+            msg_parts = [f"Already using latest files. Main: '{file_name}'.", f"{len(df) if df is not None else 0} species loaded."]
+            if attribution_df is not None and isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+                msg_parts.append(f"{len(attribution_df)} column source records.")
+            if prompts_df is not None and isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
+                msg_parts.append(f"{len(prompts_df)} prompt records.")
+            
             return jsonify({
                 'status': 'unchanged',
-                'message': f"Already using latest files. Main: '{file_name}'. {len(df) if df is not None else 0} species loaded.",
+                'message': ' '.join(msg_parts),
                 'reloaded': False,
                 'main_updated': False,
                 'supplemental_updated': False,
@@ -3267,19 +3308,27 @@ def prompt_explorer():
     tier_prompt = ''
     
     if isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
-        # Find type column (could be 'type', 'key', 'name', or first column)
+        # Find type column (look for column containing 'type', 'key', or 'name')
         type_col = prompts_df.columns[0]  # default to first column
         for col in prompts_df.columns:
-            if col.lower() in ['type', 'key', 'name']:
+            col_lower = col.lower()
+            if 'type' in col_lower or col_lower in ['key', 'name']:
                 type_col = col
                 break
         
-        # Find content column (could be 'prompt', 'content', or second column)
+        # Find content column (look for 'content', 'text', 'value', or second column)
+        # Skip the type_col to avoid matching "Prompt Type" when looking for content
         content_col = prompts_df.columns[1] if len(prompts_df.columns) > 1 else None
         for col in prompts_df.columns:
-            if col.lower() in ['prompt', 'content', 'text', 'value']:
+            if col == type_col:
+                continue  # Skip the type column
+            col_lower = col.lower()
+            if 'content' in col_lower or col_lower in ['text', 'value']:
                 content_col = col
                 break
+        
+        # Log column detection for debugging
+        app.logger.info(f"Prompts: Using type_col='{type_col}', content_col='{content_col}'")
         
         # Find base prompt and tier prompts
         for _, row in prompts_df.iterrows():
@@ -3290,11 +3339,17 @@ def prompt_explorer():
             if content_col and pd.notna(row[content_col]):
                 content = str(row[content_col])
             
-            # Match prompt types (flexible matching)
-            if row_type in ['base', 'base_prompt', 'shared_context', 'shared context', 'shared']:
+            app.logger.debug(f"Prompts: row_type='{row_type}', has_content={bool(content)}")
+            
+            # Match prompt types (flexible matching for various naming conventions)
+            # Base/shared context
+            if 'base' in row_type or 'shared' in row_type:
                 base_prompt = markdown_to_html(content)
-            elif row_type == f'tier{current_tier}' or row_type == f'tier {current_tier}' or row_type == f'tier_{current_tier}':
+                app.logger.info(f"Prompts: Found base prompt ({len(content)} chars)")
+            # Tier-specific guidance (tier 1, tier1, tier 1 guidance, etc.)
+            elif f'tier {current_tier}' in row_type or f'tier{current_tier}' in row_type:
                 tier_prompt = markdown_to_html(content)
+                app.logger.info(f"Prompts: Found tier{current_tier} prompt ({len(content)} chars)")
     
     # Load column prompts from Column Sources tab (attribution data)
     attribution_df = load_attribution_data()
