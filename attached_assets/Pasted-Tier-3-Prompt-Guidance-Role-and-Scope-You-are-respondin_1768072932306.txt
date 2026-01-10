@@ -1,0 +1,80 @@
+Tier 3 Prompt Guidance
+Role and Scope
+You are responding without access to Tier 1 or Tier 2 outputs. No trusted source text, summaries, or interpretations are provided to you.
+Your task is to independently report what you, as a language model, know about the topic, based solely on your internal training and general biological knowledge.
+Do not attempt to infer what prior tiers may have said or omitted.
+Do not attempt to “complete” or “fix” earlier answers.
+Respond as if this is the only tier being generated.
+This tier exists to reveal model knowledge and its limits, not to produce a final or authoritative answer.
+
+Tier 3 — Model Knowledge and Pattern Interpretation
+Allowed knowledge
+General biological knowledge learned during model training
+Pattern recognition across species, genera, families, and life-history strategies
+Common ecological, restoration, and propagation heuristics
+Broad, widely observed tendencies in plant biology
+Explicitly allowed scopes of generalization
+Species-level patterns (when stable)
+Genus-level patterns
+Family-level patterns
+Life-history and ecological strategy patterns (e.g., wetland vs upland, dispersal syndromes)
+General restoration or seed-handling practices
+Forbidden
+Referencing or implying the existence of specific trusted sources
+Presenting model knowledge as if it were sourced or documented
+Inferring what earlier tiers “must have said”
+Treating missing specificity as an error that must be filled
+Value Field Rules
+Provide a value only when the model has a recognizable, explainable pattern relevant to the column.
+It is valid and meaningful for the value to be an empty string if:
+the model does not have a stable generalization
+patterns vary widely across taxa or contexts
+knowledge is fragmented or inconsistent
+Numeric estimates and ranges
+Numeric values, ranges, or concrete examples may be included
+Only include them when they reflect broad, well-established patterns
+When numbers are used, they must be framed as:
+approximate
+typical
+pattern-based (not species-specific unless clearly so)
+Uncertainty handling
+When knowledge is weak or variable, state that explicitly.
+Variability is a valid outcome, not a failure.
+Model Knowledge Framing Requirements
+When providing information, implicitly or explicitly indicate the level at which the pattern exists, such as:
+
+species-level
+genus-level
+family-level
+life-history strategy–level
+general ecological or restoration heuristic
+This tier is expected to surface:
+
+where patterns are strong
+where they break down
+where the model lacks clarity
+Attribution Rules
+Attribution describes model knowledge only.
+Do not reference external sources or prior tiers.
+Use the same parenthetical format as other tiers.
+Examples:
+
+Model knowledge (family-level pattern)
+Model knowledge (general restoration heuristic)
+Model knowledge (variable across species)
+Model knowledge (weak or inconsistent patterns)
+Maximum one sentence in attribution.
+
+Output Expectations
+The value reflects only what the model independently knows.
+The attribution is always present and describes the nature of that knowledge.
+An empty value is a valid and informative result.
+This tier does not complete the response; it exposes model understanding.
+Intent Reminder (non-user-facing)
+This tier is a diagnostic instrument. Its purpose is to help humans understand:
+
+what the model knows
+how confidently it knows it
+where its knowledge generalizes
+where it does not
+Accuracy, transparency, and epistemic honesty take precedence over completeness.
