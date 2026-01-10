@@ -234,7 +234,7 @@
                     if (data.status === 'updated' || data.status === 'reloaded') {
                         message = 'New file loaded! ' + message;
                     } else if (data.status === 'unchanged') {
-                        message = 'Already up to date. Using current data files.';
+                        message = 'Already up to date. ' + message;
                     } else if (data.status === 'error') {
                         isSuccess = false;
                     }

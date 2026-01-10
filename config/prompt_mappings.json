@@ -14,6 +14,7 @@
     "readiness_collection_cues": "collection_readiness_cues",
     "collection_safety_and_nuisance_notes": "collection_safety_nuisances",
     "similar_species": "collection_similar_species",
+    "similar_species_/_distinguishing_features": "collection_similar_species",
     "some_useful_collection_tools": "collection_tools",
     "what_you_collect": "collection_what_to_collect",
     "habitat_notes": "identification_habitat_notes",

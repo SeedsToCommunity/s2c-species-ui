@@ -623,7 +623,7 @@
                                         class="me-1"
                                         style="width: 16px; height: 16px"
                                     ></i>
-                                    Similar Species
+                                    Similar Species {{ prompt_link(column.field) }}
                                 </h6>
                                 {% for similar in parsed.data.similar_species %}
                                 <div class="border rounded p-2 mb-2 bg-light">
@@ -1834,6 +1834,7 @@
                                 </div>
                             `;
                             }
+                            const similarPromptLink = getPromptLinkHtml(column.field);
                             content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
@@ -1841,7 +1842,7 @@
                                         <div>
                                             <h6 class="field-label mb-2">
                                                 <i data-feather="git-branch" class="me-1" style="width:16px;height:16px;"></i>
-                                                Similar Species
+                                                Similar Species ${similarPromptLink}
                                             </h6>
                                             ${similarHtml}
                                         </div>
