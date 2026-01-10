@@ -1,958 +1,1406 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ species.common_name }} - Plant Species Detail</title>
-    
-    <!-- Bootstrap CSS with Replit Theme -->
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <style>
-        .screen-nav .nav-link {
-            border-radius: 0.375rem;
-            margin: 0 0.125rem;
-        }
-        .screen-nav .nav-link.active {
-            background-color: var(--bs-primary);
-            color: white;
-        }
-        .field-value {
-            word-wrap: break-word;
-        }
-        /* Reduce Bootstrap row gutters for tighter layout */
-        #species-content {
-            --bs-gutter-x: 0.5rem;
-            --bs-gutter-y: 0.25rem;
-        }
-        /* Make cards even more compact */
-        #species-content .card {
-            border-width: 1px;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-        }
-        /* Field labels - bold and colored for visibility */
-        .field-label {
-            font-weight: 600;
-            color: #5cb377;
-            font-size: 0.85rem;
-        }
-        .field-label a {
-            color: #5cb377;
-            text-decoration: none;
-        }
-        .field-label a:hover {
-            color: #7ec994;
-            text-decoration: underline;
-        }
-        /* Attribution info icon styling */
-        .attr-info-icon {
-            color: #6cb4ee;
-            cursor: pointer;
-            vertical-align: middle;
-            opacity: 0.85;
-            transition: all 0.2s;
-            font-style: normal;
-        }
-        .attr-info-icon:hover {
-            opacity: 1;
-            color: #17a2b8;
-            transform: scale(1.15);
-        }
-        /* Attribution tooltip styling - dark theme to look like proper tooltip */
-        .popover.bs-popover-top, .popover.bs-popover-bottom,
-        .popover.bs-popover-start, .popover.bs-popover-end {
-            --bs-popover-bg: #1a1a2e;
-            --bs-popover-border-color: #4a4a6a;
-            --bs-popover-header-bg: #16213e;
-            --bs-popover-body-color: #e8e8e8;
-            max-width: 320px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        .popover-header {
-            background: #16213e !important;
-            color: #5cb377 !important;
-            font-weight: 600;
-            border-bottom: 1px solid #4a4a6a;
-            font-size: 0.85rem;
-            padding: 0.5rem 0.75rem;
-        }
-        .popover-body {
-            font-size: 0.8rem;
-            padding: 0.5rem 0.75rem;
-            color: #e8e8e8 !important;
-        }
-        .popover-body .attr-row {
-            margin-bottom: 0.35rem;
-            line-height: 1.3;
-        }
-        .popover-body .attr-row:last-child {
-            margin-bottom: 0;
-        }
-        .popover-body .attr-label {
-            color: #7fba93;
-            font-weight: 500;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            display: block;
-        }
-        .popover-body .attr-value {
-            color: #e8e8e8;
-        }
-        .popover .popover-arrow::after {
-            border-top-color: #1a1a2e !important;
-        }
-        .bs-popover-bottom .popover-arrow::after {
-            border-bottom-color: #1a1a2e !important;
-        }
-        /* Cloudinary thumbnail gallery - responsive, no cropping, no upscaling */
-        .cloudinary-thumb img {
-            display: block;
-            max-height: 200px;
-            height: auto;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-        }
-        
-        /* Tiered content styling - all tiers same bright green */
-        .tier-icon, .tier-icon-t1, .tier-icon-t2, .tier-icon-t3 {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #7fba93;
-            cursor: pointer;
-            vertical-align: middle;
-            margin: 0 2px;
-            line-height: 1;
-        }
-        .tier-icon-empty {
-            opacity: 0.5;
-        }
-        .tier-content-row {
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px dashed rgba(255,255,255,0.1);
-        }
-        .tier-content-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .tier-content-text {
-            display: inline;
-        }
-        .tier-icons-group {
-            display: inline;
-            white-space: nowrap;
-        }
-        .prompt-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            color: #6c757d;
-            text-decoration: none;
-            margin-left: 0.25rem;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        .prompt-link:hover {
-            opacity: 1;
-            color: #adb5bd;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{{ species.common_name }} - Plant Species Detail</title>
 
-    </style>
-</head>
-<body>
-    {# Macro to render attribution info icon with popover #}
-    {% macro attr_icon(field_name) %}
-        {%- set attr = attribution_data.get(field_name.lower().replace(' ', '_'), {}) -%}
-        {%- if attr -%}
-            {%- set ns = namespace(content='') -%}
-            {%- for key, value in attr.items() -%}
-                {%- if value -%}
-                    {%- set ns.content = ns.content ~ '<div class="attr-row"><span class="attr-label">' ~ key ~ '</span><span class="attr-value">' ~ value ~ '</span></div>' -%}
-                {%- endif -%}
-            {%- endfor -%}
-            <span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="{{ ns.content|e }}">ⓘ</span>
-        {%- endif -%}
-    {% endmacro %}
-    
-    {# Macro to render a tier icon with tooltip #}
-    {% macro tier_icon(tier_num, attribution) %}
-        <span class="tier-icon tier-icon-t{{ tier_num }}" 
-              data-bs-toggle="popover" 
-              data-bs-trigger="hover focus" 
-              data-bs-html="true" 
-              data-bs-placement="top" 
-              data-bs-title="Tier {{ tier_num }} Source"
-              data-bs-content="{{ attribution|e }}">t{{ tier_num }}</span>
-    {%- endmacro %}
-    
-    {# Macro to render prompt explorer link for a field #}
-    {% macro prompt_link(field_name) %}
-        {%- set topic_id = prompt_mappings.get(field_name, '') -%}
-        {%- if topic_id -%}
-            <a href="/prompts?tier=1&topic={{ topic_id }}" class="prompt-link" title="View AI prompt for this field" target="_blank">(ⓘ Prompt)</a>
-        {%- endif -%}
-    {%- endmacro %}
-    
-    {# Macro to render tiered content #}
-    {% macro render_tiered_content(data) %}
-        {# Build content rows based on which tiers have values #}
-        {%- set t1 = data.get('tier1', {}) -%}
-        {%- set t2 = data.get('tier2', {}) -%}
-        {%- set t3 = data.get('tier3', {}) -%}
-        {%- set t1_val = t1.get('value', '')|trim -%}
-        {%- set t2_val = t2.get('value', '')|trim -%}
-        {%- set t3_val = t3.get('value', '')|trim -%}
-        {%- set t1_attr = t1.get('attribution', '') -%}
-        {%- set t2_attr = t2.get('attribution', '') -%}
-        {%- set t3_attr = t3.get('attribution', '') -%}
-        
+        <!-- Bootstrap CSS with Replit Theme -->
+        <link
+            href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css"
+            rel="stylesheet"
+        />
+
+        <style>
+            .screen-nav .nav-link {
+                border-radius: 0.375rem;
+                margin: 0 0.125rem;
+            }
+            .screen-nav .nav-link.active {
+                background-color: var(--bs-primary);
+                color: white;
+            }
+            .field-value {
+                word-wrap: break-word;
+            }
+            /* Reduce Bootstrap row gutters for tighter layout */
+            #species-content {
+                --bs-gutter-x: 0.5rem;
+                --bs-gutter-y: 0.25rem;
+            }
+            /* Make cards even more compact */
+            #species-content .card {
+                border-width: 1px;
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+            }
+            /* Field labels - bold and colored for visibility */
+            .field-label {
+                font-weight: 600;
+                color: #5cb377;
+                font-size: 0.85rem;
+            }
+            .field-label a {
+                color: #5cb377;
+                text-decoration: none;
+            }
+            .field-label a:hover {
+                color: #7ec994;
+                text-decoration: underline;
+            }
+            /* Attribution info icon styling */
+            .attr-info-icon {
+                color: #6cb4ee;
+                cursor: pointer;
+                vertical-align: middle;
+                opacity: 0.85;
+                transition: all 0.2s;
+                font-style: normal;
+            }
+            .attr-info-icon:hover {
+                opacity: 1;
+                color: #17a2b8;
+                transform: scale(1.15);
+            }
+            /* Attribution tooltip styling - dark theme to look like proper tooltip */
+            .popover.bs-popover-top,
+            .popover.bs-popover-bottom,
+            .popover.bs-popover-start,
+            .popover.bs-popover-end {
+                --bs-popover-bg: #1a1a2e;
+                --bs-popover-border-color: #4a4a6a;
+                --bs-popover-header-bg: #16213e;
+                --bs-popover-body-color: #e8e8e8;
+                max-width: 320px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            }
+            .popover-header {
+                background: #16213e !important;
+                color: #5cb377 !important;
+                font-weight: 600;
+                border-bottom: 1px solid #4a4a6a;
+                font-size: 0.85rem;
+                padding: 0.5rem 0.75rem;
+            }
+            .popover-body {
+                font-size: 0.8rem;
+                padding: 0.5rem 0.75rem;
+                color: #e8e8e8 !important;
+            }
+            .popover-body .attr-row {
+                margin-bottom: 0.35rem;
+                line-height: 1.3;
+            }
+            .popover-body .attr-row:last-child {
+                margin-bottom: 0;
+            }
+            .popover-body .attr-label {
+                color: #7fba93;
+                font-weight: 500;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                display: block;
+            }
+            .popover-body .attr-value {
+                color: #e8e8e8;
+            }
+            .popover .popover-arrow::after {
+                border-top-color: #1a1a2e !important;
+            }
+            .bs-popover-bottom .popover-arrow::after {
+                border-bottom-color: #1a1a2e !important;
+            }
+            /* Cloudinary thumbnail gallery - responsive, no cropping, no upscaling */
+            .cloudinary-thumb img {
+                display: block;
+                max-height: 200px;
+                height: auto;
+                width: auto;
+                max-width: 100%;
+                object-fit: contain;
+            }
+
+            /* Tiered content styling - all tiers same bright green */
+            .tier-icon,
+            .tier-icon-t1,
+            .tier-icon-t2,
+            .tier-icon-t3 {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.9rem;
+                font-weight: bold;
+                color: #7fba93;
+                cursor: pointer;
+                vertical-align: middle;
+                margin: 0 2px;
+                line-height: 1;
+            }
+            .tier-icon-empty {
+                opacity: 0.5;
+            }
+            .tier-content-row {
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            }
+            .tier-content-row:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+            .tier-content-text {
+                display: inline;
+            }
+            .tier-icons-group {
+                display: inline;
+                white-space: nowrap;
+            }
+            .prompt-link {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.7rem;
+                color: #6c757d;
+                text-decoration: none;
+                margin-left: 0.25rem;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+            }
+            .prompt-link:hover {
+                opacity: 1;
+                color: #adb5bd;
+            }
+        </style>
+    </head>
+    <body>
+        {# Macro to render attribution info icon with popover #} {% macro
+        attr_icon(field_name) %} {%- set attr =
+        attribution_data.get(field_name.lower().replace(' ', '_'), {}) -%} {%-
+        if attr -%} {%- set ns = namespace(content='') -%} {%- for key, value in
+        attr.items() -%} {%- if value -%} {%- set ns.content = ns.content ~ '
+        <div class="attr-row">
+            <span class="attr-label">' ~ key ~ '</span
+            ><span class="attr-value">' ~ value ~ '</span>
+        </div>
+        ' -%} {%- endif -%} {%- endfor -%}
+        <span
+            class="attr-info-icon ms-1"
+            style="cursor: pointer; font-size: 11px"
+            data-bs-toggle="popover"
+            data-bs-trigger="hover focus"
+            data-bs-html="true"
+            data-bs-placement="top"
+            data-bs-title="Data Source"
+            data-bs-content="{{ ns.content|e }}"
+            >ⓘ</span
+        >
+        {%- endif -%} {% endmacro %} {# Macro to render a tier icon with tooltip
+        #} {% macro tier_icon(tier_num, attribution) %}
+        <span
+            class="tier-icon tier-icon-t{{ tier_num }}"
+            data-bs-toggle="popover"
+            data-bs-trigger="hover focus"
+            data-bs-html="true"
+            data-bs-placement="top"
+            data-bs-title="Tier {{ tier_num }} Source"
+            data-bs-content="{{ attribution|e }}"
+            >t{{ tier_num }}</span
+        >
+        {%- endmacro %} {# Macro to render prompt explorer link for a field #}
+        {% macro prompt_link(field_name) %} {%- set topic_id =
+        prompt_mappings.get(field_name, '') -%} {%- if topic_id -%}
+        <a
+            href="/prompts?tier=1&topic={{ topic_id }}"
+            class="prompt-link"
+            title="View AI prompt for this field"
+            target="_blank"
+            >(ⓘ Prompt)</a
+        >
+        {%- endif -%} {%- endmacro %} {# Macro to render tiered content #} {%
+        macro render_tiered_content(data) %} {# Build content rows based on
+        which tiers have values #} {%- set t1 = data.get('tier1', {}) -%} {%-
+        set t2 = data.get('tier2', {}) -%} {%- set t3 = data.get('tier3', {})
+        -%} {%- set t1_val = t1.get('value', '')|trim -%} {%- set t2_val =
+        t2.get('value', '')|trim -%} {%- set t3_val = t3.get('value', '')|trim
+        -%} {%- set t1_attr = t1.get('attribution', '') -%} {%- set t2_attr =
+        t2.get('attribution', '') -%} {%- set t3_attr = t3.get('attribution',
+        '') -%}
+
         <div class="tiered-content">
-            {# Case: All tiers empty - just show icons #}
-            {%- if not t1_val and not t2_val and not t3_val -%}
-                <div class="tier-icons-group">
-                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}
-                </div>
-            {# Case: Only T1 has value #}
-            {%- elif t1_val and not t2_val and not t3_val -%}
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: T1 has value, T2 empty, T3 has value #}
-            {%- elif t1_val and not t2_val and t3_val -%}
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}</span>
-                </div>
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: T1 has value, T2 has value, T3 empty #}
-            {%- elif t1_val and t2_val and not t3_val -%}
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
-                </div>
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t2_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: All three have values #}
-            {%- elif t1_val and t2_val and t3_val -%}
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t1_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(1, t1_attr) }}</span>
-                </div>
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t2_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
-                </div>
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: T1 empty, T2 has value #}
-            {%- elif not t1_val and t2_val and not t3_val -%}
-                <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: T1 empty, T2 has value, T3 has value #}
-            {%- elif not t1_val and t2_val and t3_val -%}
-                <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}<span class="tier-content-text">{{ t2_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(2, t2_attr) }}</span>
-                </div>
-                <div class="tier-content-row">
-                    <span class="tier-content-text">{{ t3_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
-                </div>
-            {# Case: T1 empty, T2 empty, T3 has value #}
-            {%- elif not t1_val and not t2_val and t3_val -%}
-                <div class="tier-content-row">
-                    {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}<span class="tier-content-text">{{ t3_val|format_list_content }}</span>
-                    <span class="tier-icons-group">{{ tier_icon(3, t3_attr) }}</span>
-                </div>
+            {# Case: All tiers empty - just show icons #} {%- if not t1_val and
+            not t2_val and not t3_val -%}
+            <div class="tier-icons-group">
+                {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{
+                tier_icon(3, t3_attr) }}
+            </div>
+            {# Case: Only T1 has value #} {%- elif t1_val and not t2_val and not
+            t3_val -%}
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t1_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}{{
+                    tier_icon(3, t3_attr) }}</span
+                >
+            </div>
+            {# Case: T1 has value, T2 empty, T3 has value #} {%- elif t1_val and
+            not t2_val and t3_val -%}
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t1_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr)
+                    }}</span
+                >
+            </div>
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t3_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(3, t3_attr) }}</span
+                >
+            </div>
+            {# Case: T1 has value, T2 has value, T3 empty #} {%- elif t1_val and
+            t2_val and not t3_val -%}
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t1_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(1, t1_attr) }}</span
+                >
+            </div>
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t2_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr)
+                    }}</span
+                >
+            </div>
+            {# Case: All three have values #} {%- elif t1_val and t2_val and
+            t3_val -%}
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t1_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(1, t1_attr) }}</span
+                >
+            </div>
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t2_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(2, t2_attr) }}</span
+                >
+            </div>
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t3_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(3, t3_attr) }}</span
+                >
+            </div>
+            {# Case: T1 empty, T2 has value #} {%- elif not t1_val and t2_val
+            and not t3_val -%}
+            <div class="tier-content-row">
+                {{ tier_icon(1, t1_attr) }}<span class="tier-content-text"
+                    >{{ t2_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(2, t2_attr) }}{{ tier_icon(3, t3_attr)
+                    }}</span
+                >
+            </div>
+            {# Case: T1 empty, T2 has value, T3 has value #} {%- elif not t1_val
+            and t2_val and t3_val -%}
+            <div class="tier-content-row">
+                {{ tier_icon(1, t1_attr) }}<span class="tier-content-text"
+                    >{{ t2_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(2, t2_attr) }}</span
+                >
+            </div>
+            <div class="tier-content-row">
+                <span class="tier-content-text"
+                    >{{ t3_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(3, t3_attr) }}</span
+                >
+            </div>
+            {# Case: T1 empty, T2 empty, T3 has value #} {%- elif not t1_val and
+            not t2_val and t3_val -%}
+            <div class="tier-content-row">
+                {{ tier_icon(1, t1_attr) }}{{ tier_icon(2, t2_attr) }}<span
+                    class="tier-content-text"
+                    >{{ t3_val|format_list_content }}</span
+                >
+                <span class="tier-icons-group"
+                    >{{ tier_icon(3, t3_attr) }}</span
+                >
+            </div>
             {# Case: T1 has value, T2 empty, T3 empty - already covered above #}
             {%- endif -%}
         </div>
-    {%- endmacro %}
-    
-    <div class="container mt-3">
-        {% include 'nav_menu.html' %}
-        
-        <!-- Header with Species Name -->
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <h1 class="text-primary mb-2">
-                    <i data-feather="leaf" class="me-2"></i>
-                    {{ species.common_name }}
-                </h1>
-                <h2 class="text-muted fst-italic fs-4">{{ botanical_name }}</h2>
-            </div>
-            <div>
-                {% set filter_params = [] %}
-                {% for key, value in current_filters.items() %}
-                    {% if value %}
-                        {% set _ = filter_params.append(key + '=' + value|urlencode) %}
-                    {% endif %}
-                {% endfor %}
-                {% set query_string = '?' + filter_params|join('&') if filter_params else '' %}
-                
-                <a href="{{ url_for('report_issue', botanical_name=botanical_name) }}" class="btn btn-outline-warning">
-                    <i data-feather="flag" class="me-1"></i>
-                    Report Issue
-                </a>
-            </div>
-        </div>
+        {%- endmacro %}
 
-        <!-- Screen Navigation -->
-        <div class="card mb-3">
-            <div class="card-body py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="screen-header">
-                        <h5 class="mb-0">
-                            <i data-feather="clipboard" class="me-2"></i>
-                            <span id="screen-title">{{ screen_config.screen_name }}</span>
-                        </h5>
-                        <small class="text-muted" id="screen-description">{{ screen_config.description }}</small>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <nav class="screen-nav">
-                            <div class="nav nav-pills">
-                                {% for screen in valid_screens %}
-                                    {% set screen_name = screen.replace('_', ' ').title() %}
-                                    <a href="javascript:void(0)" 
-                                       data-screen="{{ screen }}"
-                                       class="nav-link screen-tab {{ 'active' if screen == current_screen else '' }}"
-                                       onclick="switchScreen('{{ screen }}')">
+        <div class="container mt-3">
+            {% include 'nav_menu.html' %}
+
+            <!-- Header with Species Name -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="text-primary mb-2">
+                        <i data-feather="leaf" class="me-2"></i>
+                        {{ species.common_name }}
+                    </h1>
+                    <h2 class="text-muted fst-italic fs-4">
+                        {{ botanical_name }}
+                    </h2>
+                </div>
+                <div>
+                    {% set filter_params = [] %} {% for key, value in
+                    current_filters.items() %} {% if value %} {% set _ =
+                    filter_params.append(key + '=' + value|urlencode) %} {%
+                    endif %} {% endfor %} {% set query_string = '?' +
+                    filter_params|join('&') if filter_params else '' %}
+
+                    <a
+                        href="{{ url_for('report_issue', botanical_name=botanical_name) }}"
+                        class="btn btn-outline-warning"
+                    >
+                        <i data-feather="flag" class="me-1"></i>
+                        Report Issue
+                    </a>
+                </div>
+            </div>
+
+            <!-- Screen Navigation -->
+            <div class="card mb-3">
+                <div class="card-body py-3">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div class="screen-header">
+                            <h5 class="mb-0">
+                                <i data-feather="clipboard" class="me-2"></i>
+                                <span id="screen-title"
+                                    >{{ screen_config.screen_name }}</span
+                                >
+                            </h5>
+                            <small class="text-muted" id="screen-description"
+                                >{{ screen_config.description }}</small
+                            >
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <nav class="screen-nav">
+                                <div class="nav nav-pills">
+                                    {% for screen in valid_screens %} {% set
+                                    screen_name = screen.replace('_', '
+                                    ').title() %}
+                                    <a
+                                        href="javascript:void(0)"
+                                        data-screen="{{ screen }}"
+                                        class="nav-link screen-tab {{ 'active' if screen == current_screen else '' }}"
+                                        onclick="switchScreen('{{ screen }}')"
+                                    >
                                         {% if screen == 'identification' %}
-                                            <i data-feather="search" class="me-1 small"></i>
+                                        <i
+                                            data-feather="search"
+                                            class="me-1 small"
+                                        ></i>
                                         {% elif screen == 'collection' %}
-                                            <i data-feather="package" class="me-1 small"></i>
+                                        <i
+                                            data-feather="package"
+                                            class="me-1 small"
+                                        ></i>
                                         {% elif screen == 'processing' %}
-                                            <i data-feather="settings" class="me-1 small"></i>
+                                        <i
+                                            data-feather="settings"
+                                            class="me-1 small"
+                                        ></i>
                                         {% elif screen == 'storage' %}
-                                            <i data-feather="archive" class="me-1 small"></i>
+                                        <i
+                                            data-feather="archive"
+                                            class="me-1 small"
+                                        ></i>
                                         {% elif screen == 'stratification' %}
-                                            <i data-feather="layers" class="me-1 small"></i>
+                                        <i
+                                            data-feather="layers"
+                                            class="me-1 small"
+                                        ></i>
                                         {% elif screen == 'planting' %}
-                                            <i data-feather="sun" class="me-1 small"></i>
-                                        {% endif %}
-                                        {{ screen_name }}
+                                        <i
+                                            data-feather="sun"
+                                            class="me-1 small"
+                                        ></i>
+                                        {% endif %} {{ screen_name }}
                                     </a>
-                                {% endfor %}
-                            </div>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Announcement (if present) -->
-        <div id="announcement-container">
-        {% if screen_config.announcement %}
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-warning border-warning">
-                    <div class="d-flex align-items-start">
-                        <i data-feather="alert-triangle" class="me-2 mt-1 flex-shrink-0" style="color: #856404;"></i>
-                        <div>
-                            <strong>Important Notice:</strong><br>
-                            {{ screen_config.announcement }}
+                                    {% endfor %}
+                                </div>
+                            </nav>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        {% endif %}
-        </div>
 
-        <!-- Species Data Fields -->
-        <div class="row" id="species-content">
-            {% for column in screen_config.columns %}
-                {% set field_value = species.get(column.field, '') %}
-                {% if field_value and field_value != '' %}
-                    {% set parsed = field_value|parse_json_urls %}
-                    <div class="col-lg-6 mb-1">
-                        <div class="card h-100">
-                            <div class="card-body py-1 px-2">
-                                {% if parsed.type == 'image' %}
-                                    <!-- Single image URL -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <a href="{{ parsed.data }}" target="_blank">
-                                            <img src="{{ parsed.data }}" alt="{{ column.label }}" class="img-fluid rounded" style="max-height: 200px;">
-                                        </a>
-                                    </div>
-                                {% elif parsed.type == 'image_dict' %}
-                                    <!-- JSON dictionary of labeled image URLs -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            {% for name, url in parsed.data.items() %}
-                                                <a href="{{ url }}" target="_blank" title="{{ name }}">
-                                                    <img src="{{ url }}" alt="{{ name }}" class="img-fluid rounded" style="max-height: 150px;">
-                                                </a>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% elif parsed.type == 'url_dict' %}
-                                    <!-- JSON dictionary of labeled URLs -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            {% for name, url in parsed.data.items() %}
-                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
-                                                    <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>{{ name }}
-                                                </a>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% elif parsed.type == 'url_list' %}
-                                    <!-- JSON array of URLs -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            {% for url in parsed.data %}
-                                                <a href="{{ url }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
-                                                    <i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link {{ loop.index }}
-                                                </a>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% elif parsed.type == 'html' %}
-                                    <!-- HTML-formatted content -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <div class="text-body-secondary">{{ parsed.data|safe }}</div>
-                                    </div>
-                                {% elif parsed.type == 'chart' %}
-                                    <!-- Chart data -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <div style="max-height: 200px;">
-                                            <canvas id="chart-{{ column.field }}" class="chart-canvas" 
-                                                    data-labels='{{ parsed.data.keys()|list|tojson|e }}'
-                                                    data-values='{{ parsed.data.values()|list|tojson|e }}'
-                                                    data-label="{{ column.label }}"></canvas>
-                                        </div>
-                                    </div>
-                                {% elif parsed.type == 'tiered_content' %}
-                                    <!-- Tiered content (tier1/tier2/tier3 with attributions) -->
-                                    <div>
-                                        <small class="field-label d-block mb-1">{{ column.label }}:{{ prompt_link(column.field) }}</small>
-                                        <div class="text-body-secondary">
-                                            {{ render_tiered_content(parsed.data) }}
-                                        </div>
-                                    </div>
-                                {% elif parsed.type == 'similar_species' %}
-                                    <!-- Similar Species structured content -->
-                                    <div>
-                                        <h6 class="field-label mb-2">
-                                            <i data-feather="git-branch" class="me-1" style="width:16px;height:16px;"></i>
-                                            Similar Species
-                                        </h6>
-                                        {% for similar in parsed.data.similar_species %}
-                                            <div class="border rounded p-2 mb-2 bg-light">
-                                                <div class="fw-semibold text-dark">
-                                                    {{ similar.name }}
-                                                    {% if similar.common_name %}
-                                                        <span class="text-muted fw-normal">— {{ similar.common_name }}</span>
-                                                    {% endif %}
-                                                </div>
-                                                {% if similar.tier1_source_backed and similar.tier1_source_backed.distinguishing_features %}
-                                                    <div class="mt-1">
-                                                        <small class="text-secondary">
-                                                            <strong>Distinguishing Characteristics:</strong>
-                                                            {{ similar.tier1_source_backed.distinguishing_features.value }}
-                                                        </small>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% elif column.type == 'link' and field_value %}
-                                    <div class="d-flex align-items-center">
-                                        <small class="field-label me-2">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <a href="{{ field_value }}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill">
-                                            <i data-feather="external-link" class="me-1"></i>
-                                            View Pictures
-                                        </a>
-                                    </div>
-                                {% elif column.field == 'coefficient_of_conservatism_(c)' %}
-                                    {% set c_interp = field_value|interpret_c_value %}
-                                    <div>
-                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <span class="text-body-secondary ms-1">{{ field_value }}</span>
-                                        {% if c_interp %}
-                                            <span class="text-body-secondary ms-1">— {{ c_interp.short }}</span>
-                                            <small class="d-block text-muted mt-1">
-                                                {{ c_interp.description }}
-                                                <a href="{{ url_for('explain_conservatism') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
-                                                    <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
-                                                </a>
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                {% elif column.field == 'coefficient_of_wetness_(cw)' %}
-                                    {% set w_interp = field_value|interpret_w_value %}
-                                    <div>
-                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        <span class="text-body-secondary ms-1">{{ field_value }}</span>
-                                        {% if w_interp %}
-                                            <span class="text-body-secondary ms-1">— {{ w_interp.short }}</span>
-                                            <small class="d-block text-muted mt-1">
-                                                {{ w_interp.description }}
-                                                <a href="{{ url_for('explain_wetland') }}" class="btn btn-outline-info btn-sm rounded-pill ms-2">
-                                                    <i data-feather="info" style="width:12px;height:12px;" class="me-1"></i>Explained
-                                                </a>
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                {% else %}
-                                    <div>
-                                        <small class="field-label">{{ column.label }}:{{ attr_icon(column.field) }}</small>
-                                        {% if '\n' in field_value or '•' in field_value or '- ' in field_value or 'Native —' in field_value or 'Non-native —' in field_value or 'Horticultural —' in field_value or 'Invasive —' in field_value %}
-                                            <div class="text-body-secondary ms-1">{{ field_value|format_list_content }}</div>
-                                        {% else %}
-                                            <span class="text-body-secondary ms-1">{{ field_value }}</span>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-            {% endfor %}
-            
-            <!-- Cloudinary Image Gallery -->
-            {% if cloudinary_images %}
-                {% for group_id, group_data in cloudinary_images.items() %}
-                    {% if group_data.images %}
-                        <div class="col-12 mb-2">
-                            <div class="card">
-                                <div class="card-body py-2 px-3">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i data-feather="{{ group_data.icon or 'image' }}" class="me-2 text-primary" style="width:18px;height:18px;"></i>
-                                        <h6 class="mb-0 text-primary">{{ group_data.label }}</h6>
-                                        <span class="badge bg-secondary ms-2">{{ group_data.images|length }} images</span>
-                                    </div>
-                                    <div class="cloudinary-gallery d-flex flex-wrap gap-2">
-                                        {% for img in group_data.images %}
-                                            <a href="{{ img.url }}" target="_blank" class="cloudinary-thumb" title="{{ img.filename }}">
-                                                <img src="{{ img.thumbnail_url }}" 
-                                                     alt="{{ img.filename }}"
-                                                     class="rounded"
-                                                     loading="lazy">
-                                            </a>
-                                        {% endfor %}
-                                    </div>
+            <!-- Announcement (if present) -->
+            <div id="announcement-container">
+                {% if screen_config.announcement %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-warning border-warning">
+                            <div class="d-flex align-items-start">
+                                <i
+                                    data-feather="alert-triangle"
+                                    class="me-2 mt-1 flex-shrink-0"
+                                    style="color: #856404"
+                                ></i>
+                                <div>
+                                    <strong>Important Notice:</strong><br />
+                                    {{ screen_config.announcement }}
                                 </div>
                             </div>
                         </div>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-            
-            <!-- Show message if no data available for this screen -->
-            {% set data_fields = [] %}
-            {% for column in screen_config.columns %}
-                {% set field_value = species.get(column.field, '') %}
-                {% if field_value and field_value != '' %}
-                    {% set _ = data_fields.append(1) %}
+                    </div>
+                </div>
                 {% endif %}
-            {% endfor %}
-            
-            {% set has_cloudinary_images = cloudinary_images and cloudinary_images|length > 0 %}
-            
-            {% if data_fields|length == 0 and not has_cloudinary_images %}
+            </div>
+
+            <!-- Species Data Fields -->
+            <div class="row" id="species-content">
+                {% for column in screen_config.columns %} {% set field_value =
+                species.get(column.field, '') %} {% if field_value and
+                field_value != '' %} {% set parsed = field_value|parse_json_urls
+                %}
+                <div class="col-lg-6 mb-1">
+                    <div class="card h-100">
+                        <div class="card-body py-1 px-2">
+                            {% if parsed.type == 'image' %}
+                            <!-- Single image URL -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <a href="{{ parsed.data }}" target="_blank">
+                                    <img
+                                        src="{{ parsed.data }}"
+                                        alt="{{ column.label }}"
+                                        class="img-fluid rounded"
+                                        style="max-height: 200px"
+                                    />
+                                </a>
+                            </div>
+                            {% elif parsed.type == 'image_dict' %}
+                            <!-- JSON dictionary of labeled image URLs -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for name, url in parsed.data.items() %}
+                                    <a
+                                        href="{{ url }}"
+                                        target="_blank"
+                                        title="{{ name }}"
+                                    >
+                                        <img
+                                            src="{{ url }}"
+                                            alt="{{ name }}"
+                                            class="img-fluid rounded"
+                                            style="max-height: 150px"
+                                        />
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'url_dict' %}
+                            <!-- JSON dictionary of labeled URLs -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for name, url in parsed.data.items() %}
+                                    <a
+                                        href="{{ url }}"
+                                        target="_blank"
+                                        class="btn btn-outline-info btn-sm rounded-pill"
+                                    >
+                                        <i
+                                            data-feather="external-link"
+                                            class="me-1"
+                                            style="width: 12px; height: 12px"
+                                        ></i
+                                        >{{ name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'url_list' %}
+                            <!-- JSON array of URLs -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for url in parsed.data %}
+                                    <a
+                                        href="{{ url }}"
+                                        target="_blank"
+                                        class="btn btn-outline-info btn-sm rounded-pill"
+                                    >
+                                        <i
+                                            data-feather="external-link"
+                                            class="me-1"
+                                            style="width: 12px; height: 12px"
+                                        ></i
+                                        >Link {{ loop.index }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'html' %}
+                            <!-- HTML-formatted content -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <div class="text-body-secondary">
+                                    {{ parsed.data|safe }}
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'chart' %}
+                            <!-- Chart data -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <div style="max-height: 200px">
+                                    <canvas
+                                        id="chart-{{ column.field }}"
+                                        class="chart-canvas"
+                                        data-labels="{{ parsed.data.keys()|list|tojson|e }}"
+                                        data-values="{{ parsed.data.values()|list|tojson|e }}"
+                                        data-label="{{ column.label }}"
+                                    ></canvas>
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'tiered_content' %}
+                            <!-- Tiered content (tier1/tier2/tier3 with attributions) -->
+                            <div>
+                                <small class="field-label d-block mb-1"
+                                    >{{ column.label }}:{{
+                                    prompt_link(column.field) }}</small
+                                >
+                                <div class="text-body-secondary">
+                                    {{ render_tiered_content(parsed.data) }}
+                                </div>
+                            </div>
+                            {% elif parsed.type == 'similar_species' %}
+                            <!-- Similar Species structured content -->
+                            <div>
+                                <h6 class="field-label mb-2">
+                                    <i
+                                        data-feather="git-branch"
+                                        class="me-1"
+                                        style="width: 16px; height: 16px"
+                                    ></i>
+                                    Similar Species
+                                </h6>
+                                {% for similar in parsed.data.similar_species %}
+                                <div class="border rounded p-2 mb-2 bg-light">
+                                    <div class="fw-semibold text-dark">
+                                        {{ similar.name }} {% if
+                                        similar.common_name %}
+                                        <span class="text-muted fw-normal"
+                                            >— {{ similar.common_name }}</span
+                                        >
+                                        {% endif %}
+                                    </div>
+                                    {% if similar.tier1_source_backed and
+                                    similar.tier1_source_backed.distinguishing_features
+                                    %}
+                                    <div class="mt-1">
+                                        <small class="text-secondary">
+                                            <strong
+                                                >Distinguishing
+                                                Characteristics:</strong
+                                            >
+                                            {{
+                                            similar.tier1_source_backed.distinguishing_features.value
+                                            }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% elif column.type == 'link' and field_value %}
+                            <div class="d-flex align-items-center">
+                                <small class="field-label me-2"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <a
+                                    href="{{ field_value }}"
+                                    target="_blank"
+                                    class="btn btn-outline-info btn-sm rounded-pill"
+                                >
+                                    <i
+                                        data-feather="external-link"
+                                        class="me-1"
+                                    ></i>
+                                    View Pictures
+                                </a>
+                            </div>
+                            {% elif column.field ==
+                            'coefficient_of_conservatism_(c)' %} {% set c_interp
+                            = field_value|interpret_c_value %}
+                            <div>
+                                <small class="field-label"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <span class="text-body-secondary ms-1"
+                                    >{{ field_value }}</span
+                                >
+                                {% if c_interp %}
+                                <span class="text-body-secondary ms-1"
+                                    >— {{ c_interp.short }}</span
+                                >
+                                <small class="d-block text-muted mt-1">
+                                    {{ c_interp.description }}
+                                    <a
+                                        href="{{ url_for('explain_conservatism') }}"
+                                        class="btn btn-outline-info btn-sm rounded-pill ms-2"
+                                    >
+                                        <i
+                                            data-feather="info"
+                                            style="width: 12px; height: 12px"
+                                            class="me-1"
+                                        ></i
+                                        >Explained
+                                    </a>
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% elif column.field ==
+                            'coefficient_of_wetness_(cw)' %} {% set w_interp =
+                            field_value|interpret_w_value %}
+                            <div>
+                                <small class="field-label"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                <span class="text-body-secondary ms-1"
+                                    >{{ field_value }}</span
+                                >
+                                {% if w_interp %}
+                                <span class="text-body-secondary ms-1"
+                                    >— {{ w_interp.short }}</span
+                                >
+                                <small class="d-block text-muted mt-1">
+                                    {{ w_interp.description }}
+                                    <a
+                                        href="{{ url_for('explain_wetland') }}"
+                                        class="btn btn-outline-info btn-sm rounded-pill ms-2"
+                                    >
+                                        <i
+                                            data-feather="info"
+                                            style="width: 12px; height: 12px"
+                                            class="me-1"
+                                        ></i
+                                        >Explained
+                                    </a>
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div>
+                                <small class="field-label"
+                                    >{{ column.label }}:{{
+                                    attr_icon(column.field) }}</small
+                                >
+                                {% if '\n' in field_value or '•' in field_value
+                                or '- ' in field_value or 'Native —' in
+                                field_value or 'Non-native —' in field_value or
+                                'Horticultural —' in field_value or 'Invasive —'
+                                in field_value %}
+                                <div class="text-body-secondary ms-1">
+                                    {{ field_value|format_list_content }}
+                                </div>
+                                {% else %}
+                                <span class="text-body-secondary ms-1"
+                                    >{{ field_value }}</span
+                                >
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %} {% endfor %}
+
+                <!-- Cloudinary Image Gallery -->
+                {% if cloudinary_images %} {% for group_id, group_data in
+                cloudinary_images.items() %} {% if group_data.images %}
+                <div class="col-12 mb-2">
+                    <div class="card">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i
+                                    data-feather="{{ group_data.icon or 'image' }}"
+                                    class="me-2 text-primary"
+                                    style="width: 18px; height: 18px"
+                                ></i>
+                                <h6 class="mb-0 text-primary">
+                                    {{ group_data.label }}
+                                </h6>
+                                <span class="badge bg-secondary ms-2"
+                                    >{{ group_data.images|length }} images</span
+                                >
+                            </div>
+                            <div
+                                class="cloudinary-gallery d-flex flex-wrap gap-2"
+                            >
+                                {% for img in group_data.images %}
+                                <a
+                                    href="{{ img.url }}"
+                                    target="_blank"
+                                    class="cloudinary-thumb"
+                                    title="{{ img.filename }}"
+                                >
+                                    <img
+                                        src="{{ img.thumbnail_url }}"
+                                        alt="{{ img.filename }}"
+                                        class="rounded"
+                                        loading="lazy"
+                                    />
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %} {% endfor %} {% endif %}
+
+                <!-- Show message if no data available for this screen -->
+                {% set data_fields = [] %} {% for column in
+                screen_config.columns %} {% set field_value =
+                species.get(column.field, '') %} {% if field_value and
+                field_value != '' %} {% set _ = data_fields.append(1) %} {%
+                endif %} {% endfor %} {% set has_cloudinary_images =
+                cloudinary_images and cloudinary_images|length > 0 %} {% if
+                data_fields|length == 0 and not has_cloudinary_images %}
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body text-center py-5">
-                            <i data-feather="info" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <i
+                                data-feather="info"
+                                style="width: 48px; height: 48px"
+                                class="text-muted mb-3"
+                            ></i>
                             <h5 class="text-muted">No Data Available</h5>
                             <p class="text-muted mb-0">
-                                No information is currently available for this species in the {{ screen_config.screen_name.lower() }} workflow.
+                                No information is currently available for this
+                                species in the {{
+                                screen_config.screen_name.lower() }} workflow.
                             </p>
                         </div>
                     </div>
                 </div>
-            {% endif %}
-        </div>
-
-        <!-- Contribute Button (all screens) -->
-        <div class="row mt-3">
-            <div class="col-12">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitPhotoModal">
-                    <i data-feather="edit-3" class="me-1"></i>
-                    Contribute
-                </button>
+                {% endif %}
             </div>
-        </div>
 
-        <!-- Footer -->
-        <footer class="mt-5 pt-4 border-top">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted">
-                        <i data-feather="database" class="me-1"></i>
-                        Plant Species Workflow System
-                    </p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="text-muted mb-0">
-                        <i data-feather="layers" class="me-1"></i>
-                        {{ current_screen.replace('_', ' ').title() }} Workflow
-                    </p>
+            <!-- Contribute Button (all screens) -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button
+                        type="button"
+                        class="btn btn-outline-info"
+                        data-bs-toggle="modal"
+                        data-bs-target="#submitPhotoModal"
+                    >
+                        <i data-feather="upload" class="me-1"></i>
+                        Contribute Images, Process Knowledge, or Descriptions
+                        for {{ species.common_name }}
+                    </button>
                 </div>
             </div>
-        </footer>
-    </div>
-    
-    <!-- Submit Contribution Modal -->
-    <div class="modal fade" id="submitPhotoModal" tabindex="-1" aria-labelledby="submitPhotoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form action="{{ url_for('submit_contribution', botanical_name=botanical_name) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateContributionForm()">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="submitPhotoModalLabel">
-                            <i data-feather="edit-3" class="me-2"></i>
-                            Contribute to {{ species.common_name }}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted mb-4">
-                            Share your photos or knowledge about <strong class="fst-italic">{{ botanical_name }}</strong>. 
-                            All submissions will be reviewed before being used.
+
+            <!-- Footer -->
+            <footer class="mt-5 pt-4 border-top">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted">
+                            <i data-feather="database" class="me-1"></i>
+                            Plant Species Workflow System
                         </p>
-                        
-                        <!-- Images Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-transparent">
-                                <i data-feather="camera" class="me-2"></i>Photos (optional)
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <input type="file" class="form-control" id="imageFile" name="images" accept="image/png,image/jpeg,image/gif,image/webp" multiple onchange="previewImages(this)">
-                                    <div class="form-text">PNG, JPG, GIF, or WebP. Maximum 10MB each.</div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="text-muted mb-0">
+                            <i data-feather="layers" class="me-1"></i>
+                            {{ current_screen.replace('_', ' ').title() }}
+                            Workflow
+                        </p>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Submit Contribution Modal -->
+        <div
+            class="modal fade"
+            id="submitPhotoModal"
+            tabindex="-1"
+            aria-labelledby="submitPhotoModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form
+                        action="{{ url_for('submit_contribution', botanical_name=botanical_name) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        onsubmit="return validateContributionForm()"
+                    >
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="submitPhotoModalLabel">
+                                <i data-feather="edit-3" class="me-2"></i>
+                                Contribute to {{ species.common_name }}
+                            </h5>
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"
+                            ></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted mb-4">
+                                Share your photos or knowledge about
+                                <strong class="fst-italic"
+                                    >{{ botanical_name }}</strong
+                                >. All submissions will be reviewed before being
+                                used.
+                            </p>
+
+                            <!-- Images Section -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-transparent">
+                                    <i data-feather="camera" class="me-2"></i
+                                    >Photos (optional)
                                 </div>
-                                
-                                <div id="imagePreviewContainer" class="mb-3 d-none">
-                                    <div id="imagePreviews" class="d-flex flex-wrap gap-2 justify-content-center"></div>
-                                    <div class="text-center mt-2 text-muted small"><span id="imageCount">0</span> image(s) selected</div>
-                                </div>
-                                
-                                <div id="imageTagsSection" class="d-none">
-                                    <label class="form-label small">Image tags:</label>
-                                    <div class="d-flex gap-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="tagSeeds" name="tag_seeds">
-                                            <label class="form-check-label" for="tagSeeds">Seeds</label>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <input
+                                            type="file"
+                                            class="form-control"
+                                            id="imageFile"
+                                            name="images"
+                                            accept="image/png,image/jpeg,image/gif,image/webp"
+                                            multiple
+                                            onchange="previewImages(this)"
+                                        />
+                                        <div class="form-text">
+                                            PNG, JPG, GIF, or WebP. Maximum 10MB
+                                            each.
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="tagSeedling" name="tag_seedling">
-                                            <label class="form-check-label" for="tagSeedling">Seedling</label>
+                                    </div>
+
+                                    <div
+                                        id="imagePreviewContainer"
+                                        class="mb-3 d-none"
+                                    >
+                                        <div
+                                            id="imagePreviews"
+                                            class="d-flex flex-wrap gap-2 justify-content-center"
+                                        ></div>
+                                        <div
+                                            class="text-center mt-2 text-muted small"
+                                        >
+                                            <span id="imageCount">0</span>
+                                            image(s) selected
+                                        </div>
+                                    </div>
+
+                                    <div id="imageTagsSection" class="d-none">
+                                        <label class="form-label small"
+                                            >Image tags:</label
+                                        >
+                                        <div class="d-flex gap-3">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="tagSeeds"
+                                                    name="tag_seeds"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="tagSeeds"
+                                                    >Seeds</label
+                                                >
+                                            </div>
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="tagSeedling"
+                                                    name="tag_seedling"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="tagSeedling"
+                                                    >Seedling</label
+                                                >
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Knowledge Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-transparent">
-                                <i data-feather="book-open" class="me-2"></i>Knowledge & Tips (optional)
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <textarea class="form-control" id="metadataText" name="metadata_text" rows="4" placeholder="Share your experience, tips, or knowledge about this species..."></textarea>
-                                    <div class="form-text">Describe collection methods, identification tips, processing techniques, or other useful information.</div>
+
+                            <!-- Knowledge Section -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-transparent">
+                                    <i data-feather="book-open" class="me-2"></i
+                                    >Knowledge & Tips (optional)
                                 </div>
-                                
-                                <div id="metadataCategoriesSection">
-                                    <label class="form-label small">This information relates to:</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="catIdentification" name="cat_identification">
-                                            <label class="form-check-label" for="catIdentification">Identification</label>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <textarea
+                                            class="form-control"
+                                            id="metadataText"
+                                            name="metadata_text"
+                                            rows="4"
+                                            placeholder="Share your experience, tips, or knowledge about this species..."
+                                        ></textarea>
+                                        <div class="form-text">
+                                            Describe collection methods,
+                                            identification tips, processing
+                                            techniques, or other useful
+                                            information.
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="catCollection" name="cat_collection">
-                                            <label class="form-check-label" for="catCollection">Collection</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="catStorage" name="cat_storage">
-                                            <label class="form-check-label" for="catStorage">Storage</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="catProcessing" name="cat_processing">
-                                            <label class="form-check-label" for="catProcessing">Processing</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="catStratification" name="cat_stratification">
-                                            <label class="form-check-label" for="catStratification">Stratification</label>
+                                    </div>
+
+                                    <div id="metadataCategoriesSection">
+                                        <label class="form-label small"
+                                            >This information relates to:</label
+                                        >
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="catIdentification"
+                                                    name="cat_identification"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="catIdentification"
+                                                    >Identification</label
+                                                >
+                                            </div>
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="catCollection"
+                                                    name="cat_collection"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="catCollection"
+                                                    >Collection</label
+                                                >
+                                            </div>
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="catStorage"
+                                                    name="cat_storage"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="catStorage"
+                                                    >Storage</label
+                                                >
+                                            </div>
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="catProcessing"
+                                                    name="cat_processing"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="catProcessing"
+                                                    >Processing</label
+                                                >
+                                            </div>
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="catStratification"
+                                                    name="cat_stratification"
+                                                />
+                                                <label
+                                                    class="form-check-label"
+                                                    for="catStratification"
+                                                    >Stratification</label
+                                                >
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <!-- Attribution -->
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="firstName" class="form-label">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="firstName" name="first_name" required>
+
+                            <hr />
+
+                            <!-- Attribution -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="firstName" class="form-label"
+                                        >First Name
+                                        <span class="text-danger"
+                                            >*</span
+                                        ></label
+                                    >
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="firstName"
+                                        name="first_name"
+                                        required
+                                    />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="lastName" class="form-label"
+                                        >Last Name
+                                        <span class="text-danger"
+                                            >*</span
+                                        ></label
+                                    >
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="lastName"
+                                        name="last_name"
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="lastName" class="form-label">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="lastName" name="last_name" required>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="consent"
+                                        name="consent"
+                                        required
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="consent"
+                                    >
+                                        <span class="text-danger">*</span> I
+                                        agree to share this contribution freely
+                                        for educational and non-commercial use
+                                        without restrictions.
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Your contribution may be used in this plant
+                                    database and associated educational
+                                    materials.
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="consent" name="consent" required>
-                                <label class="form-check-label" for="consent">
-                                    <span class="text-danger">*</span> I agree to share this contribution freely for educational and non-commercial use without restrictions.
-                                </label>
-                            </div>
-                            <div class="form-text">Your contribution may be used in this plant database and associated educational materials.</div>
+                        <div class="modal-footer">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                data-bs-dismiss="modal"
+                            >
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="upload" class="me-1"></i>
+                                Submit Contribution
+                            </button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i data-feather="upload" class="me-1"></i>
-                            Submit Contribution
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <script>
-        function previewImages(input) {
-            const container = document.getElementById('imagePreviewContainer');
-            const previewsDiv = document.getElementById('imagePreviews');
-            const countSpan = document.getElementById('imageCount');
-            const tagsSection = document.getElementById('imageTagsSection');
-            
-            previewsDiv.innerHTML = '';
-            
-            if (input.files && input.files.length > 0) {
-                countSpan.textContent = input.files.length;
-                container.classList.remove('d-none');
-                tagsSection.classList.remove('d-none');
-                
-                Array.from(input.files).forEach((file, index) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.alt = 'Preview ' + (index + 1);
-                        img.className = 'rounded';
-                        img.style.maxHeight = '120px';
-                        img.style.maxWidth = '150px';
-                        img.style.objectFit = 'contain';
-                        previewsDiv.appendChild(img);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            } else {
-                container.classList.add('d-none');
-                tagsSection.classList.add('d-none');
-            }
-        }
-        
-        function validateContributionForm() {
-            const hasImages = document.getElementById('imageFile').files.length > 0;
-            const hasText = document.getElementById('metadataText').value.trim().length > 0;
-            
-            if (!hasImages && !hasText) {
-                alert('Please provide at least one photo or some knowledge to share.');
-                return false;
-            }
-            return true;
-        }
-    </script>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Chart.js for data visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script>
-        // Initialize Feather icons
-        feather.replace();
-        
-        // Initialize Bootstrap popovers for attribution info icons
-        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl, {
-                container: 'body',
-                html: true
-            });
-        });
-        
-        // Initialize Bootstrap tooltips on page load (mobile-friendly tier icons)
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-            new bootstrap.Tooltip(tooltipTriggerEl, {
-                container: 'body'
-            });
-        });
-        
-        // Store active chart instances for cleanup
-        const activeCharts = {};
-        
-        // Function to initialize all charts on the page
-        function initializeCharts() {
-            const canvases = document.querySelectorAll('.chart-canvas');
-            console.log('Found chart canvases:', canvases.length);
-            
-            canvases.forEach(canvas => {
-                const chartId = canvas.id;
-                console.log('Initializing chart:', chartId);
-                console.log('Data-labels attr:', canvas.dataset.labels);
-                console.log('Data-values attr:', canvas.dataset.values);
-                
-                // Destroy existing chart if any
-                if (activeCharts[chartId]) {
-                    activeCharts[chartId].destroy();
-                }
-                
-                try {
-                    const labels = JSON.parse(canvas.dataset.labels || '[]');
-                    const values = JSON.parse(canvas.dataset.values || '[]');
-                    const label = canvas.dataset.label || 'Data';
-                    console.log('Parsed labels:', labels);
-                    console.log('Parsed values:', values);
-                
-                if (labels.length > 0 && values.length > 0) {
-                    activeCharts[chartId] = new Chart(canvas, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: label,
-                                data: values,
-                                borderColor: 'rgb(75, 192, 192)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                tension: 0.3,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Observations'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Month'
-                                    }
-                                }
-                            }
-                        }
+        <script>
+            function previewImages(input) {
+                const container = document.getElementById(
+                    "imagePreviewContainer",
+                );
+                const previewsDiv = document.getElementById("imagePreviews");
+                const countSpan = document.getElementById("imageCount");
+                const tagsSection = document.getElementById("imageTagsSection");
+
+                previewsDiv.innerHTML = "";
+
+                if (input.files && input.files.length > 0) {
+                    countSpan.textContent = input.files.length;
+                    container.classList.remove("d-none");
+                    tagsSection.classList.remove("d-none");
+
+                    Array.from(input.files).forEach((file, index) => {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const img = document.createElement("img");
+                            img.src = e.target.result;
+                            img.alt = "Preview " + (index + 1);
+                            img.className = "rounded";
+                            img.style.maxHeight = "120px";
+                            img.style.maxWidth = "150px";
+                            img.style.objectFit = "contain";
+                            previewsDiv.appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
                     });
-                    console.log('Chart created successfully');
+                } else {
+                    container.classList.add("d-none");
+                    tagsSection.classList.add("d-none");
                 }
-                } catch (e) {
-                    console.error('Chart error:', e);
+            }
+
+            function validateContributionForm() {
+                const hasImages =
+                    document.getElementById("imageFile").files.length > 0;
+                const hasText =
+                    document.getElementById("metadataText").value.trim()
+                        .length > 0;
+
+                if (!hasImages && !hasText) {
+                    alert(
+                        "Please provide at least one photo or some knowledge to share.",
+                    );
+                    return false;
                 }
-            });
-        }
-        
-        // Initialize charts on page load
-        initializeCharts();
-        
-        // Current botanical name for API calls
-        const botanicalName = '{{ botanical_name }}';
-        
-        // Function to switch screens without page reload
-        async function switchScreen(screenType) {
-            try {
-                // Update active tab
-                document.querySelectorAll('.screen-tab').forEach(tab => {
-                    tab.classList.remove('active');
+                return true;
+            }
+        </script>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Chart.js for data visualization -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- Feather Icons -->
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script>
+            // Initialize Feather icons
+            feather.replace();
+
+            // Initialize Bootstrap popovers for attribution info icons
+            var popoverTriggerList = [].slice.call(
+                document.querySelectorAll('[data-bs-toggle="popover"]'),
+            );
+            var popoverList = popoverTriggerList.map(
+                function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl, {
+                        container: "body",
+                        html: true,
+                    });
+                },
+            );
+
+            // Initialize Bootstrap tooltips on page load (mobile-friendly tier icons)
+            var tooltipTriggerList = [].slice.call(
+                document.querySelectorAll('[data-bs-toggle="tooltip"]'),
+            );
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl, {
+                    container: "body",
                 });
-                document.querySelector(`[data-screen="${screenType}"]`).classList.add('active');
-                
-                // Show loading state
-                document.getElementById('species-content').innerHTML = `
+            });
+
+            // Store active chart instances for cleanup
+            const activeCharts = {};
+
+            // Function to initialize all charts on the page
+            function initializeCharts() {
+                const canvases = document.querySelectorAll(".chart-canvas");
+                console.log("Found chart canvases:", canvases.length);
+
+                canvases.forEach((canvas) => {
+                    const chartId = canvas.id;
+                    console.log("Initializing chart:", chartId);
+                    console.log("Data-labels attr:", canvas.dataset.labels);
+                    console.log("Data-values attr:", canvas.dataset.values);
+
+                    // Destroy existing chart if any
+                    if (activeCharts[chartId]) {
+                        activeCharts[chartId].destroy();
+                    }
+
+                    try {
+                        const labels = JSON.parse(
+                            canvas.dataset.labels || "[]",
+                        );
+                        const values = JSON.parse(
+                            canvas.dataset.values || "[]",
+                        );
+                        const label = canvas.dataset.label || "Data";
+                        console.log("Parsed labels:", labels);
+                        console.log("Parsed values:", values);
+
+                        if (labels.length > 0 && values.length > 0) {
+                            activeCharts[chartId] = new Chart(canvas, {
+                                type: "line",
+                                data: {
+                                    labels: labels,
+                                    datasets: [
+                                        {
+                                            label: label,
+                                            data: values,
+                                            borderColor: "rgb(75, 192, 192)",
+                                            backgroundColor:
+                                                "rgba(75, 192, 192, 0.2)",
+                                            tension: 0.3,
+                                            fill: true,
+                                        },
+                                    ],
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false,
+                                        },
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: "Observations",
+                                            },
+                                        },
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: "Month",
+                                            },
+                                        },
+                                    },
+                                },
+                            });
+                            console.log("Chart created successfully");
+                        }
+                    } catch (e) {
+                        console.error("Chart error:", e);
+                    }
+                });
+            }
+
+            // Initialize charts on page load
+            initializeCharts();
+
+            // Current botanical name for API calls
+            const botanicalName = "{{ botanical_name }}";
+
+            // Function to switch screens without page reload
+            async function switchScreen(screenType) {
+                try {
+                    // Update active tab
+                    document.querySelectorAll(".screen-tab").forEach((tab) => {
+                        tab.classList.remove("active");
+                    });
+                    document
+                        .querySelector(`[data-screen="${screenType}"]`)
+                        .classList.add("active");
+
+                    // Show loading state
+                    document.getElementById("species-content").innerHTML = `
                     <div class="col-12 text-center py-5">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 `;
-                
-                // Fetch new screen data
-                const response = await fetch(`/api/species/${encodeURIComponent(botanicalName)}/${screenType}`);
-                if (!response.ok) throw new Error('Failed to load screen data');
-                
-                const data = await response.json();
-                
-                // Update screen title and description
-                document.getElementById('screen-title').textContent = data.screen_config.screen_name;
-                document.getElementById('screen-description').textContent = data.screen_config.description || '';
-                
-                // Update announcement
-                updateAnnouncement(data.screen_config);
-                
-                // Update content
-                updateScreenContent(data.species, data.screen_config, data.cloudinary_images, data.attribution_data, data.prompt_mappings);
-                
-                // Re-initialize Feather icons for new content
-                feather.replace();
-                
-                // Re-initialize Bootstrap popovers for attribution icons
-                var newPopoverList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-                newPopoverList.forEach(function (popoverTriggerEl) {
-                    new bootstrap.Popover(popoverTriggerEl, {
-                        container: 'body',
-                        html: true
+
+                    // Fetch new screen data
+                    const response = await fetch(
+                        `/api/species/${encodeURIComponent(botanicalName)}/${screenType}`,
+                    );
+                    if (!response.ok)
+                        throw new Error("Failed to load screen data");
+
+                    const data = await response.json();
+
+                    // Update screen title and description
+                    document.getElementById("screen-title").textContent =
+                        data.screen_config.screen_name;
+                    document.getElementById("screen-description").textContent =
+                        data.screen_config.description || "";
+
+                    // Update announcement
+                    updateAnnouncement(data.screen_config);
+
+                    // Update content
+                    updateScreenContent(
+                        data.species,
+                        data.screen_config,
+                        data.cloudinary_images,
+                        data.attribution_data,
+                        data.prompt_mappings,
+                    );
+
+                    // Re-initialize Feather icons for new content
+                    feather.replace();
+
+                    // Re-initialize Bootstrap popovers for attribution icons
+                    var newPopoverList = [].slice.call(
+                        document.querySelectorAll('[data-bs-toggle="popover"]'),
+                    );
+                    newPopoverList.forEach(function (popoverTriggerEl) {
+                        new bootstrap.Popover(popoverTriggerEl, {
+                            container: "body",
+                            html: true,
+                        });
                     });
-                });
-                
-                // Re-initialize Bootstrap tooltips for tier icons (mobile-friendly)
-                var newTooltipList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                newTooltipList.forEach(function (tooltipTriggerEl) {
-                    new bootstrap.Tooltip(tooltipTriggerEl, {
-                        container: 'body'
+
+                    // Re-initialize Bootstrap tooltips for tier icons (mobile-friendly)
+                    var newTooltipList = [].slice.call(
+                        document.querySelectorAll('[data-bs-toggle="tooltip"]'),
+                    );
+                    newTooltipList.forEach(function (tooltipTriggerEl) {
+                        new bootstrap.Tooltip(tooltipTriggerEl, {
+                            container: "body",
+                        });
                     });
-                });
-                
-            } catch (error) {
-                console.error('Error switching screen:', error);
-                document.getElementById('species-content').innerHTML = `
+                } catch (error) {
+                    console.error("Error switching screen:", error);
+                    document.getElementById("species-content").innerHTML = `
                     <div class="col-12">
                         <div class="alert alert-danger">
                             <i data-feather="alert-circle" class="me-2"></i>
@@ -960,15 +1408,17 @@
                         </div>
                     </div>
                 `;
-                feather.replace();
+                    feather.replace();
+                }
             }
-        }
-        
-        // Function to update announcement
-        function updateAnnouncement(screenConfig) {
-            const announcementContainer = document.getElementById('announcement-container');
-            if (screenConfig.announcement) {
-                announcementContainer.innerHTML = `
+
+            // Function to update announcement
+            function updateAnnouncement(screenConfig) {
+                const announcementContainer = document.getElementById(
+                    "announcement-container",
+                );
+                if (screenConfig.announcement) {
+                    announcementContainer.innerHTML = `
                     <div class="row mb-3">
                         <div class="col-12">
                             <div class="alert alert-warning border-warning">
@@ -983,200 +1433,262 @@
                         </div>
                     </div>
                 `;
-            } else {
-                announcementContainer.innerHTML = '';
-            }
-        }
-        
-        // Image file extensions for detection
-        const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
-        
-        // HTML tag pattern for detecting formatted content
-        const HTML_TAG_PATTERN = /<(b|i|strong|em|p|br|ul|li|ol|a|span|div|h[1-6])[^>]*>/i;
-        
-        // Helper function to check if URL is an image
-        function isImageUrl(url) {
-            if (typeof url !== 'string' || !url.startsWith('http')) return false;
-            const urlPath = url.split('?')[0].toLowerCase();
-            return IMAGE_EXTENSIONS.some(ext => urlPath.endsWith(ext));
-        }
-        
-        // Helper function to check if text contains HTML
-        function containsHtml(text) {
-            if (typeof text !== 'string') return false;
-            return HTML_TAG_PATTERN.test(text);
-        }
-        
-        // Helper function to check for tiered content format
-        function isTieredData(parsed) {
-            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-                return false;
-            }
-            const tierKeys = ['tier1', 'tier2', 'tier3'];
-            let tierCount = 0;
-            for (const key of tierKeys) {
-                if (parsed[key] && typeof parsed[key] === 'object') {
-                    const tierObj = parsed[key];
-                    if ('value' in tierObj && 'attribution' in tierObj) {
-                        tierCount++;
-                    }
+                } else {
+                    announcementContainer.innerHTML = "";
                 }
             }
-            return tierCount > 0;
-        }
-        
-        // Helper function to parse JSON URLs
-        function parseJsonUrls(value) {
-            if (!value || typeof value !== 'string') {
-                return { type: 'text', data: value };
-            }
-            const trimmed = value.trim();
-            
-            // Check for single image URL (not JSON)
-            if (trimmed.startsWith('http') && isImageUrl(trimmed)) {
-                return { type: 'image', data: trimmed };
-            }
-            
-            // Check for single non-image URL (not JSON)
-            if (trimmed.startsWith('http') && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-                return { type: 'url', data: trimmed };
-            }
-            
-            // Check for HTML-formatted content
-            if (containsHtml(trimmed)) {
-                return { type: 'html', data: trimmed };
-            }
-            
-            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-                return { type: 'text', data: value };
-            }
-            try {
-                const parsed = JSON.parse(trimmed);
-                if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-                    // Check for tiered content format FIRST (before other checks)
-                    if (isTieredData(parsed)) {
-                        console.log('Detected tiered_content JSON');
-                        return { type: 'tiered_content', data: parsed };
-                    }
-                    
-                    // Check for topic-based structured content (similar_species)
-                    if (parsed.topic === 'similar_species' && parsed.similar_species) {
-                        console.log('Detected similar_species JSON');
-                        return { type: 'similar_species', data: parsed };
-                    }
-                    
-                    const values = Object.values(parsed);
-                    const imageCount = values.filter(v => isImageUrl(v)).length;
-                    const urlCount = values.filter(v => typeof v === 'string' && v.startsWith('http')).length;
-                    const numericCount = values.filter(v => typeof v === 'number').length;
-                    
-                    if (imageCount > 0 && imageCount >= Object.keys(parsed).length * 0.5) {
-                        return { type: 'image_dict', data: parsed };
-                    }
-                    if (urlCount > 0 && urlCount >= Object.keys(parsed).length * 0.5) {
-                        return { type: 'url_dict', data: parsed };
-                    }
-                    // Check for chart data (numeric values)
-                    if (numericCount >= Object.keys(parsed).length * 0.8 && Object.keys(parsed).length >= 2) {
-                        return { type: 'chart', data: parsed };
-                    }
-                }
-                if (Array.isArray(parsed)) {
-                    const imageCount = parsed.filter(v => isImageUrl(v)).length;
-                    const urlCount = parsed.filter(v => typeof v === 'string' && v.startsWith('http')).length;
-                    
-                    if (imageCount > 0 && imageCount >= parsed.length * 0.5) {
-                        return { type: 'image_list', data: parsed };
-                    }
-                    if (urlCount > 0 && urlCount >= parsed.length * 0.5) {
-                        return { type: 'url_list', data: parsed };
-                    }
-                }
-                return { type: 'text', data: value };
-            } catch (e) {
-                return { type: 'text', data: value };
-            }
-        }
-        
-        // Helper function to generate attribution icon HTML
-        function getAttrIconHtml(fieldName, attributionData) {
-            if (!attributionData) return '';
-            const key = fieldName.toLowerCase().replace(/ /g, '_');
-            const attr = attributionData[key];
-            if (!attr) return '';
-            
-            // Build popover content from attribution data with cleaner styling
-            let popoverContent = '';
-            for (const [k, v] of Object.entries(attr)) {
-                if (v) {
-                    popoverContent += `<div class="attr-row"><span class="attr-label">${escapeHtml(k)}</span><span class="attr-value">${escapeHtml(String(v))}</span></div>`;
-                }
-            }
-            
-            return `<span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="${escapeHtml(popoverContent)}">ⓘ</span>`;
-        }
-        
-        // Helper function to escape HTML for popover content
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-        
-        // Function to format list-like content with proper line breaks
-        function formatListContent(text) {
-            if (!text || typeof text !== 'string') return text;
-            
-            // Check if content looks like a list (has bullet points or numbered items)
-            const listPatterns = [
-                /^\s*[•\-\*]\s/m,  // Bullet points: •, -, *
-                /^\s*\d+[\.\)]\s/m  // Numbered: 1. or 1)
+
+            // Image file extensions for detection
+            const IMAGE_EXTENSIONS = [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".webp",
+                ".svg",
+                ".bmp",
             ];
-            
-            const isList = listPatterns.some(pattern => pattern.test(text));
-            
-            if (isList || text.includes('\n')) {
-                // Escape HTML first, then convert newlines to <br>
-                return escapeHtml(text).replace(/\n/g, '<br>');
+
+            // HTML tag pattern for detecting formatted content
+            const HTML_TAG_PATTERN =
+                /<(b|i|strong|em|p|br|ul|li|ol|a|span|div|h[1-6])[^>]*>/i;
+
+            // Helper function to check if URL is an image
+            function isImageUrl(url) {
+                if (typeof url !== "string" || !url.startsWith("http"))
+                    return false;
+                const urlPath = url.split("?")[0].toLowerCase();
+                return IMAGE_EXTENSIONS.some((ext) => urlPath.endsWith(ext));
             }
-            
-            return escapeHtml(text);
-        }
-        
-        // Function to update screen content
-        function updateScreenContent(species, screenConfig, cloudinaryImages, attributionData, promptMappings) {
-            let content = '';
-            let hasData = false;
-            cloudinaryImages = cloudinaryImages || {};
-            attributionData = attributionData || {};
-            promptMappings = promptMappings || {};
-            
-            // Helper to generate prompt link HTML
-            function getPromptLinkHtml(fieldName) {
-                const topicId = promptMappings[fieldName];
-                if (topicId) {
-                    return `<a href="/prompts?tier=1&topic=${topicId}" class="prompt-link" title="View AI prompt for this field" target="_blank">(ⓘ Prompt)</a>`;
+
+            // Helper function to check if text contains HTML
+            function containsHtml(text) {
+                if (typeof text !== "string") return false;
+                return HTML_TAG_PATTERN.test(text);
+            }
+
+            // Helper function to check for tiered content format
+            function isTieredData(parsed) {
+                if (
+                    typeof parsed !== "object" ||
+                    parsed === null ||
+                    Array.isArray(parsed)
+                ) {
+                    return false;
                 }
-                return '';
+                const tierKeys = ["tier1", "tier2", "tier3"];
+                let tierCount = 0;
+                for (const key of tierKeys) {
+                    if (parsed[key] && typeof parsed[key] === "object") {
+                        const tierObj = parsed[key];
+                        if ("value" in tierObj && "attribution" in tierObj) {
+                            tierCount++;
+                        }
+                    }
+                }
+                return tierCount > 0;
             }
-            
-            screenConfig.columns.forEach(column => {
-                const fieldValue = species[column.field];
-                // For special_collect, only show TRUE values; for other fields, show non-empty values
-                const shouldShowField = fieldValue !== null && fieldValue !== undefined && fieldValue !== '' &&
-                                       (column.field !== 'special_collect' || fieldValue === 'TRUE');
-                if (shouldShowField) {
-                    hasData = true;
-                    
-                    // Parse JSON URLs
-                    const parsed = parseJsonUrls(fieldValue);
-                    
-                    // Get attribution icon for this field
-                    const attrIcon = getAttrIconHtml(column.field, attributionData);
-                    
-                    if (parsed.type === 'image') {
-                        // Single image URL
-                        content += `
+
+            // Helper function to parse JSON URLs
+            function parseJsonUrls(value) {
+                if (!value || typeof value !== "string") {
+                    return { type: "text", data: value };
+                }
+                const trimmed = value.trim();
+
+                // Check for single image URL (not JSON)
+                if (trimmed.startsWith("http") && isImageUrl(trimmed)) {
+                    return { type: "image", data: trimmed };
+                }
+
+                // Check for single non-image URL (not JSON)
+                if (
+                    trimmed.startsWith("http") &&
+                    !trimmed.startsWith("{") &&
+                    !trimmed.startsWith("[")
+                ) {
+                    return { type: "url", data: trimmed };
+                }
+
+                // Check for HTML-formatted content
+                if (containsHtml(trimmed)) {
+                    return { type: "html", data: trimmed };
+                }
+
+                if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+                    return { type: "text", data: value };
+                }
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (typeof parsed === "object" && !Array.isArray(parsed)) {
+                        // Check for tiered content format FIRST (before other checks)
+                        if (isTieredData(parsed)) {
+                            console.log("Detected tiered_content JSON");
+                            return { type: "tiered_content", data: parsed };
+                        }
+
+                        // Check for topic-based structured content (similar_species)
+                        if (
+                            parsed.topic === "similar_species" &&
+                            parsed.similar_species
+                        ) {
+                            console.log("Detected similar_species JSON");
+                            return { type: "similar_species", data: parsed };
+                        }
+
+                        const values = Object.values(parsed);
+                        const imageCount = values.filter((v) =>
+                            isImageUrl(v),
+                        ).length;
+                        const urlCount = values.filter(
+                            (v) =>
+                                typeof v === "string" && v.startsWith("http"),
+                        ).length;
+                        const numericCount = values.filter(
+                            (v) => typeof v === "number",
+                        ).length;
+
+                        if (
+                            imageCount > 0 &&
+                            imageCount >= Object.keys(parsed).length * 0.5
+                        ) {
+                            return { type: "image_dict", data: parsed };
+                        }
+                        if (
+                            urlCount > 0 &&
+                            urlCount >= Object.keys(parsed).length * 0.5
+                        ) {
+                            return { type: "url_dict", data: parsed };
+                        }
+                        // Check for chart data (numeric values)
+                        if (
+                            numericCount >= Object.keys(parsed).length * 0.8 &&
+                            Object.keys(parsed).length >= 2
+                        ) {
+                            return { type: "chart", data: parsed };
+                        }
+                    }
+                    if (Array.isArray(parsed)) {
+                        const imageCount = parsed.filter((v) =>
+                            isImageUrl(v),
+                        ).length;
+                        const urlCount = parsed.filter(
+                            (v) =>
+                                typeof v === "string" && v.startsWith("http"),
+                        ).length;
+
+                        if (
+                            imageCount > 0 &&
+                            imageCount >= parsed.length * 0.5
+                        ) {
+                            return { type: "image_list", data: parsed };
+                        }
+                        if (urlCount > 0 && urlCount >= parsed.length * 0.5) {
+                            return { type: "url_list", data: parsed };
+                        }
+                    }
+                    return { type: "text", data: value };
+                } catch (e) {
+                    return { type: "text", data: value };
+                }
+            }
+
+            // Helper function to generate attribution icon HTML
+            function getAttrIconHtml(fieldName, attributionData) {
+                if (!attributionData) return "";
+                const key = fieldName.toLowerCase().replace(/ /g, "_");
+                const attr = attributionData[key];
+                if (!attr) return "";
+
+                // Build popover content from attribution data with cleaner styling
+                let popoverContent = "";
+                for (const [k, v] of Object.entries(attr)) {
+                    if (v) {
+                        popoverContent += `<div class="attr-row"><span class="attr-label">${escapeHtml(k)}</span><span class="attr-value">${escapeHtml(String(v))}</span></div>`;
+                    }
+                }
+
+                return `<span class="attr-info-icon ms-1" style="cursor:pointer;font-size:11px;" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" data-bs-placement="top" data-bs-title="Data Source" data-bs-content="${escapeHtml(popoverContent)}">ⓘ</span>`;
+            }
+
+            // Helper function to escape HTML for popover content
+            function escapeHtml(text) {
+                const div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+            // Function to format list-like content with proper line breaks
+            function formatListContent(text) {
+                if (!text || typeof text !== "string") return text;
+
+                // Check if content looks like a list (has bullet points or numbered items)
+                const listPatterns = [
+                    /^\s*[•\-\*]\s/m, // Bullet points: •, -, *
+                    /^\s*\d+[\.\)]\s/m, // Numbered: 1. or 1)
+                ];
+
+                const isList = listPatterns.some((pattern) =>
+                    pattern.test(text),
+                );
+
+                if (isList || text.includes("\n")) {
+                    // Escape HTML first, then convert newlines to <br>
+                    return escapeHtml(text).replace(/\n/g, "<br>");
+                }
+
+                return escapeHtml(text);
+            }
+
+            // Function to update screen content
+            function updateScreenContent(
+                species,
+                screenConfig,
+                cloudinaryImages,
+                attributionData,
+                promptMappings,
+            ) {
+                let content = "";
+                let hasData = false;
+                cloudinaryImages = cloudinaryImages || {};
+                attributionData = attributionData || {};
+                promptMappings = promptMappings || {};
+
+                // Helper to generate prompt link HTML
+                function getPromptLinkHtml(fieldName) {
+                    const topicId = promptMappings[fieldName];
+                    if (topicId) {
+                        return `<a href="/prompts?tier=1&topic=${topicId}" class="prompt-link" title="View AI prompt for this field" target="_blank">(ⓘ Prompt)</a>`;
+                    }
+                    return "";
+                }
+
+                screenConfig.columns.forEach((column) => {
+                    const fieldValue = species[column.field];
+                    // For special_collect, only show TRUE values; for other fields, show non-empty values
+                    const shouldShowField =
+                        fieldValue !== null &&
+                        fieldValue !== undefined &&
+                        fieldValue !== "" &&
+                        (column.field !== "special_collect" ||
+                            fieldValue === "TRUE");
+                    if (shouldShowField) {
+                        hasData = true;
+
+                        // Parse JSON URLs
+                        const parsed = parseJsonUrls(fieldValue);
+
+                        // Get attribution icon for this field
+                        const attrIcon = getAttrIconHtml(
+                            column.field,
+                            attributionData,
+                        );
+
+                        if (parsed.type === "image") {
+                            // Single image URL
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1190,13 +1702,15 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'image_dict') {
-                        // JSON dictionary of labeled image URLs
-                        let imagesHtml = '';
-                        for (const [name, url] of Object.entries(parsed.data)) {
-                            imagesHtml += `<a href="${url}" target="_blank" title="${name}"><img src="${url}" alt="${name}" class="img-fluid rounded" style="max-height: 150px;"></a>`;
-                        }
-                        content += `
+                        } else if (parsed.type === "image_dict") {
+                            // JSON dictionary of labeled image URLs
+                            let imagesHtml = "";
+                            for (const [name, url] of Object.entries(
+                                parsed.data,
+                            )) {
+                                imagesHtml += `<a href="${url}" target="_blank" title="${name}"><img src="${url}" alt="${name}" class="img-fluid rounded" style="max-height: 150px;"></a>`;
+                            }
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1208,13 +1722,15 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'url_dict') {
-                        // JSON dictionary of labeled URLs
-                        let linksHtml = '';
-                        for (const [name, url] of Object.entries(parsed.data)) {
-                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>${name}</a>`;
-                        }
-                        content += `
+                        } else if (parsed.type === "url_dict") {
+                            // JSON dictionary of labeled URLs
+                            let linksHtml = "";
+                            for (const [name, url] of Object.entries(
+                                parsed.data,
+                            )) {
+                                linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>${name}</a>`;
+                            }
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1226,13 +1742,13 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'url_list') {
-                        // JSON array of URLs
-                        let linksHtml = '';
-                        parsed.data.forEach((url, index) => {
-                            linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link ${index + 1}</a>`;
-                        });
-                        content += `
+                        } else if (parsed.type === "url_list") {
+                            // JSON array of URLs
+                            let linksHtml = "";
+                            parsed.data.forEach((url, index) => {
+                                linksHtml += `<a href="${url}" target="_blank" class="btn btn-outline-info btn-sm rounded-pill"><i data-feather="external-link" class="me-1" style="width:12px;height:12px;"></i>Link ${index + 1}</a>`;
+                            });
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1244,9 +1760,9 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'html') {
-                        // HTML-formatted content
-                        content += `
+                        } else if (parsed.type === "html") {
+                            // HTML-formatted content
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1258,12 +1774,16 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'chart') {
-                        // Chart data - render as line chart
-                        const chartId = `chart-${column.field}-${Date.now()}`;
-                        const labels = JSON.stringify(Object.keys(parsed.data));
-                        const values = JSON.stringify(Object.values(parsed.data));
-                        content += `
+                        } else if (parsed.type === "chart") {
+                            // Chart data - render as line chart
+                            const chartId = `chart-${column.field}-${Date.now()}`;
+                            const labels = JSON.stringify(
+                                Object.keys(parsed.data),
+                            );
+                            const values = JSON.stringify(
+                                Object.values(parsed.data),
+                            );
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1280,14 +1800,21 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'similar_species') {
-                        // Similar Species structured content
-                        let similarHtml = '';
-                        for (const similar of parsed.data.similar_species || []) {
-                            const commonName = similar.common_name ? `<span class="text-muted fw-normal">— ${similar.common_name}</span>` : '';
-                            let distinguishing = '';
-                            if (similar.tier1_source_backed && similar.tier1_source_backed.distinguishing_features) {
-                                distinguishing = `
+                        } else if (parsed.type === "similar_species") {
+                            // Similar Species structured content
+                            let similarHtml = "";
+                            for (const similar of parsed.data.similar_species ||
+                                []) {
+                                const commonName = similar.common_name
+                                    ? `<span class="text-muted fw-normal">— ${similar.common_name}</span>`
+                                    : "";
+                                let distinguishing = "";
+                                if (
+                                    similar.tier1_source_backed &&
+                                    similar.tier1_source_backed
+                                        .distinguishing_features
+                                ) {
+                                    distinguishing = `
                                     <div class="mt-1">
                                         <small class="text-secondary">
                                             <strong>Distinguishing Characteristics:</strong>
@@ -1295,8 +1822,8 @@
                                         </small>
                                     </div>
                                 `;
-                            }
-                            similarHtml += `
+                                }
+                                similarHtml += `
                                 <div class="border rounded p-2 mb-2 bg-light">
                                     <div class="fw-semibold text-dark">
                                         ${similar.name} ${commonName}
@@ -1304,8 +1831,8 @@
                                     ${distinguishing}
                                 </div>
                             `;
-                        }
-                        content += `
+                            }
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1320,40 +1847,50 @@
                                 </div>
                             </div>
                         `;
-                    } else if (parsed.type === 'tiered_content') {
-                        // Tiered content with tier1/tier2/tier3 structure - inline display
-                        const tieredData = parsed.data;
-                        let tieredHtml = '';
-                        const tierNames = ['tier1', 'tier2', 'tier3'];
-                        const tierLabels = { tier1: 't1', tier2: 't2', tier3: 't3' };
-                        
-                        for (const tierName of tierNames) {
-                            const tier = tieredData[tierName];
-                            const tierLabel = tierLabels[tierName];
-                            const attrText = tier && tier.attribution ? escapeHtml(tier.attribution) : 'No data';
-                            
-                            // Check if tier has a real value (not empty, null, or "unknown")
-                            const hasRealValue = tier && tier.value && 
-                                                 String(tier.value).trim() !== '' && 
-                                                 String(tier.value).toLowerCase() !== 'unknown';
-                            
-                            if (hasRealValue) {
-                                // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
-                                // Use formatListContent to handle bullet points and newlines
-                                tieredHtml += `<span class="tier-value">${formatListContent(String(tier.value))}</span>`;
-                                tieredHtml += `<span class="tier-icon ms-1" 
+                        } else if (parsed.type === "tiered_content") {
+                            // Tiered content with tier1/tier2/tier3 structure - inline display
+                            const tieredData = parsed.data;
+                            let tieredHtml = "";
+                            const tierNames = ["tier1", "tier2", "tier3"];
+                            const tierLabels = {
+                                tier1: "t1",
+                                tier2: "t2",
+                                tier3: "t3",
+                            };
+
+                            for (const tierName of tierNames) {
+                                const tier = tieredData[tierName];
+                                const tierLabel = tierLabels[tierName];
+                                const attrText =
+                                    tier && tier.attribution
+                                        ? escapeHtml(tier.attribution)
+                                        : "No data";
+
+                                // Check if tier has a real value (not empty, null, or "unknown")
+                                const hasRealValue =
+                                    tier &&
+                                    tier.value &&
+                                    String(tier.value).trim() !== "" &&
+                                    String(tier.value).toLowerCase() !==
+                                        "unknown";
+
+                                if (hasRealValue) {
+                                    // Show value with tier icon inline after it - use Bootstrap tooltip for mobile support
+                                    // Use formatListContent to handle bullet points and newlines
+                                    tieredHtml += `<span class="tier-value">${formatListContent(String(tier.value))}</span>`;
+                                    tieredHtml += `<span class="tier-icon ms-1" 
                                     data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
-                            } else if (tier) {
-                                // No real value - show empty tier icon inline (will appear before next value)
-                                tieredHtml += `<span class="tier-icon tier-icon-empty ms-1" 
+                                } else if (tier) {
+                                    // No real value - show empty tier icon inline (will appear before next value)
+                                    tieredHtml += `<span class="tier-icon tier-icon-empty ms-1" 
                                     data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
+                                }
                             }
-                        }
-                        
-                        const promptLink = getPromptLinkHtml(column.field);
-                        content += `
+
+                            const promptLink = getPromptLinkHtml(column.field);
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1365,8 +1902,8 @@
                                 </div>
                             </div>
                         `;
-                    } else if (column.type === 'link' && fieldValue) {
-                        content += `
+                        } else if (column.type === "link" && fieldValue) {
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1381,16 +1918,20 @@
                                 </div>
                             </div>
                         `;
-                    } else {
-                        // Handle special formatting for specific field types
-                        let displayValue = fieldValue;
-                        if (column.field === 'special_collect' && (fieldValue === 'TRUE' || fieldValue === true)) {
-                            displayValue = '<span class="badge bg-success ms-1">Requested Species</span>';
                         } else {
-                            displayValue = `<span class="text-body-secondary ms-1">${displayValue}</span>`;
-                        }
-                        
-                        content += `
+                            // Handle special formatting for specific field types
+                            let displayValue = fieldValue;
+                            if (
+                                column.field === "special_collect" &&
+                                (fieldValue === "TRUE" || fieldValue === true)
+                            ) {
+                                displayValue =
+                                    '<span class="badge bg-success ms-1">Requested Species</span>';
+                            } else {
+                                displayValue = `<span class="text-body-secondary ms-1">${displayValue}</span>`;
+                            }
+
+                            content += `
                             <div class="col-lg-6 mb-1">
                                 <div class="card h-100">
                                     <div class="card-body py-1 px-2">
@@ -1402,30 +1943,34 @@
                                 </div>
                             </div>
                         `;
+                        }
                     }
-                }
-            });
-            
-            // Add Cloudinary image galleries
-            const hasCloudinaryImages = cloudinaryImages && Object.keys(cloudinaryImages).length > 0;
-            if (hasCloudinaryImages) {
-                hasData = true;
-                for (const [groupId, groupData] of Object.entries(cloudinaryImages)) {
-                    if (groupData.images && groupData.images.length > 0) {
-                        let imagesHtml = '';
-                        groupData.images.forEach(img => {
-                            imagesHtml += `
-                                <a href="${img.url}" target="_blank" class="cloudinary-thumb" title="${img.filename || ''}">
+                });
+
+                // Add Cloudinary image galleries
+                const hasCloudinaryImages =
+                    cloudinaryImages &&
+                    Object.keys(cloudinaryImages).length > 0;
+                if (hasCloudinaryImages) {
+                    hasData = true;
+                    for (const [groupId, groupData] of Object.entries(
+                        cloudinaryImages,
+                    )) {
+                        if (groupData.images && groupData.images.length > 0) {
+                            let imagesHtml = "";
+                            groupData.images.forEach((img) => {
+                                imagesHtml += `
+                                <a href="${img.url}" target="_blank" class="cloudinary-thumb" title="${img.filename || ""}">
                                     <img src="${img.thumbnail_url}" 
-                                         alt="${img.filename || ''}"
+                                         alt="${img.filename || ""}"
                                          class="rounded"
                                          loading="lazy">
                                 </a>
                             `;
-                        });
-                        
-                        const iconName = groupData.icon || 'image';
-                        content += `
+                            });
+
+                            const iconName = groupData.icon || "image";
+                            content += `
                             <div class="col-12 mb-2">
                                 <div class="card">
                                     <div class="card-body py-2 px-3">
@@ -1441,12 +1986,12 @@
                                 </div>
                             </div>
                         `;
+                        }
                     }
                 }
-            }
-            
-            if (!hasData) {
-                content = `
+
+                if (!hasData) {
+                    content = `
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body text-center py-5">
@@ -1459,13 +2004,13 @@
                         </div>
                     </div>
                 `;
+                }
+
+                document.getElementById("species-content").innerHTML = content;
+
+                // Initialize any charts in the new content
+                initializeCharts();
             }
-            
-            document.getElementById('species-content').innerHTML = content;
-            
-            // Initialize any charts in the new content
-            initializeCharts();
-        }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
