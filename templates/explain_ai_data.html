@@ -163,16 +163,16 @@
                                 </ul>
                                 <p class="text-muted"><em>It still does not rely on the AI's general knowledge. Everything added here is tied back to references.</em></p>
 
-                                <h3 class="h4 mt-4 mb-2"><strong>Tier 3: Model Based Gap Filling</strong></h3>
-                                <p>Only at this stage does the system allow AI Model based reasoning and synthesis.</p>
+                                <h3 class="h4 mt-4 mb-2"><strong>Tier 3: Model Knowledge (Independent Diagnostic)</strong></h3>
+                                <p>This tier operates independently—it has no access to what Tier 1 or Tier 2 produced. Its purpose is to reveal what the AI model knows on its own, based purely on its training.</p>
                                 <p>Here, the AI:</p>
                                 <ul>
-                                    <li>Fills in reasonable gaps</li>
-                                    <li>Explains patterns learned during model training</li>
-                                    <li>Connects ideas</li>
-                                    <li>Provides context that isn't fully documented yet</li>
+                                    <li>Reports patterns it learned during training (species-level, genus-level, family-level, or broader ecological patterns)</li>
+                                    <li>Indicates where its knowledge is strong or weak</li>
+                                    <li>Shows where patterns break down or vary across taxa</li>
+                                    <li>Returns empty values when knowledge is fragmented or uncertain—this is a valid and informative outcome</li>
                                 </ul>
-                                <p class="text-muted"><em>This layer is clearly understood as model-based synthesis, not a citation. It's useful—but it's not presented as fact in the same way as the earlier tiers.</em></p>
+                                <p class="text-muted"><em>This layer is a diagnostic instrument. It helps us understand what the model knows, how confidently it knows it, and where its knowledge generalizes or doesn't. Accuracy and transparency take precedence over completeness.</em></p>
 
                                 <h2 class="section-heading h4 text-success">
                                     Why Do This Instead of "Just Using AI"?

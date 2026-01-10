@@ -65,6 +65,23 @@ When a user selects a species from the main list, they enter a dedicated workflo
 - **Cache management** - Both main and supplemental data caches are cleared together on refresh
 - **Configuration** - Uses `supplemental_file_prefix` in app_settings.json (default: "PlantData")
 
+### Dynamic Prompt System ✅ (January 2026)
+- **Google Sheet-based prompts** - AI prompt content loaded dynamically from PlantData Google Sheet tabs instead of static markdown files
+- **Tab 2 (Column Sources)** - Contains attribution data AND column-specific prompt content for each data field
+- **Tab 3 (Prompts)** - Contains base shared context and tier-specific prompt guidance (tier1, tier2, tier3)
+- **Prompt Explorer page** - Displays prompts loaded from Google Sheet, allowing inspection of AI generation rules
+- **No static prompt files** - Removed `/prompts` folder; all prompt content now managed in Google Sheet
+- **Configuration** - Uses `prompts_tab_name` in app_settings.json (default: "Prompts")
+
+### 3-Tier AI Data Architecture ✅ (January 2026)
+- **Tier 1: Local & Trusted Sources** - Uses only explicitly provided, trusted source material
+- **Tier 2: Expanded Sources** - Adds information from additional identified sources, still source-bound
+- **Tier 3: Model Knowledge (Independent Diagnostic)** - Operates independently without access to Tier 1/2 outputs; reveals what the AI model knows based purely on its training
+  - Reports patterns at species, genus, family, or life-history strategy levels
+  - Empty values are valid and informative when knowledge is uncertain
+  - Attribution format: "Model knowledge (pattern-level description)"
+  - Purpose is diagnostic transparency, not gap-filling
+
 ### Development vs Production Environment Detection ✅
 - **Proper environment detection** - Uses REPLIT_ENVIRONMENT variable to distinguish development from production
 - **Development-only features** - Edit capabilities and admin tools only appear in development workspace

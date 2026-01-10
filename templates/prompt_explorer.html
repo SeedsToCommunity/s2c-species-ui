@@ -163,8 +163,8 @@
                             <div class="category-header">{{ category }}</div>
                             {% for topic in topics %}
                             <a href="{{ url_for('prompt_explorer', tier=current_tier, topic=topic.id) }}" 
-                               class="topic-item d-block text-decoration-none text-light {{ 'active' if current_topic == topic.id }}">
-                                {{ topic.name }}
+                               class="topic-item d-block text-decoration-none {{ 'text-muted' if not topic.has_prompt else 'text-light' }} {{ 'active' if current_topic == topic.id }}">
+                                {{ topic.name }}{% if not topic.has_prompt %} <small class="text-muted">(no prompt)</small>{% endif %}
                             </a>
                             {% endfor %}
                             {% endfor %}
@@ -203,6 +203,18 @@
                         </span>
                     </div>
                     <div class="prompt-content text-light">{{ topic_prompt }}</div>
+                </div>
+                {% elif current_topic %}
+                <div class="prompt-section section-topic">
+                    <div class="prompt-section-header">
+                        <span class="prompt-section-label text-success">
+                            <i data-feather="file-text" class="me-2" style="width: 16px; height: 16px;"></i>
+                            Topic: {{ current_topic_name }}
+                        </span>
+                    </div>
+                    <div class="prompt-content text-muted">
+                        <em>No specific prompt content is defined for this topic yet.</em>
+                    </div>
                 </div>
                 {% else %}
                 <div class="prompt-section section-topic">

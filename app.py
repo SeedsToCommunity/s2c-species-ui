@@ -312,6 +312,11 @@ _cached_attribution_data = None
 _attribution_load_failed_no_creds = False  # Track if loading failed due to missing credentials (for retry)
 ATTRIBUTION_CACHE_FILE = os.path.join(CACHE_DIR, 'attribution_data.pkl')
 
+# Global cache for prompts data (Prompts tab - base context and tier guidance)
+_cached_prompts_data = None
+_prompts_load_failed_no_creds = False
+PROMPTS_CACHE_FILE = os.path.join(CACHE_DIR, 'prompts_data.pkl')
+
 # Track columns removed during last cleanup (for admin notification)
 _last_removed_columns = []
 
@@ -1714,6 +1719,155 @@ def get_all_attributions():
     
     return attributions
 
+def load_prompts_data(force_reload=False):
+    """Load prompts data from 'Prompts' tab of PlantData Google Sheet.
+    
+    This tab contains base context and tier-specific prompt guidance for AI data generation.
+    Returns a DataFrame with prompt information, or empty dict on error.
+    """
+    global _cached_prompts_data, _supplemental_file_id, _prompts_load_failed_no_creds
+    
+    # Check if we should retry - if previous attempt failed due to missing credentials
+    if _prompts_load_failed_no_creds and not force_reload:
+        service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if service_account_json:
+            app.logger.info("Credentials now available, retrying prompts data load...")
+            force_reload = True
+            _prompts_load_failed_no_creds = False
+    
+    # Return cached data if available and not forcing reload
+    if not force_reload and _cached_prompts_data is not None:
+        if isinstance(_cached_prompts_data, pd.DataFrame) and not _cached_prompts_data.empty:
+            return _cached_prompts_data
+        _cached_prompts_data = None
+    
+    # Try to load from disk cache first (only if not forcing reload)
+    if not force_reload and os.path.exists(PROMPTS_CACHE_FILE):
+        try:
+            disk_cache = pd.read_pickle(PROMPTS_CACHE_FILE)
+            if isinstance(disk_cache, pd.DataFrame) and not disk_cache.empty:
+                _cached_prompts_data = disk_cache
+                app.logger.info(f"Loaded prompts data from disk cache ({len(disk_cache)} rows)")
+                return _cached_prompts_data
+            else:
+                app.logger.info("Disk cache prompts data is empty, will reload from source")
+        except Exception as e:
+            app.logger.warning(f"Could not load prompts cache from disk: {e}")
+    
+    settings = load_app_settings()
+    folder_id = settings.get('data_source', {}).get('google_drive_folder_id', '')
+    supplemental_prefix = settings.get('data_source', {}).get('supplemental_file_prefix', 'PlantData')
+    prompts_tab_name = settings.get('data_source', {}).get('prompts_tab_name', 'Prompts')
+    
+    if not folder_id or not supplemental_prefix:
+        app.logger.warning("Prompts data not configured - folder_id or supplemental_file_prefix not set")
+        return {}
+    
+    try:
+        # Check if credentials are available
+        service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if not service_account_json:
+            app.logger.warning("Prompts load skipped - GOOGLE_SERVICE_ACCOUNT_JSON not available yet")
+            _prompts_load_failed_no_creds = True
+            return {}
+        
+        # Find the Google Sheet (use existing supplemental file ID if available)
+        file_id = _supplemental_file_id
+        if not file_id:
+            file_id, file_name, message = find_google_sheet_in_folder(folder_id, supplemental_prefix)
+        
+        if not file_id:
+            app.logger.warning("No supplemental data file found for prompts")
+            return {}
+        
+        # Export the prompts tab by name
+        csv_content, error = export_google_sheet_tab_by_name(file_id, prompts_tab_name)
+        if error:
+            app.logger.warning(f"Could not load prompts tab '{prompts_tab_name}': {error}")
+            return {}
+        
+        # Parse CSV into DataFrame
+        csv_data = StringIO(csv_content)
+        df = pd.read_csv(csv_data)
+        
+        if df.empty:
+            app.logger.info("Prompts tab is empty")
+            return {}
+        
+        app.logger.info(f"Loaded {len(df)} rows of prompts data")
+        app.logger.info(f"Prompts columns: {list(df.columns)}")
+        
+        # Cache the data
+        _cached_prompts_data = df
+        _prompts_load_failed_no_creds = False
+        
+        # Save to disk cache
+        try:
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            df.to_pickle(PROMPTS_CACHE_FILE)
+        except Exception as e:
+            app.logger.warning(f"Could not save prompts cache to disk: {e}")
+        
+        return df
+        
+    except Exception as e:
+        app.logger.error(f"Error loading prompts data: {str(e)}")
+        return {}
+
+def get_prompt_by_type(prompt_type):
+    """Get a specific prompt by type (e.g., 'base', 'tier1', 'tier2', 'tier3').
+    
+    Returns the prompt content as a string, or empty string if not found.
+    """
+    prompts_df = load_prompts_data()
+    
+    if prompts_df is None or (isinstance(prompts_df, pd.DataFrame) and prompts_df.empty):
+        return ''
+    
+    if isinstance(prompts_df, dict):
+        return ''
+    
+    # Look for a row matching the prompt type (case-insensitive)
+    type_normalized = prompt_type.lower().strip()
+    
+    # Try to find in first column or a 'type' column
+    for col in prompts_df.columns:
+        col_values = prompts_df[col].astype(str).str.lower().str.strip()
+        matches = prompts_df[col_values == type_normalized]
+        if not matches.empty:
+            # Get the prompt content from the row
+            row = matches.iloc[0]
+            # Return the content from a 'prompt' or 'content' column, or second column
+            for content_col in ['prompt', 'content', 'Prompt', 'Content']:
+                if content_col in row.index and pd.notna(row[content_col]):
+                    return str(row[content_col])
+            # Fallback: return value from second column if it exists
+            if len(row) > 1:
+                second_col = prompts_df.columns[1]
+                if pd.notna(row[second_col]):
+                    return str(row[second_col])
+    
+    return ''
+
+def get_all_prompts():
+    """Get all prompts data as a list of dictionaries."""
+    prompts_df = load_prompts_data()
+    
+    if prompts_df is None or (isinstance(prompts_df, pd.DataFrame) and prompts_df.empty):
+        return []
+    
+    if isinstance(prompts_df, dict):
+        return []
+    
+    # Convert each row to a dictionary, filtering out NaN values
+    prompts = []
+    for _, row in prompts_df.iterrows():
+        prompt = {k: v for k, v in row.items() if pd.notna(v) and str(v).strip()}
+        if prompt:
+            prompts.append(prompt)
+    
+    return prompts
+
 def load_supplemental_data(force_reload=False):
     """Load supplemental data from PlantData Google Sheet"""
     global _cached_supplemental_data, _supplemental_file_id, _supplemental_file_name
@@ -2733,11 +2887,12 @@ def admin_dashboard():
 @require_admin_auth
 def reload_data_api():
     """API endpoint to reload data from current Google Drive files"""
-    global _cached_plant_data, _cached_supplemental_data, _cached_attribution_data
+    global _cached_plant_data, _cached_supplemental_data, _cached_attribution_data, _cached_prompts_data
     try:
         _cached_plant_data = None  # Clear cache
         _cached_supplemental_data = None  # Clear supplemental cache
         _cached_attribution_data = None  # Clear attribution cache
+        _cached_prompts_data = None  # Clear prompts cache
         df = load_plant_data(force_reload=True)
         
         # Build comprehensive message
@@ -2757,6 +2912,11 @@ def reload_data_api():
         attribution_df = load_attribution_data(force_reload=True)
         if attribution_df is not None and isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
             message_parts.append(f'Loaded {len(attribution_df)} column source records.')
+        
+        # Reload prompts data (Prompts tab)
+        prompts_df = load_prompts_data(force_reload=True)
+        if prompts_df is not None and isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
+            message_parts.append(f'Loaded {len(prompts_df)} prompt records.')
         
         # Check for any columns that were cleaned up
         removed = get_last_removed_columns()
@@ -3079,8 +3239,11 @@ def explain_ai_data():
 
 @app.route('/prompts')
 def prompt_explorer():
-    """Prompt Explorer page showing how AI prompts are constructed"""
-    import os
+    """Prompt Explorer page showing how AI prompts are constructed.
+    
+    Loads prompt data from the 'Prompts' tab and column prompts from 'Column Sources' tab
+    in the PlantData Google Sheet.
+    """
     import markdown
     from markupsafe import Markup
     
@@ -3091,23 +3254,52 @@ def prompt_explorer():
         current_tier = 1
     current_topic = request.args.get('topic', '')
     
-    prompts_dir = 'prompts'
-    
-    # Helper to read and convert markdown to HTML
-    def read_markdown_file(filepath):
-        if os.path.exists(filepath):
-            with open(filepath, 'r') as f:
-                content = f.read()
-                return Markup(markdown.markdown(content, extensions=['fenced_code', 'tables']))
+    # Helper to convert markdown text to HTML
+    def markdown_to_html(text):
+        if text and str(text).strip():
+            return Markup(markdown.markdown(str(text), extensions=['fenced_code', 'tables']))
         return ''
     
-    base_prompt = read_markdown_file(os.path.join(prompts_dir, 'tiered_base_prompt.md'))
-    tier_prompt = read_markdown_file(os.path.join(prompts_dir, f'tier{current_tier}_prompt_guidance.md'))
+    # Load prompts from Google Sheet (Prompts tab)
+    prompts_df = load_prompts_data()
+    
+    base_prompt = ''
+    tier_prompt = ''
+    
+    if isinstance(prompts_df, pd.DataFrame) and not prompts_df.empty:
+        # Find type column (could be 'type', 'key', 'name', or first column)
+        type_col = prompts_df.columns[0]  # default to first column
+        for col in prompts_df.columns:
+            if col.lower() in ['type', 'key', 'name']:
+                type_col = col
+                break
+        
+        # Find content column (could be 'prompt', 'content', or second column)
+        content_col = prompts_df.columns[1] if len(prompts_df.columns) > 1 else None
+        for col in prompts_df.columns:
+            if col.lower() in ['prompt', 'content', 'text', 'value']:
+                content_col = col
+                break
+        
+        # Find base prompt and tier prompts
+        for _, row in prompts_df.iterrows():
+            row_type = str(row[type_col]).lower().strip() if pd.notna(row[type_col]) else ''
+            
+            # Get content from determined content column
+            content = ''
+            if content_col and pd.notna(row[content_col]):
+                content = str(row[content_col])
+            
+            # Match prompt types (flexible matching)
+            if row_type in ['base', 'base_prompt', 'shared_context', 'shared context', 'shared']:
+                base_prompt = markdown_to_html(content)
+            elif row_type == f'tier{current_tier}' or row_type == f'tier {current_tier}' or row_type == f'tier_{current_tier}':
+                tier_prompt = markdown_to_html(content)
+    
+    # Load column prompts from Column Sources tab (attribution data)
+    attribution_df = load_attribution_data()
     
     topic_files = []
-    excluded_files = ['tiered_base_prompt.md', 'tier1_prompt_guidance.md', 
-                      'tier2_prompt_guidance.md', 'tier3_prompt_guidance.md',
-                      'similar-species.md']
     
     # Category prefixes and their display names
     category_prefixes = [
@@ -3118,30 +3310,47 @@ def prompt_explorer():
         ('stratification_', 'Stratification'),
     ]
     
-    if os.path.exists(prompts_dir):
-        for filename in sorted(os.listdir(prompts_dir)):
-            if filename.endswith('.md') and filename not in excluded_files:
-                topic_id = filename.replace('.md', '')
+    if isinstance(attribution_df, pd.DataFrame) and not attribution_df.empty:
+        # Look for a 'prompt' column in the attribution data (optional - we show fields even without prompts)
+        prompt_col = None
+        for col in attribution_df.columns:
+            if 'prompt' in col.lower():
+                prompt_col = col
+                break
+        
+        # First column is typically the field/column name
+        first_col = attribution_df.columns[0]
+        
+        for _, row in attribution_df.iterrows():
+            field_name = str(row[first_col]).strip() if pd.notna(row[first_col]) else ''
+            prompt_content = ''
+            if prompt_col and pd.notna(row[prompt_col]):
+                prompt_content = str(row[prompt_col]).strip()
+            
+            # Include all fields with names, even if no prompt content
+            if field_name:
+                # Create topic ID from field name
+                topic_id = field_name.lower().replace(' ', '_')
                 
                 # Determine category and clean name
                 category = 'General'
-                display_name = topic_id
+                display_name = field_name
                 
                 for prefix, cat_name in category_prefixes:
                     if topic_id.startswith(prefix):
                         category = cat_name
-                        # Remove prefix from display name
-                        display_name = topic_id[len(prefix):]
+                        display_name = topic_id[len(prefix):].replace('_', ' ').title()
                         break
                 
-                # Convert underscores/dashes to spaces and title case
-                display_name = display_name.replace('_', ' ').replace('-', ' ').title()
+                if category == 'General':
+                    display_name = field_name.replace('_', ' ').replace('-', ' ').title()
                 
                 topic_files.append({
                     'id': topic_id,
                     'name': display_name,
                     'category': category,
-                    'filename': filename
+                    'prompt': prompt_content,
+                    'has_prompt': bool(prompt_content)
                 })
     
     # Group by category with specific order
@@ -3155,9 +3364,10 @@ def prompt_explorer():
     topic_prompt = ''
     current_topic_name = ''
     if current_topic:
-        topic_prompt = read_markdown_file(os.path.join(prompts_dir, f'{current_topic}.md'))
+        # Find the topic prompt content
         for topic in topic_files:
             if topic['id'] == current_topic:
+                topic_prompt = markdown_to_html(topic.get('prompt', ''))
                 current_topic_name = topic['name']
                 break
     

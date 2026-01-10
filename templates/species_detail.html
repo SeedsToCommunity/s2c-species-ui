@@ -196,13 +196,15 @@
         >
         {%- endif -%} {% endmacro %} {# Macro to render a tier icon with tooltip
         #} {% macro tier_icon(tier_num, attribution) %}
+        {# Tier 3 is the model knowledge layer (independent diagnostic), others are source tiers #}
+        {%- set tier_title = "Model Knowledge" if tier_num == 3 else "Tier " ~ tier_num ~ " Source" -%}
         <span
             class="tier-icon tier-icon-t{{ tier_num }}"
             data-bs-toggle="popover"
             data-bs-trigger="hover focus"
             data-bs-html="true"
             data-bs-placement="top"
-            data-bs-title="Tier {{ tier_num }} Source"
+            data-bs-title="{{ tier_title }}"
             data-bs-content="{{ attribution|e }}"
             >t{{ tier_num }}</span
         >
