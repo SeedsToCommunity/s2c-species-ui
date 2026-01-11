@@ -597,8 +597,8 @@
                                     <canvas
                                         id="chart-{{ column.field }}"
                                         class="chart-canvas"
-                                        data-labels="{{ parsed.data.keys()|list|tojson|e }}"
-                                        data-values="{{ parsed.data.values()|list|tojson|e }}"
+                                        data-labels='{{ parsed.data.keys()|list|tojson }}'
+                                        data-values='{{ parsed.data.values()|list|tojson }}'
                                         data-label="{{ column.label }}"
                                     ></canvas>
                                 </div>
