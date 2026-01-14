@@ -197,7 +197,14 @@
         {%- endif -%} {% endmacro %} {# Macro to render a tier icon with tooltip
         #} {% macro tier_icon(tier_num, attribution) %}
         {# Tier 3 is the model knowledge layer (independent diagnostic), others are source tiers #}
-        {%- set tier_title = "Model Knowledge" if tier_num == 3 else "Tier " ~ tier_num ~ " Source" -%}
+        {# Define tier titles with trust-level phrases #}
+        {%- if tier_num == 1 -%}
+            {%- set tier_title = "Tier 1 Source (Highest Trust)" -%}
+        {%- elif tier_num == 2 -%}
+            {%- set tier_title = "Tier 2 Source (Secondary Trust)" -%}
+        {%- else -%}
+            {%- set tier_title = "Model Knowledge (AI Generated)" -%}
+        {%- endif -%}
         <span
             class="tier-icon tier-icon-t{{ tier_num }}"
             data-bs-toggle="popover"
@@ -1241,6 +1248,7 @@
             tooltipTriggerList.forEach(function (tooltipTriggerEl) {
                 new bootstrap.Tooltip(tooltipTriggerEl, {
                     container: "body",
+                    html: true,
                 });
             });
 
@@ -1398,6 +1406,7 @@
                     newTooltipList.forEach(function (tooltipTriggerEl) {
                         new bootstrap.Tooltip(tooltipTriggerEl, {
                             container: "body",
+                            html: true,
                         });
                     });
                 } catch (error) {
@@ -1860,14 +1869,21 @@
                                 tier2: "t2",
                                 tier3: "t3",
                             };
+                            const tierTitles = {
+                                tier1: "Tier 1 Source (Highest Trust)",
+                                tier2: "Tier 2 Source (Secondary Trust)",
+                                tier3: "Model Knowledge (AI Generated)",
+                            };
 
                             for (const tierName of tierNames) {
                                 const tier = tieredData[tierName];
                                 const tierLabel = tierLabels[tierName];
-                                const attrText =
+                                const tierTitle = tierTitles[tierName];
+                                const attrContent =
                                     tier && tier.attribution
                                         ? escapeHtml(tier.attribution)
                                         : "No data";
+                                const attrText = `<strong>${tierTitle}</strong><br>${attrContent}`;
 
                                 // Check if tier has a real value (not empty, null, or "unknown")
                                 const hasRealValue =
@@ -1882,12 +1898,12 @@
                                     // Use formatListContent to handle bullet points and newlines
                                     tieredHtml += `<span class="tier-value">${formatListContent(String(tier.value))}</span>`;
                                     tieredHtml += `<span class="tier-icon ms-1" 
-                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" data-bs-html="true"
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                                 } else if (tier) {
                                     // No real value - show empty tier icon inline (will appear before next value)
                                     tieredHtml += `<span class="tier-icon tier-icon-empty ms-1" 
-                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" 
+                                    data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" data-bs-html="true"
                                     data-bs-title="${attrText}">${tierLabel}</span> `;
                                 }
                             }
