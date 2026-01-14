@@ -199,11 +199,11 @@
         {# Tier 3 is the model knowledge layer (independent diagnostic), others are source tiers #}
         {# Define tier titles with trust-level phrases #}
         {%- if tier_num == 1 -%}
-            {%- set tier_title = "Tier 1 Source (Highest Trust)" -%}
+            {%- set tier_title = "Tier 1 Source — Highest Trust" -%}
         {%- elif tier_num == 2 -%}
-            {%- set tier_title = "Tier 2 Source (Secondary Trust)" -%}
+            {%- set tier_title = "Tier 2 Source — Extended Sources" -%}
         {%- else -%}
-            {%- set tier_title = "Model Knowledge (AI Generated)" -%}
+            {%- set tier_title = "Model Knowledge — AI Inference" -%}
         {%- endif -%}
         <span
             class="tier-icon tier-icon-t{{ tier_num }}"
@@ -1870,9 +1870,9 @@
                                 tier3: "t3",
                             };
                             const tierTitles = {
-                                tier1: "Tier 1 Source (Highest Trust)",
-                                tier2: "Tier 2 Source (Secondary Trust)",
-                                tier3: "Model Knowledge (AI Generated)",
+                                tier1: "Tier 1 Source — Highest Trust",
+                                tier2: "Tier 2 Source — Extended Sources",
+                                tier3: "Model Knowledge — AI Inference",
                             };
 
                             for (const tierName of tierNames) {
