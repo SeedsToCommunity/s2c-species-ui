@@ -62,15 +62,25 @@
         {% include 'nav_menu.html' %}
         
         <!-- Header Section -->
-        <div class="row mb-3">
+        <div class="row mb-3 align-items-center">
             <div class="col">
-                <h1 class="display-4 mb-3">
-                    <i data-feather="leaf" class="me-3"></i>
-                    Plant Species Directory
-                </h1>
-                <p class="lead text-muted">
-                    Filter and browse Southeast Michigan native plant species. Select the name to see details.
-                </p>
+                <div class="d-flex align-items-center">
+                    <div>
+                        <h1 class="display-4 mb-1">
+                            <i data-feather="leaf" class="me-3"></i>
+                            Explore Species
+                        </h1>
+                        <p class="lead text-muted mb-0">
+                            Filter and browse Southeast Michigan native plant species. Select the name to see details.
+                        </p>
+                        <p class="text-success small mb-0 mt-1" style="font-style: italic;">
+                            Huron/Erie Lake Plains — EPA Level III Ecoregion 57
+                        </p>
+                    </div>
+                    <img src="/static/images/ecoregion_huron_erie.png" alt="Huron/Erie Lake Plains Ecoregion" 
+                         class="ms-auto d-none d-md-block rounded" 
+                         style="width: 90px; height: 90px; object-fit: cover; opacity: 0.85;">
+                </div>
             </div>
         </div>
 
