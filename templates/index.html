@@ -107,14 +107,14 @@
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="form-check form-switch mb-0">
                                         <input class="form-check-input" type="checkbox" role="switch" id="community_data" name="community_data" value="true"
-                                               style="width: 3em; height: 1.5em; cursor: pointer;"
+                                               style="width: 2.5em; height: 1.25em; cursor: pointer;"
                                                {% if current_filters and current_filters.community_data %}checked{% endif %}>
-                                        <label class="form-check-label fw-bold ms-2" for="community_data" style="cursor: pointer; font-size: 1.05rem;">
+                                        <label class="form-check-label fw-bold ms-2" for="community_data" style="cursor: pointer; font-size: 0.875rem;">
                                             <i data-feather="star" class="me-1" style="color: var(--bs-success);"></i>
                                             Show Only Species with Proof-of-Concept Data
                                         </label>
                                     </div>
-                                    <span class="badge bg-success fs-6">{{ filter_options.community_data_count }} of {{ filter_options.total_count }} species</span>
+                                    <span class="badge bg-success" style="font-size: 0.8rem;">{{ filter_options.community_data_count }} of {{ filter_options.total_count }} species</span>
                                 </div>
                             </div>
 
