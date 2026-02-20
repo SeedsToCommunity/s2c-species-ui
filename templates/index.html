@@ -74,6 +74,24 @@
             </div>
         </div>
 
+        <!-- First-Visit Welcome Banner -->
+        <div class="row mb-3" id="poc-welcome-banner" style="display: none;">
+            <div class="col">
+                <div class="alert alert-success alert-dismissible fade show border border-success" role="alert" style="background-color: rgba(25, 135, 84, 0.15);">
+                    <div class="d-flex align-items-start">
+                        <i data-feather="info" class="me-3 flex-shrink-0 mt-1" style="width: 24px; height: 24px;"></i>
+                        <div>
+                            <strong>Welcome!</strong> This directory contains {{ filter_options.total_count }} plant species. 
+                            <strong>{{ filter_options.community_data_count }} of them</strong> currently include expanded proof-of-concept data fields with community-sourced seed collection information.
+                            <br class="d-none d-md-block">
+                            Use the highlighted toggle below to view only those species.
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="dismissPocBanner()"></button>
+                </div>
+            </div>
+        </div>
+
         <!-- Filter Controls -->
         <div class="row mb-3">
             <div class="col">
@@ -84,6 +102,22 @@
                             Filter Options
                         </h5>
                         <form method="GET" action="/" id="filterForm">
+                            <!-- Prominent PoC Data Toggle -->
+                            <div class="mb-3 p-2 rounded" id="poc-toggle-container" style="border: 2px solid var(--bs-success); background-color: rgba(25, 135, 84, 0.1);">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="community_data" name="community_data" value="true"
+                                               style="width: 3em; height: 1.5em; cursor: pointer;"
+                                               {% if current_filters and current_filters.community_data %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold ms-2" for="community_data" style="cursor: pointer; font-size: 1.05rem;">
+                                            <i data-feather="star" class="me-1" style="color: var(--bs-success);"></i>
+                                            Show Only Species with Proof-of-Concept Data
+                                        </label>
+                                    </div>
+                                    <span class="badge bg-success fs-6">{{ filter_options.community_data_count }} of {{ filter_options.total_count }} species</span>
+                                </div>
+                            </div>
+
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label for="name" class="form-label">Name</label>
@@ -141,14 +175,6 @@
                                 </div>
                             </div>
                             <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="community_data" name="community_data" value="true"
-                                           {% if current_filters and current_filters.community_data %}checked{% endif %}>
-                                    <label class="form-check-label" for="community_data">
-                                        <i data-feather="users" class="me-1"></i>
-                                        Community Data Only
-                                    </label>
-                                </div>
                                 <a href="/" class="btn btn-outline-secondary">
                                     <i data-feather="x-circle" class="me-1"></i>
                                     Clear All Filters
@@ -517,6 +543,17 @@
                 }
             });
         });
+
+        function dismissPocBanner() {
+            document.cookie = "poc_banner_dismissed=1; path=/; max-age=" + (365 * 24 * 60 * 60);
+        }
+
+        (function() {
+            if (!document.cookie.includes('poc_banner_dismissed=1')) {
+                var banner = document.getElementById('poc-welcome-banner');
+                if (banner) banner.style.display = '';
+            }
+        })();
         
     </script>
 </body>

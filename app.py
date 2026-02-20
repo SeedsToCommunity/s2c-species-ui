@@ -2822,12 +2822,14 @@ def index():
             filtered_df = df.iloc[0:0]  # Empty DataFrame with same structure
 
         # Get unique values for filter dropdowns
+        community_data_count = int(df['has_community_data'].sum()) if 'has_community_data' in df.columns else 0
         filter_options = {
             'start_seed_watch': get_unique_values(df, 'start_seed_watch'),
             'germination_code': get_unique_values(df, 'germination_code'),
             'light': get_unique_values_ordered(df, 'light', ['Sn', 'P', 'Sh']),
             'moisture': get_unique_values(df, 'moisture'),
-            'total_count': len(df)
+            'total_count': len(df),
+            'community_data_count': community_data_count
         }
 
         # Convert to list of dictionaries for easier template rendering
