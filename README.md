@@ -1,4 +1,4 @@
-# Southeast Michigan Native Plant Species Directory
+# Southeast Michigan Native Plant Species Directory v0.1
 
 A Flask-based web application for browsing and managing native plant species information for the Seeds to Community project.
 
